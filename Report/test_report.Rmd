@@ -1,0 +1,77 @@
+---
+title: "Test report"
+author: "Michiel van Dijk"
+date: "8 November 2016"
+output: 
+  word_document:
+    reference_docx: ../Common//word_styles_01.docx
+
+# For more info:
+# http://rmarkdown.rstudio.com/articles_docx.html
+# https://scriptsandstatistics.wordpress.com/2015/12/18/rmarkdown-how-to-inserts-page-breaks-in-a-ms-word-document/
+# https://scriptsandstatistics.wordpress.com/2016/08/29/how-to-number-and-reference-tables-and-figures-in-r-markdown-files/
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Heading 1
+My report starts here.
+
+# another heading 1
+
+## Heading 2
+And I have this next subsection
+
+# another heading 1
+## heading 2
+### Heading 3
+
+# Make a table
+Create a subset of the mtcars data. 
+
+and a code chunk to extract a subset of data from the mtcars data set.
+
+ <br>
+
+```{r code, message = FALSE}
+
+library(dplyr)
+# extract a subset of the mtcars data
+df <- mtcars %>%
+    mutate(make_model = row.names(mtcars)) %>%
+    filter(cyl == 4) %>%    
+    select(make_model, mpg, wt) %>%
+    mutate(wt = wt*1000) %>%
+    arrange(make_model) 
+
+```
+
+<br>
+
+Add some text followed by a code chunk,
+Then use *knitr::kable()* to create the table.
+
+<br>
+```{r table, echo = FALSE}
+library(knitr)
+kable(df) 
+```
+
+<br>
+
+```{r cars}
+summary(cars)
+```
+
+
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
