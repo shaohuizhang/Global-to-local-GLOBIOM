@@ -1,0 +1,64 @@
+---
+title: "micro-GLOBIOM"
+author: "Michiel van Dijk"
+date: "8 November 2016"
+output:
+  word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+The GLOBIOM team is facing an increasing demand for sub-regional (as opposed to global) assessments of deforestation, climate change and food security. Examples of ongoing work include a farm systems analysis for Ethiopia, deforestation scenarios for Brazil, Indonesia and Congo and modelling of consumption and diet change at the state-level for India. A new project along these lines is ISWEL, which aims to analyse the trade-offs between water, enery and food security (the nexus) in the Indus and Zambezi river basins. This type of studies, which a strong regional focus demand the use of more detailed and specific information on consumption patterns, production and income change at the plot, farm and household level. 
+
+Previously the use of this data was problematic because surveys only covered very small regions were organised in an ad hoc manner or were of low quality. Recently a number of efferts were undertaken to address these issues and collect nationally representative data using a systematic approach that allow for international comparisons and cover multiple years. Examples of such datasets are: the World bank Living Standards Measurement Study (LSMS), the related Measurement Study Integrated Surveys on Agriculture(LSMS-ISA) and the Demographic and Health Surveys (DHS). 
+
+The aim of this document is to present some first ideas on how to expand and deepen GLOBIOM by integrating and linking mico-level information (for now  I will refer to this process as 'micro-GLOBIOM' for lack of a better description). The main idea is that such data can provide more detail on several key building blocks of GLOBIOM, including the modelling of production and consumption. In addition, these data can also be used to construct a number of development related indicators that benefit from micro-level data, such as poverty and food security indicators. This document describes some of the possible directions we can take to use the available data to enrich GLOBIOM. It builds on on previous work done by colleagues that already explored this type of information, including farm systems modelling in Ethiopia, consumption modelling in India and forest modelling in Brazil, Congo and Indonesia. The document serves as a basis for discussion and is expected to be updated, refined and expanded as the thinking on this topics progresses. 
+
+# Possible directions to enhance GLOBIOM with micro-data
+Following the brainstorm discussion four, potentially interesting, approaches to develop 'micro-GLOBIOM' have been identified. 
+
+## Combining GLOBIOM output with available spatially explicit micro-based indicators
+As GLOBIOM presents spatially explicit results, it might be interesting to combine GLOBIOM output with spatially explicit socio-economic indicators. An example of such analysis could be the combination (overlay) of a map that depicts 'hotspots' of land use change and a poverty map to assess which people are most vulnerable. Unfortunately, spatially explicit socio-economic data is only available for a handfull of indicators. The main reason is that the required raw micro-level data to construct such maps is not available at high-resolution because it is too costly to collect by means of surveys. An interesting development in this regard is the collection of poverty data by means of mobile phone metadata [@Blumenstock2015] and sattelite imagery [@Jean2016], which will likely increase the availability of poverty maps at high resolution in the near future.  
+
+### Potential data
+For the following indicators spatially explicit socio-economic data is available for multiple countries or even at the global scale.
+
+- Poverty
+- Population density
+- Consumption?
+
+
+```{r maps}
+# Add maps
+```
+
+### Examples of related work
+
+### Required investment
+For the abovementioned indicators data can be easily downloaded and combined with GLOBIOM output. This can either being done within GAMS (I think) or by means of postprocessing in R or any GIS software (QGIS, ArcGis, etc).
+
+## Update the supply side
+
+
+
+
+## Improve demand side
+
+
+## Produce socio-economic indicators
+
+
+
+
+
+
+# Next steps
+
+## Determine priorities 
+
+
+# References
+
