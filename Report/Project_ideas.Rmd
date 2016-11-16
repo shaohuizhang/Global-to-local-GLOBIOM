@@ -1,5 +1,5 @@
 ---
-title: "micro-GLOBIOM"
+title: "Global-to-local modelling with GLOBIOM: first ideas"
 author: "Michiel van Dijk"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output: 
@@ -13,27 +13,80 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Introduction
-The GLOBIOM team is facing an increasing demand for sub-regional (as opposed to global) assessments of deforestation, climate change and food security. Examples of ongoing work include a farm systems analysis for Ethiopia, deforestation scenarios for Brazil, Indonesia and Congo and modelling of consumption and diet change at the state-level for India. A new project along these lines is ISWEL, which aims to analyse the trade-offs between water, enery and food security (the nexus) in the Indus and Zambezi river basins. Sub-regional model studies and the often associated demand for socio-economic impact analysis (i.e. poverty, food security and health) can benefit from the use of plot, farm and households surveys that are increasingly available and provide micro-level information on consumption, production and income. 
+There is an growing awareness that climate change, land use degredation and loss in biodiversity are putting pressure on the boundaries of the earth. To assess policy trade offs, decision makers have great interest in the socio-economic impact of these global phenomena at different scales. 
 
-Previously the use of this data was problematic because surveys only covered very small regions were organised in an ad hoc manner or were of low quality. Recently a number of efferts were undertaken to address these issues and collect nationally representative data using a systematic approach that allow for international comparisons and cover multiple years. Examples of such datasets are: the World bank Living Standards Measurement Study (LSMS), the related Measurement Study Integrated Surveys on Agriculture (LSMS-ISA) and the Demographic and Health Surveys (DHS). 
+The GLOBIOM team is facing an increasing demand for subnational (as opposed to global) assessments of deforestation, climate change and food security. Examples of ongoing work include farm systems analysis for Ethiopia, deforestation scenarios for Brazil, Indonesia and Congo and modelling of consumption and diet change at the state-level for India. A new project along these lines is ISWEL, which aims to analyse the trade-offs between water, enery and food security (the nexus) in the Indus and Zambezi river basins. Subnational model studies and the often associated demand for socio-economic impact analysis (i.e. poverty, food security and health) can benefit from the use of plot, farm and households surveys that are increasingly available and provide micro-level information on consumption, production and income patterns. 
 
-A second interesting and related source of information to improve both the sub-regional and global modelling is spatially explicit data on number of socio-economic indicators that are build using micro-level surveys. These maps can be either used as input into to the modelling process (e.g. population maps) or be contrasted with model outputs (e.g. climate hotspots with poverty and food security maps). Although, spatially explicit information on socio-economic indicators is relatively thin [@Otto2015], there is ongoing effort to improve data availability [@Azzarri2016].
+Previously the use of this data was problematic because surveys only covered very small regions were organised in an ad hoc manner or were of low quality. Recently a number of efforts were undertaken to address these issues and collect nationally representative data using a systematic approach that allow for international comparisons and cover multiple years. A second interesting and related source of information to improve both the sub-regional and global modelling is spatially explicit data on number of socio-economic indicators that are often build using micro-level surveys. Although, spatially explicit information on socio-economic indicators is relatively thin [@Otto2015], there is ongoing effort to improve data availability [@Azzarri2016].
 
-The aim of this document is to present some first ideas on how to expand and deepen the modelling with GLOBIOM by integrating and linking micro-level and spatial information on socio-economic variables (for now  I will refer to this process as 'micro-GLOBIOM' for lack of a better description). The main idea is that such data can provide more detail on several key building blocks of the model, including the modelling of production and consumption. In addition, these data might also be used to construct a number of development related indicators that benefit from micro-level data, such as poverty and food security indicators. This document describes some of the possible directions we can take to use the available data inorder to enrich the modelling with GLOBIOM. It partially builds on on previous work done by colleagues that already explored this type of information, including farm systems modelling in Ethiopia, consumption modelling in India and forest modelling in Brazil, Congo and Indonesia as well as an additional literature survey. The document serves as a basis for discussion and is expected to be updated, refined and expanded as the thinking on this topics progresses. 
+The aim of this document is to present some first ideas on how to expand and deepen the modelling with GLOBIOM by integrating and linking micro-level and spatial information (hereafter together referred to as micro-data) on socio-economic variables (for now  I will refer to this process as 'global-to-local GLOBIOM' for lack of a better description). The main idea is that such data can provide more detail on several key building blocks of the model, including the modelling of production and consumption. In addition, these data might also be used to construct a number of development related indicators that benefit from micro-level data, such as poverty and food security indicators. 
 
-# Possible directions to enhance GLOBIOM with micro-data
-Following the brainstorm discussion four, potentially interesting, approaches to develop 'micro-GLOBIOM' have been identified. 
+This document describes some of the possible directions we can be taken to use the available data in order to enrich the modelling with GLOBIOM. It partially builds on on previous work done by colleagues that already explored this type of information, including farm systems modelling in Ethiopia, consumption modelling in India and forest modelling in Brazil, Congo and Indonesia as well as an additional literature survey. The document serves as a basis for discussion and is expected to be updated, refined and expanded as the thinking on this topics progresses. 
+
+# Household level data sources
+There are a number of data sources with plot, farm or household information that can be used to enhance the modelling of GLOBIOM, which are summarised below. All of the sources present information that is at least nationally representative and therefore can be used as input to country-level modelling. Regional coverage strongly differs across sources. Some datasets only cover a handfull of countries, while others have mode wider coverage.
+
+## The Living Standards Measurement Study (LSMS)
+
+## The Living Standards Measurement Study - Integrated Surveys on Agriculture (LSMS-ISA)
+The Living Standards Measurement Study - Integrated Surveys on Agriculture (LSMS-ISA) is a project funded by the Bill and Melinda Gates foundation and implemented by the World Bank undertake nationally representative households surveys in a eight African countries: Burkina Faso, Ethiopia, Malawi, Mali, Niger, Nigeria, Tanzania and Uganda. In each country multiple survey rounds are supported that make it possible to analyse long-term developments and apply econometric panel approaches. 
+
+The surveys cover a wide range of topics and are particularly designed to improve the understanding between agricultural, socio-economic status and non-farm income activities. They cover around 3000 to 5000 households per country and includes questions on a large number of topics, including agricultural production (including fishery and livestock) at crop and plot level, diets and consumption patterns and household composition and income. The data also includes the coordinates of the sampling sites and can therefore can be linked with and compared to geo-spatial datasets. The database already includes information several spatial variables such as precipitation, temperature and infrastructure.
+
+# The Demographic and Health Surveys (DHS)
+The Demographic and Health Surveys (DHS) Program is a large survey program to collect nationally representative information on fertility,  family  planning,  maternal  and  child  health,  nutrition, mortality,  environmental  health,  HIV/AIDS, malaria, and provision of health services funded by USAID. To date, the program has has collected data for more 90 countries in more than 300 surveys.
+
+Data is pr Recent data is  
+
+DHS data are, however, weak on agricultural activities and income, as well as infrastructure. 
+
+# Ad hoc surveys
+Several institutes and universities, often with support of national statistical agencies organise their own nationally representative households surveys that are similar to the LSMS and LSMS-ISA surveys. Examples are the Ghana EGC-ISSER Socioeconomic Panel Survey undertaken by the Economic Growth Center (EGC) at Yale University and the Institute of Statistical, Social, and Economic Research (ISSER) at the University of Ghana, Legon; the Zambia Rural Agricultural Livelihoods Survey, organised by the Indaba Agricultural Research Institute (IAPRI) and Michigan State University and Rural Household Survey, faciliated by the Tegemeo Institute and Michigan State University. It depends on the data sharing policy of the involved institutions if the data is publically available. 
+
+
+# Possible directions to develop a Global-to-local GLOBIOM framework
+Broadly defined, micro-data can be used for two purposes to extend GLOBIOM:
+1. Improve the input-side, including an improved representation of farming systems and consumption.
+2. Improve the output-side, for example by providing new or more disaggregated indicators on issues like poverty, food security and health.
+
+These section provides a brief discussion of existing work on both directions, drawing on ongoing work of the GLOBIOM team and a literature survey and some possible new directions. 
+
+## Improvement of input-side
+Ongoing work to improve the input-side modelling of GLOBIOM has developed in two directions. Boere et al [@REF] used Ethiopian household survey data to refine the farming systems classification in a study to [@ADD]. Valin [@REF] estimated food demand functions for different food commodities using Indian panel household data to improve the food projections per state. 
+
+Using some of the data descrived above, it might be possible to extend these aproaches to other regions. However, this is only possible if the datasets are of sufficient quality. For the farmer systems classification, it is important that the data is geo-coded so that classifications can be spatially allocated. For the consumption function estimation detailed information is needed on consumption patterns and, preferably, the panel data should cover a relative long period to investigate changes over time. 
+
+
+# Improvement of the output-side
+
 
 ## Combining GLOBIOM output with spatially explicit socio-economic indicators
+
+
+
+These maps can be either used as input into to the modelling process (e.g. population maps) or be contrasted with model outputs (e.g. climate hotspots with poverty and food security maps).
+
+
+# Literature review
+## Modelling of poverty
+
+- GTAP POV
+- GIDD
+- MYGTAP
+
+## TOA
+
+## Spatial overlap
+
+
+
+
+
 As GLOBIOM presents spatially explicit results, it might be interesting to combine GLOBIOM output with spatially explicit socio-economic indicators. An example of such analysis could be the combination (overlay) of a map that depicts 'hotspots' of land use change and a poverty map to assess which people are most vulnerable. Unfortunately, spatially explicit socio-economic data is only available for a handfull of indicators. The main reason is that the required raw micro-level data to construct such maps is not available at high-resolution because it is too costly to collect by means of surveys. An interesting development in this regard is the collection of poverty data by means of mobile phone metadata [@Blumenstock2015] and sattelite imagery [@Jean2016], which will likely increase the availability of poverty maps at high resolution in the near future.  
 
 ### Potential data
 For the following indicators spatially explicit socio-economic data is available for multiple countries or even at the global scale.
 
-- Poverty: 
-- Children stunted
-- ChildrenConsumption?
-- Population density: 
 
 
 ```{r maps}
@@ -41,7 +94,7 @@ For the following indicators spatially explicit socio-economic data is available
 ```
 
 ### Examples of related work
-Probably due to limited information, there are not many global modelling exercises that make use of spatially explicit socio-economic data. An interesting an recent example is Biewald2015 [-@Biewald2015], who analyse the impact of climate change on hunger for 2030. They use the MAgPIE model to provide spatially explicit projections on changes in the costs of food. These results are subsequently compared with a spatially explicit Vulnerability to Hunger Index under different scenarions. The index is constructed by combining maps on child underweight, child mortality and prevalence of stunding under five and projected into the future on the basis of national level poverty scenarios. 
+
 
 # ADD info on TOA model
 
@@ -69,34 +122,40 @@ For the abovementioned indicators data can be easily downloaded and combined wit
 
 # Spatial data sources
 
+# Processing the data
+Grouping of data into regions => often surveys are only representative at Zone level, which are relatively large areas.
 
-# Household level data sources
-There are a number of data sources with plot, farm or household information that can be used to enhance the modelling of GLOBIOM, which are summarised below. All of the sources present information that is at least nationally representative and therefore can be used as input to country-level modelling. Regional coverage strongly differs across sources. Some datasets only cover a handfull of countries, while others have mode wider coverage.
+```{r TZAZONEMAP}
 
-## The Living Standards Measurement Study (LSMS)
-
-## The Living Standards Measurement Study - Integrated Surveys on Agriculture (LSMS-ISA)
-The Living Standards Measurement Study - Integrated Surveys on Agriculture (LSMS-ISA) is a project funded by the Bill and Melinda Gates foundation and implemented by the World Bank undertake nationally representative households surveys in a eight African countries: Burkina Faso, Ethiopia, Malawi, Mali, Niger, Nigeria, Tanzania and Uganda. In each country multiple survey rounds are supported that make it possible to analyse long-term developments and apply econometric panel approaches. 
-
-The surveys cover a wide range of topics and are particularly designed to improve the understanding between agricultural, socio-economic status and non-farm income activities. They cover around 3000 to 5000 households per country and includes questions on a large number of topics, including agricultural production (including fishery and livestock) at crop and plot level, diets and consumption patterns and household composition and income. The data also includes the coordinates of the sampling sites and can therefore can be linked with and compared to geo-spatial datasets. The database already includes information several spatial variables such as precipitation, temperature and infrastructure.
-
-# The Demographic and Health Surveys (DHS)
-The Demographic and Health Surveys (DHS) Program is a large survey program to collect nationally representative information on fertility,  family  planning,  maternal  and  child  health,  nutrition, mortality,  environmental  health,  HIV/AIDS, malaria, and provision of health services funded by USAID. To date, the program has has collected data for more 90 countries in more than 300 surveys. Data is pr Recent data is  
-
-DHS data are, however, weak on agricultural activities and income, as well as infrastructure. 
-
-# Ad hoc surveys
-
+```
 
 # Thinking wider and broader: Global socio-economic modelling with GLOBIOM
-There is an increasing awareness about the interaction and  of climate. More demand: LANCET, SUSFANS
+The section above provides a brief review and some ideas on how to enhance the modelling with GLOBIOM using micro-survey data. Such an analysis will provide interesting insights on the socio-economic impact of major global changes and policies at the subnational level for which more detailed information is available. Another interesting and related avenue to improve GLOBIOM is the modelling and analysis of socio-economic indicators at the global level. Naturally the produced indicators and results are less comprehensive in comparison to global-to-local case-studies but the advantage is that conclusions can be drawn that are global in scope. Another advantage is that they can be used to evaluate expected progress on global developmental targets (e.g the SDGs) under different scenarios. The indicators also stimulate engagement and discussion with other communities that have an increasing interest in the global assessments. Examples of multi-disciplinary approaches are the CGIAR Agrigulture for Nutrition and Health (A4NH) program and a the recent Lancet Countdown in Response to Climate Change Health Crisis initiative.
 
+Several model teams have already started to extend their models with global socio-economic indicators, specifically in the direction of food and nutrition security and health. The ongoing process to extend GLOBIOM with food and nutrition security indicators (e.g. people at risk of hunger) fits with this trend. As the data sources and construction of these global socio-economic indicators often resemble the micro-approaches discussed above, it useful  to present a brief literature review on the indicators that are produced by other model teams in this section for discussion.
 
-Examples
-GAEZ
-GISMO
-IMPACT - health modelling
+## People at risk of hunger
+Several models present an indicator for people at risk of hunger/undernourishment [e.g. @Hertel2016, @Lucas2008]. As GLOBIOM also recently introduced this indicator is it not discussed here.
 
-Next steps
+## Vulnerability to hunger index
+Biewald et al. [-@Biewald2015] analyse the impact of climate change on hunger for 2030. They use the MAgPIE model to provide spatially explicit projections on changes in the costs of food. These results are subsequently compared with a spatially explicit Vulnerability to Hunger Index under different scenarions. The index is constructed by combining global maps of child underweight, child mortality and prevalence of stunding under five and projected into the future on the basis of national level poverty scenarios. 
+
+## Child malnutrition
+In their study on the impact of climate change on food security, Nelson et al. [-@Nelson2010a] provide projections for child malnutrition up to 2050. The percentage of malnourished children is estimated using a cross-country regression analysis based on Smith and Haddad [-@Smith2000] in which the IMPACT model projections on calorie availability per country are use as a dependent variable. Other dependent variables include projections for the ratio of female to male life expectancy at birth, total female enrollment in secondary education and access to safe water. A similar methodology is used in the GISMO-IMAGE modelling framework [@Hilderink2008] of PBL to project child malnutrition. 
+
+## Health, morbidity and mortality
+Springmann et al. [-@Springmann2016] assess the wider health impacts of climate change for 155 regions in the year 2050. More specifically the investigate the relationship between changes in fruits and vegetables consumption, red meat consumption and bodyweight on deaths coronory heart disease, stroke, cancer and other causes for six climate change scenarios.
+
+The health module of GISMO [@Hilderink2008] describes the causal chain between health-risk factors and health outcomes (morbidity and mortality) and takes into account the effect of health services. In comparison to Springmann et al. [-@Springmann2016], it takes a broader approach to health modelling by looking at a wide range of health-risk factors, not only including diets but also malaria, diarrhoea, pneumonia, chronic diseases, air pollution and other communicable diseases and injuries. Regression techniques are used to relate mortality rates with GDP, smoking behaviour and human capital. 
+
+## Poverty
+The poverty module of GISMO [@Hilderink2008] offers an alternative approach to estimate global poverty levels in comparison to the World Bank GIDD approach discussed above. it determines regional poverty on the basis of a log-normal income distribution that is parameterised by (projections) for per-capita income and income distribution (GINI-coefficient). A possible advantage of this approach is that it has a larger geographic coverage as information on gini-coefficients available for more countries than the micro-data that is needed to [@check]. On the other hand, the gini-coefficent might not fully represent the distributional aspects of poverty and income. 
+
+# Next steps
+As a next step it would be useful to discuss the following questions:
+- In the context of ongoing projects and needs, which of the possible avenues should be explored first? Input (e.g. farming systems and food demand) or output side improvements (e.g. poverty and food security)?
+- What are key model variables (in the context of the ISWEL project) that would benefit from additional and more detailed information from micro-surveys.
+- What is the most suitable data to extent the model? 
+ 
 # References
 

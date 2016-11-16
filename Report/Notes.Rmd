@@ -1,0 +1,42 @@
+---
+title: "Global-to-local modelling with GLOBIOM: Notes"
+author: "Michiel van Dijk"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  word_document:
+    reference_docx: ../Common//word_styles_01.docx
+---
+
+# GLOBIOM
+- Has 5(?) core steps, a number of pre-processing others running the model
+- Somehow shifts types of households to a higher classification (intensive production) on the basis of producer and consumer surplus.
+-	Includes a simple yield response function to model production but this is spatially explicit.
+- More information can be found in Havlik (2011)
+
+## Improvement of supply side
+### Previous work
+#### Improving farming systems in Ethiopia and Indonesia
+For two projects GLOBIOM was enriched with additional data. For Indonesia, Aline added new land cover and land use maps but nothing more. For Ethiopia Esther developed a procedure to extend the farmings systems classification that is used in GLOBIOM.In sum, the procedure consists of:
+
+- Construct an additional farm systems classification on the basis of expert information: activities.
+- Relate the classification to key drivers at an administrative level (Woreda in case of ETH) using a multinominal logit (in R). In this cases they used a Bayes approach to estimate share of land that belong to the classification
+- Use the structural relationship to impute missing values (in R).
+- Somehow harmonise the classification with national data on land use and production so that it adds up (optimization in GAMS).
+- Somehow link additional information on the different systems (yield, food security, etc) to the regions for which data is missing.
+- Create a multidimensional table (activtities x farming systems x Woreda) and fill this with info
+- Somehow estimate a yield response function to assess which Woredas can still move to a higher technology (e.g. from medium intensity to high intensity) on the basis where there yield and input use is now and the response curve (in STATA). The result is a 'potential technology' (own words) table that is used to determine which Woredas can move up the technology scale.  
+
+Data that is replaced in GLOBIOM for each of the farming systems
+- Yields
+- Nitrogen and phosporous use.
+- Seed cost (not sure)
+- Share crop that is used for own consumption
+- Land use
+- Land cover
+- Population density
+- Livestock numbers
+
+Questions:
+- Where is data on the above coming from now and why is it not good enough if we use it for subnational studies? 
+- Can the modelling of own consumption being improved? Now assumed fixed over the scenarios which seems unrealistic.
+- How exactly do farmers move from one system to the other?
