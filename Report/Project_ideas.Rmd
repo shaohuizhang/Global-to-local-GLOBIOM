@@ -24,9 +24,10 @@ The aim of this document is to present some first ideas on how to expand and dee
 This document describes some of the possible directions we can be taken to use the available data in order to enrich the modelling with GLOBIOM. It partially builds on on previous work done by colleagues that already explored this type of information, including farm systems modelling in Ethiopia, consumption modelling in India and forest modelling in Brazil, Congo and Indonesia as well as an additional literature survey. The document serves as a basis for discussion and is expected to be updated, refined and expanded as the thinking on this topics progresses. 
 
 # Household level data sources
-There are a number of data sources with plot, farm or household information that can be used to enhance the modelling of GLOBIOM, which are summarised below. All of the sources present information that is at least nationally representative and therefore can be used as input to country-level modelling. Regional coverage strongly differs across sources. Some datasets only cover a handfull of countries, while others have mode wider coverage.
+There are a number of data sources with plot, farm or household information that can be used to enhance the modelling of GLOBIOM, which are summarised below. All of the sources present information that is at least nationally representative and therefore can be used as input to country-level modelling. Regional coverage strongly differs across sources. Some datasets only cover a handfull of countries, while others have mode wider coverage. There also exists a number of other data collection initiatives (e.g. IMPACT-lite; ILRI/CCAFS-CGIAR; RIGA, FAO-World Bank) that provide interesting data but are probably less useful because the cover a limited number of countries, cannot be compared across countries or are not nationally representative.
 
 ## The Living Standards Measurement Study (LSMS)
+The Living Standards Measurement Study (LSMS) is an ongoing household survey program supported by the World Bank. Since the 1980s the LSMS surveys have been organised in a large number of countries. Although the LSMS surveys provide a rich source of information, they are often not comparable over time and across countries. It is also not clear if they include location information and therefore can be linked to maps.    
 
 ## The Living Standards Measurement Study - Integrated Surveys on Agriculture (LSMS-ISA)
 The Living Standards Measurement Study - Integrated Surveys on Agriculture (LSMS-ISA) is a project funded by the Bill and Melinda Gates foundation and implemented by the World Bank undertake nationally representative households surveys in a eight African countries: Burkina Faso, Ethiopia, Malawi, Mali, Niger, Nigeria, Tanzania and Uganda. In each country multiple survey rounds are supported that make it possible to analyse long-term developments and apply econometric panel approaches. 
@@ -34,11 +35,38 @@ The Living Standards Measurement Study - Integrated Surveys on Agriculture (LSMS
 The surveys cover a wide range of topics and are particularly designed to improve the understanding between agricultural, socio-economic status and non-farm income activities. They cover around 3000 to 5000 households per country and includes questions on a large number of topics, including agricultural production (including fishery and livestock) at crop and plot level, diets and consumption patterns and household composition and income. The data also includes the coordinates of the sampling sites and can therefore can be linked with and compared to geo-spatial datasets. The database already includes information several spatial variables such as precipitation, temperature and infrastructure.
 
 # The Demographic and Health Surveys (DHS)
-The Demographic and Health Surveys (DHS) Program is a large survey program to collect nationally representative information on fertility,  family  planning,  maternal  and  child  health,  nutrition, mortality,  environmental  health,  HIV/AIDS, malaria, and provision of health services funded by USAID. To date, the program has has collected data for more 90 countries in more than 300 surveys.
+The Demographic and Health Surveys (DHS) Program is a large survey program to collect nationally representative information on fertility,  family  planning,  maternal  and  child  health,  nutrition, mortality,  environmental  health,  HIV/AIDS, malaria, and provision of health services funded by USAID. To date, the program has has collected data for more 90 countries in more than 300 surveys. The advantage of the DHS surveys is that they can easily be compared internationally because of the use of (nearly) similar questionnaires. A disadvantage is that they are weak on agricultural activities, income and infrastructure. 
 
-Data is pr Recent data is  
 
-DHS data are, however, weak on agricultural activities and income, as well as infrastructure. 
+
+```{r maps}
+# Add maps
+library(rgdal)
+library(ggplot2)
+library(rgeos)
+library(dplyr)
+
+DHS <- "P:\\globiom\\Projects\\ISWEL\\Data\\DHS\\shps\\sdr_subnational_data_dhs_2006.shp"
+ogrListLayers(DHS)
+ogrInfo(DHS, layer="sdr_subnational_data_dhs_2006")
+DHSmap <- readOGR(DHS, layer = "sdr_subnational_data_dhs_2006")
+proj4string(DHSmap)
+plot(DHSmap)
+DHSmap@data$id = rownames(DHSmap@data)
+DHSmap2 <- fortify(DHSmap)
+DHSmap.df = left_join(DHSmap2, DHSmap@data)
+
+ggplot(DHSmap.df) + 
+  aes(long,lat,group=group,fill=CNNUTSCHA2) + 
+  geom_polygon() +
+  geom_path(color="white") +
+  coord_equal() +
+  scale_fill_brewer("Utah Ecoregion")
+
+
+# https://github.com/tidyverse/ggplot2/wiki/plotting-polygon-shapefiles
+```
+
 
 # Ad hoc surveys
 Several institutes and universities, often with support of national statistical agencies organise their own nationally representative households surveys that are similar to the LSMS and LSMS-ISA surveys. Examples are the Ghana EGC-ISSER Socioeconomic Panel Survey undertaken by the Economic Growth Center (EGC) at Yale University and the Institute of Statistical, Social, and Economic Research (ISSER) at the University of Ghana, Legon; the Zambia Rural Agricultural Livelihoods Survey, organised by the Indaba Agricultural Research Institute (IAPRI) and Michigan State University and Rural Household Survey, faciliated by the Tegemeo Institute and Michigan State University. It depends on the data sharing policy of the involved institutions if the data is publically available. 
@@ -52,29 +80,28 @@ Broadly defined, micro-data can be used for two purposes to extend GLOBIOM:
 These section provides a brief discussion of existing work on both directions, drawing on ongoing work of the GLOBIOM team and a literature survey and some possible new directions. 
 
 ## Improvement of input-side
-Ongoing work to improve the input-side modelling of GLOBIOM has developed in two directions. Boere et al [@REF] used Ethiopian household survey data to refine the farming systems classification in a study to [@ADD]. Valin [@REF] estimated food demand functions for different food commodities using Indian panel household data to improve the food projections per state. 
-
-Using some of the data descrived above, it might be possible to extend these aproaches to other regions. However, this is only possible if the datasets are of sufficient quality. For the farmer systems classification, it is important that the data is geo-coded so that classifications can be spatially allocated. For the consumption function estimation detailed information is needed on consumption patterns and, preferably, the panel data should cover a relative long period to investigate changes over time. 
+Ongoing work to improve the input-side modelling of GLOBIOM has developed in two directions. Boere et al [@REF] used Ethiopian household survey data to refine the farming systems classification in a study to [@ADD]. 
 
 
-# Improvement of the output-side
+Valin [@REF] estimated food demand functions for different food commodities using Indian panel household data to improve the food projections per state. 
 
+Using some of the data descrived above, it might be possible to extend these aproaches to other regions. However, this is only possible if the datasets are of sufficient quality. For the farmer systems classification, it is important that the data is geo-coded or regionally allocated so that classifications can be spatially allocated. For the consumption function estimation detailed information is needed on consumption patterns and, preferably, the panel data should cover a relative long period to investigate changes over time. 
+
+
+## Improvement of the output-side
+A key indicator to evaluate policies and potential future scenarios is their impact on poverty/income, which in turn can be used to investigate changes in the access to food. Several global model teams have recently started to extend their models with poverty indicators on the basis of household survey data. Three different approaches can be distinguished that capture household heterogeneity within and across countries, all of which are related to global CGE models [see @Bourguignon2013a for a review].
+
+GTAP-POV [@Hertel2015] is a macro-to-micro modelling approach in which a micro-simulation household model is embedded in the GTAP model.It simulates household welfare at the poverty line for different strata of the population. Changes in poverty headcount by strata are estimated by combining model projections for the change in real income with information on the elasticity of poverty headcount with respect to real income. Hence the model only targets households in the neighbourhood of the poverty line, not the full distribution of households in a country. GTAP-POP identifies the following typical strata: agriculture, non-agriculture, urban labor, rural labor, transfer, urban diverse and rural diverse. In order to couple the micro-simulation and GTAP model, the demand and supply system of the latter was extended and refined to deal with multiple households. At the moment the GTAP-POV model contains information on 31 countries.
+
+MYGTAP [@ADD] is an approach to bridge the gap between the GTAP model and single country CGE models, which have a much richer representation of households. It adopts a consistent approach to split the regional household and factors in the GTAP model into multiple households and factors using additional data. Model outcomes include factor income and consumption per type of household, which can subsequently be used to assess the impact of economic shocks on poverty and food security. Currently MYGTAP aproach to is used to extent the MAGNET mode as part of the FOODSECURE project. 
+
+A final macro-to-micro moddeling framwork is the Global Income Distribution Dynanmics (GIDD) model [@Bussolo2010]. In comparison to GTAP-POV and MYGTAP it covers much larger share of countries - 132 in total, covering about 91% of the total world population for the base year of 2005. It has an explicit long-term focus and tries to capture the impacts of demographic changes, such as aging and the skill composition of a population, which are expected to influence growth and distribution dynamics. it is a dynamic modelling framework, which consists of the following steps: (1) Estimating structural relations between household income and determinants (age, education, etc) to create a global income distribution on the basis of household surveys; (2) Generate new sampling weights for the future using exogenos projections on education and population growth; (3) Run the CGE model that incorporates projections for labour supply on the basis of step and obtain information on sectoral composition of employment and relative wages; and (4) Simulate a new global distribution.
+
+All the approaches above take a CGE approach and are able to model the full income of the households also including other activities than agriculture and combine this with (changes in) factor and output prices. 
 
 ## Combining GLOBIOM output with spatially explicit socio-economic indicators
-
-
-
 These maps can be either used as input into to the modelling process (e.g. population maps) or be contrasted with model outputs (e.g. climate hotspots with poverty and food security maps).
 
-
-# Literature review
-## Modelling of poverty
-
-- GTAP POV
-- GIDD
-- MYGTAP
-
-## TOA
 
 ## Spatial overlap
 
@@ -87,11 +114,6 @@ As GLOBIOM presents spatially explicit results, it might be interesting to combi
 ### Potential data
 For the following indicators spatially explicit socio-economic data is available for multiple countries or even at the global scale.
 
-
-
-```{r maps}
-# Add maps
-```
 
 ### Examples of related work
 
