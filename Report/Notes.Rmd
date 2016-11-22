@@ -7,6 +7,8 @@ output:
     reference_docx: ../Common//word_styles_01.docx
 ---
 
+# Meeting Esther 17-11-2016
+
 # GLOBIOM
 - Has 5(?) core steps, a number of pre-processing others running the model
 - Somehow shifts types of households to a higher classification (intensive production) on the basis of producer and consumer surplus.
@@ -40,3 +42,29 @@ Questions:
 - Where is data on the above coming from now and why is it not good enough if we use it for subnational studies? 
 - Can the modelling of own consumption being improved? Now assumed fixed over the scenarios which seems unrealistic.
 - How exactly do farmers move from one system to the other?
+
+# Meeting Petr, Aline, Hugo, Amanda, Esther, 22-11-16
+
+# GLOBIOM
+- Emphasis on output indicators, something with poverty would be nice or at least improvement on income side.
+- GIID approach seems best but assumptions will have to be made as GLOBIOM only models the agricultural sector.
+- There is an urgent need for spatially explicit price information (crops and inputs).
+- We should not get too detailed when using micro-data. ETH project was probably too detailed.
+
+
+# Global-to-local GLOBIOM
+Disaggregated GLOBIOM by:
+- Rural/urban agricultural population
+- Level 1 zones (provinces or Zones)
+- AEZs => there is no fixed definition of this so perhaps not useful
+- Gender
+
+Collect data on:
+- Income (agriculture vs non-agriculture)
+- (own) consumption (of agricultural products)
+- Yield
+- input costs
+- Output prices
+- Nitrogen
+
+Collect additional data on land use etc for case-study regions.
