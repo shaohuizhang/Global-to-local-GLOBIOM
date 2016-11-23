@@ -11,22 +11,15 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+# Introduction
+GLOBIOM has been designed as global asssessment tool. Most input data is defined at the [0.5 degree] spatial level. Recently, there has been increasing demand for regional and subnational assessments that focus an a specific geographical region. Examples are land use change studies for Brazil, Congo, Ethiopa and Indonesia and an assessment of the water-land-energy nexus in the Zambezi and Indus river basins.The global datasets that are normally used for assessments are too coarse to arrive at the level of detail that is demanded for this type of studies and therefore needs to be replaced more detailed information that have a higher spatial resolution, if available.  
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+This document describes the various steps to prepare GLOBIOM for regional or subnational assessments. 
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+To explain the methodology, we use the XX study
 
-```{r cars}
-summary(cars)
-```
 
-## Including Plots
+# Preparing GLOBIOM in GAMS
 
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+# Data that needs to be replaced
