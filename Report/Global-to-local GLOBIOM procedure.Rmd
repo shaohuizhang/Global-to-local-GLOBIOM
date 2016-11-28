@@ -5,7 +5,7 @@ date: "`r format(Sys.time(), '%B %d, %Y')`"
 output: 
   word_document:
     reference_docx: ../Common/word_styles_01.docx
-bibliography: ../Common/micro-GLOBIOM.bib
+    
 ---
 
 ```{r setup, include=FALSE}
@@ -19,78 +19,47 @@ This document describes the various steps to prepare GLOBIOM for regional or sub
  
 
 # Data processing pipeline
-Figure X shows the 
+Figure X shows a flowchart for all the steps to prepare the data. We will discuss them one by one. 
 
-```{r, echo = FALSE}
-# library(DiagrammeR)
-# DiagrammeR::mermaid("
-# digraph rmarkdown {
-# A -> B
-# }
-# ", height = 200)
+## Collect additional data
+Preferably the following information should be updated in GLOBIOM:
+- Area and production for each product (see Annex) by administrative unit in 2000 (and 2010)
+- Land cover map classes by simulation unit for 2000 and (2010) [@Are there standard classes?]
+- Protected areas map.
+- Costs. At the moment only fertilizer and irrigation costs. Additional household data might improve the present information that is used in GLOBIOM, which is provided at a very high level (national/regional.)
+- Productivity [?]
 
-```
+It highly depends on the region, which data is available and at which level. We recommend to take a pragmatic approach, using data from household surveys (e.g. LSMS-ISA, LSMS, etc), national statistics and specialised ministries and institutes. The following sections describe some rules of thumb that can be used to update the information.
 
+## Area and production.
+National statistics and household surveys provide the best information for detailed information on agricultural production. In most cases it should be possible to collect information on total production, crop area and/or harvested area at the second administrative level (e.g. province). Sometimes it will be necessary to add additional crops that are not part of the standard GLOBIOM crop classification (e.g. teff in Ethiopia) 
 
+When production data is not available, another approach can be to collect information on average consumption or diets and combine this with population density maps to approximate total consumption at the level of the administrative unit. As in many poor countries, the agricultural sector is characterised by subsistince farming, consumption is a reasonable proxy for production in case no other information is available.
 
-# Preparing GLOBIOM in GAMS
-- Create country case study folder in GAMS data folder with national statistics using similar structure as global data folder. THis can be used as a template.
+## Land cover map
+Many countries publish detailed land cover maps, that provide information on the location of crop land, forest land, agro-industrial plantation (consessions), timeber plantations (concesstions), forest land, urbanised land and unused areas (i.e. rock). These maps can be used to improve the land cover map in GLOBIOM at the simulation unit level. 
 
-- Harmonize administrative units over time. 
-- Compare data from different sources, quality check indicators for Adm2. 
-- Develop pipeline between R and GAMS to check data.
-- Downscaling in GAMS to downscale adm2 to simu levels. Priors are identified for downscaling, for instance transpor costs. This is a bit of craftmenship. Statistics are leading.
-- Downscaling mostly down for crops, livestock taken from global maps. Is done for each adm zone separately so can take some time but can be easily speed up by using multiple processors as these are separate systems.
+## Harmonise data 
+- Ensure to harmonise the administrative boundaries over time. In many countries they tend to change over time. 
+- Compare data from different sources and over time.
 
-# Brazil
-- land use land cover
-- local policies spatially explict
-
-# Congo Basin
-- Detailed data.
+## Downscale land use and production data
+Code in GAMS is provided to downscale and harmonise the land use and land cover data to the GLOBIOM simu levels. Downscaling is performed using priors that provide information on the suitability of certain crops or transportation costs. Downscaling is mostly down for crops as only limited information tends to be available on livestock. It is a separate optimization problem for each of the administrative units for which detailed production data is collected and can therefore be treated as a large number of parallel processes. 
 
 
+# GLOBIOM set up
 
-# Supply
-# Objective is to have at simu level:
-- land use.
-- land cover,
-- productivity
-- Costs.
-
-# Also use other types of information.
-- For instance consumption data to use it for supply information
-
-# Trade/consumption
-- Have to decide if you would keep one region or split countries.
-- In latter case, adopt regional trade block and model trade with total block not bilaterally.
- 
-#
-
-# Need to develop module that can be merged with standard GLOBIOM.
+# Regional module
 - Creates one GDX file with all information for the region you are studying. 
 - Add some lines in the aggregation phase, where regional data is replaced by new updated information.
 
+## Folder structure
+Add a country case study folder in GAMS that will be used for all (sub)national statistics. It will have the same structure as a standard global data folder in GLOBIOM.
 
+## Trade
+Have to decide if you would keep one region or split countries. In latter case, adopt regional trade block and model trade with total block not bilaterally.
+ 
+## Consumption
 
-# Common problems
-- production does not match with land cover. 
-
-# Data that needs to be replaced
-
-
-# Improve land cover-land use map. 
-## Collect national statistics at local level (adm2)
-
-- Stefan has a hybrid land cover map.
-
-- Area by crop, planted and harvested
-- Production by crop (18)
-- Livestock heads and production ()
-- Add country specific crops if needed (teff and sesame in ETH)
-- Tricky to add new crops. No epic data for new crops, so no information on how yield evolves for different management systems (low, high yield, etc.)
-- Fertilizer costs are defined globally - one world price times yield from EPIC.
-- Irrigation costs: are globally defined, can be updated.
-- Transportation costs are added for country case studies.
 
 - 
