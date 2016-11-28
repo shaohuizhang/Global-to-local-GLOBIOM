@@ -4,8 +4,8 @@ author: "Michiel van Dijk"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output: 
   word_document:
-    reference_docx: ../Common//word_styles_01.docx
-bibliography: ../common/micro-GLOBIOM.bib
+    reference_docx: ../Common/word_styles_01.docx
+bibliography: ../Common/micro-GLOBIOM.bib
 ---
 
 ```{r setup, include=FALSE}
