@@ -9,21 +9,88 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+setwd("D:\\Data\\Github\\micro-GLOBIOM")
 ```
 
 # Introduction
-GLOBIOM has been designed as global asssessment tool. Most input data is defined at the [0.5 degree] spatial level. Recently, there has been increasing demand for regional and subnational assessments that focus an a specific geographical region. Examples are land use change studies for Brazil, Congo, Ethiopa and Indonesia and an assessment of the water-land-energy nexus in the Zambezi and Indus river basins.The global datasets that are normally used for assessments are too coarse to arrive at the level of detail that is demanded for this type of studies and therefore needs to be replaced more detailed information that have a higher spatial resolution, if available.  
+GLOBIOM has been designed as global asssessment tool. Most input data is defined at the [0.5 degree] spatial level. Recently, there has been increasing demand for regional and subnational assessments that focus an a specific geographical region. Examples are land use change studies for Brazil, Congo, Ethiopia and Indonesia and an assessment of the water-land-energy nexus in the Zambezi and Indus river basins.The global datasets that are normally used for assessments are too coarse to arrive at the level of detail that is demanded for this type of studies and therefore needs to be replaced more detailed information that have a higher spatial resolution, if available.  
 
-This document describes the various steps to prepare GLOBIOM for regional or subnational assessments. 
+This document describes the various steps to prepare GLOBIOM for regional or subnational assessments. Refining the land use and land cover data for subnational assessments can be very time and resource-demanding and demands a certain craftsmanship. It is recommended to only follow the full process for relative large projects that take at least around two years. It is also advisable to involve local partners and stakeholders to provide input data (e.g. land use maps and production statistics) and validate processed information (e.g. updated land use map that is used in GLOBIOM) 
+ 
 
-To explain the methodology, we use the XX study
+# Data processing pipeline
+Figure X shows the 
+
+```{r, echo = FALSE}
+# library(DiagrammeR)
+# DiagrammeR::mermaid("
+# digraph rmarkdown {
+# A -> B
+# }
+# ", height = 200)
+
+```
 
 
 
 # Preparing GLOBIOM in GAMS
+- Create country case study folder in GAMS data folder with national statistics using similar structure as global data folder. THis can be used as a template.
 
+- Harmonize administrative units over time. 
+- Compare data from different sources, quality check indicators for Adm2. 
+- Develop pipeline between R and GAMS to check data.
+- Downscaling in GAMS to downscale adm2 to simu levels. Priors are identified for downscaling, for instance transpor costs. This is a bit of craftmenship. Statistics are leading.
+- Downscaling mostly down for crops, livestock taken from global maps. Is done for each adm zone separately so can take some time but can be easily speed up by using multiple processors as these are separate systems.
+
+# Brazil
+- land use land cover
+- local policies spatially explict
+
+# Congo Basin
+- Detailed data.
+
+
+
+# Supply
+# Objective is to have at simu level:
+- land use.
+- land cover,
+- productivity
+- Costs.
+
+# Also use other types of information.
+- For instance consumption data to use it for supply information
+
+# Trade/consumption
+- Have to decide if you would keep one region or split countries.
+- In latter case, adopt regional trade block and model trade with total block not bilaterally.
+ 
+#
+
+# Need to develop module that can be merged with standard GLOBIOM.
+- Creates one GDX file with all information for the region you are studying. 
+- Add some lines in the aggregation phase, where regional data is replaced by new updated information.
+
+
+
+# Common problems
+- production does not match with land cover. 
 
 # Data that needs to be replaced
 
 
-# Land use data
+# Improve land cover-land use map. 
+## Collect national statistics at local level (adm2)
+
+- Stefan has a hybrid land cover map.
+
+- Area by crop, planted and harvested
+- Production by crop (18)
+- Livestock heads and production ()
+- Add country specific crops if needed (teff and sesame in ETH)
+- Tricky to add new crops. No epic data for new crops, so no information on how yield evolves for different management systems (low, high yield, etc.)
+- Fertilizer costs are defined globally - one world price times yield from EPIC.
+- Irrigation costs: are globally defined, can be updated.
+- Transportation costs are added for country case studies.
+
+- 
