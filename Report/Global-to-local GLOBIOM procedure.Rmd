@@ -19,7 +19,11 @@ This document describes the various steps to prepare GLOBIOM for regional or sub
 To explain the methodology, we use the XX study
 
 
+
 # Preparing GLOBIOM in GAMS
 
 
 # Data that needs to be replaced
+
+
+# Land use data
