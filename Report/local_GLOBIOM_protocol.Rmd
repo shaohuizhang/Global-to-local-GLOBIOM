@@ -15,6 +15,12 @@ knitr::opts_chunk$set(echo = FALSE)
 ```
 
 # Introduction
+
+
+fff 
+
+
+
 GLOBIOM has been designed as global asssessment tool. Most input data is defined at the [0.5 degree] spatial level. Recently, there has been increasing demand for regional and subnational assessments that focus an a specific geographical region. Examples are land use change studies for Brazil, Congo, Ethiopia and Indonesia and an assessment of the water-land-energy nexus in the Zambezi and Indus river basins.The global datasets that are normally used for assessments are too coarse to arrive at the level of detail that is demanded for this type of studies and therefore needs to be replaced more detailed information that have a higher spatial resolution, if available.  
 
 This document describes the various steps to prepare GLOBIOM for regional or subnational assessments. Refining the land use and land cover data for subnational assessments can be very time and resource-demanding and demands a certain craftsmanship. It is recommended to only follow the full process for relative large projects that take at least around two years. It is also advisable to involve local partners and stakeholders to provide input data (e.g. land use maps and production statistics) and validate processed information (e.g. updated land use map that is used in GLOBIOM) 
@@ -54,6 +60,7 @@ Code in GAMS is provided to downscale and harmonise the land use and land cover 
 # Regional module
 - Creates one GDX file with all information for the region you are studying. 
 - Add some lines in the aggregation phase, where regional data is replaced by new updated information.
+-30 world regions
 
 ## Folder structure
 Add a country case study folder in GAMS that will be used for all (sub)national statistics. It will have the same structure as a standard global data folder in GLOBIOM.
