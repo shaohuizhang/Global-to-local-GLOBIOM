@@ -9,7 +9,9 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+library(rprojroot)
+root <- find_root(is_rstudio_project)
+knitr::opts_chunk$set(echo = FALSE)
 ```
 
 # Introduction
@@ -62,4 +64,15 @@ Have to decide if you would keep one region or split countries. In latter case, 
 ## Consumption
 
 
-- 
+# Annex
+
+```{r, message = FALSE, results='asis'}
+getwd()
+library(readxl)
+library(knitr)
+library(xtable)
+products <- read_excel(file.path(root ,"Data/GLOBIOM_products.xlsx"))
+kable(products)
+
+```
+
