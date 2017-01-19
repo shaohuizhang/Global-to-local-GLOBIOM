@@ -1,5 +1,5 @@
 #'========================================================================================================================================
-#' Project:  Test
+#' Project:  Global-to-local GLOBIOM
 #' Subject:  Script to create maps
 #' Author:   Michiel van Dijk
 #' Contact:  michiel.vandijk@wur.nl
@@ -19,10 +19,16 @@ p_load("rgdal", "ggmap", "raster", "rasterVis", "rgeos", "sp", "mapproj", "mapto
 root <- find_root(is_rstudio_project)
 
 ### DATAPATH
-dataPath <- "C:\\Users\\dijk158\\OneDrive - IIASA\\SurveyData"
 
 ### R SETTINGS
 options(scipen=999) # surpress scientific notation
 options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e.g. csv) is not turned into factors
 options(digits=4)
 
+### ETH AND TZA MAPS
+# Download
+ETH_adm1 <- readRDS("Data/GADM_2.8_ETH_adm1.rds")
+TZA_adm1 <- readRDS("Data/GADM_2.8_TZA_adm1.rds")
+
+ETH_adm <- spplot(ETH_adm1, "OBJECTID", main = "Regional states (Kililoch) in Ethiopia", sub = "Source: www.GADM.org", colorkey=FALSE)
+TZA_adm <- spplot(TZA_adm1, "OBJECTID", main = "Regions (mkoa) in Ethiopia", sub = "Source: www.GADM.org", colorkey=FALSE)
