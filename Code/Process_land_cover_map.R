@@ -62,7 +62,7 @@ standard_crs <- crs(SIMU_5min)
 
 # Reproject country land use cover map to standard CRS
 land_cover_map <- projectRaster(land_cover_map_raw , crs = standard_crs, method = "ngb", filename = "Data/land_cover_map.grd", overwrite = TRUE)
-
+levelplot(land_cover_map)
 
 SIMU2country <- projectRaster(SIMU2country , crs = country_crs, method = "ngb", filename = "Data/SIMU2country.grd", overwrite = TRUE)
 
