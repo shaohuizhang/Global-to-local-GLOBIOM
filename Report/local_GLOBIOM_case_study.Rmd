@@ -1,0 +1,94 @@
+---
+title: "Global-to-local GLOBIOM procedure"
+author: "Michiel van Dijk"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  word_document:
+    reference_docx: ../Common/word_styles_01.docx
+    
+---
+
+```{r setup, include=FALSE}
+p_load(rprojroot)
+root <- find_root(is_rstudio_project)
+
+p_load(knitr)
+knitr::opts_chunk$set(
+  fig.width=12, fig.height=8,
+  dpi = 300,
+  echo=FALSE, warning=FALSE, message=FALSE,
+  fig.path = file.path(root,"FigTabMap/out-"),
+  dev = "CairoPNG",
+  dev.args = list(CairoPNG = list(bg = "transparent"))
+  )
+
+p_load(pander)
+panderOptions('table.alignment.default', function(df)
+    ifelse(sapply(df, is.numeric), 'right', 'left'))
+panderOptions('table.split.table', Inf)
+panderOptions('big.mark', ",")
+panderOptions('keep.trailing.zeros', TRUE)
+
+#source(file.path(root, "Code/Fig_cs.R"))
+#source(file.path(root, "Code/Tab_cs.R"))
+source(file.path(root, "Code/Map_cs.R"))
+```
+
+# Introduction
+This chapter presents an example on how to process and link additional country specific data to GLOBIOM for global-to-local assessments. We use Malawi (MWI) as a case-study because of the availability of recent land cover maps with data for multiple years as well as an household survey with detailed information on the agricultural sector. The sections below first describe the data followed by an application of the various steps as described in chapter @X.
+
+# Data
+## Land cover maps
+There have been four recent initiatives to prepare new land cover maps for Malawi funded by the United Nations Food and Agricultural Organization (FAO), the World Bank, the Japan International Cooperation Agency (JICA) and the United States Agency for International Development (USAID). @Haack2015 provide more information about data sources and methodology for each land cover map. For practical reasons, we decided to use the land cover map funded by USAID because it presents data for three periods, including the GLOBIOM base year (2000), as well as two other periods (1990 and 2010) in raster format. The FAO and JICA funded initiatives also present data for the same periods but are supplied in polygon format and therefore need additional processing before they can be overlaid with the SIMU maps. Furthermore, although there are substantial differences between the four land cover maps, they are all of good quality and there are no objective arguments to prefer one over the other [@Haack2015]. [^1]  
+
+The USAID funded land cover map was prepared by the Regional Centre of Mapping of Resources for Development (RCMRD). RCMRD is an intergovernmental organization in Africa that is building capacity for land cover mapping in the participating countries. The main source of information was Landsat imagery [@RCMRD2012].
+
+## Household survey
+Malawi farm and plot level information is taken from the Third Integrated Household Survey (IHS3) that was implemented from March 2010 to March 2011 by the national statistical office under the umbrella of the World Bank Living Standards Measurement Study – Integrated Surveys on Agriculture (LSMS-ISA) initiative. The LSMS-ISA are nationally-representative multi-topic panel household surveys with a strong focus on agriculture. [@ADD]. In addition to agricultural activities, a broad range of topics including agricultural production, consumption, health and a number of socio-economic characteristics were recorded. The data was collected at several levels, including at the plot, household and enumeration area level, and the location of each household was GPS recorded with an offset to preserve household anonymity.
+
+The IHS3 sampling frame is stratified into rural and urban strata that are representative at national, region and district level. There are in total 31 strata that correspond with 27 districts (the Island district of Likoma was excluded) and four major urban areas. The sample of 12,271 households provides key socio-economic and agricultural data that is representative at the district level. This is the sample that we use to collect detailed country specific information that will be used in GLOBIOM. It also interesting to note that a sub-sample of 3,247 IHS3 households was  visited twice (post planting and post harvest) during the IHS3 to reduce recall related to agricultural activities. These households were resurveyed in 2013 and form the Integrated Household Panel Survey (IHPS) component of the IHS3. this panel can be used to perform additional econometric panel analysis on agricultural production and food security that potentially can be used in GLOBIOM.
+
+# Land cover maps
+## STEP 1 Selecting the administrative region for analysis
+Apart from total country, the GADM provides information on three administrative levels in Malawi. 
+Figure X depicts the 28 districts of Malawi, which are catagorised as administrative region 1 in the GADM database. The districts can be further divided into 256 (administrative region 2 in the GADM, including towns and traditional authorities) and 3,126 lower level districts (administrative region 3 in the GADM). Another official geographical classification although nnot provided by the GADM, is the Northern, Central and Southern regions that cover several districts (https://en.wikipedia.org/wiki/Districts_of_Malawi). When selecting the administrative region for further analysis and data collection there is a trade off between data availability and level of detail. We decided to use the district level in Malawi as, on the one hand, we can use detailed and representative information on agricultural activities from the IHS3 and on the other hand, the 28 districts represent sufficient geographical coverage and variation. 
+
+__Figure 1: Districts in Malawi__
+
+```{r Fig-1}
+Fig_MWI_adm
+```
+
+##### Source: www.GADM.org
+
+## STEP 2: Collect land cover map and scale to SIMUs 
+Figure 2 depicts the land cover map for 2000 overlaid with the SIMU grid. Land cover is classified into eight categories, which include the six standard classes used by GLOBIOM [@check] and additional classes for Shadow and Clouds. Fortunately, with 0.3% and 0.2% these classes only form a small part of total area (Table 1). We decided to add the Cloud and Shadow areas to the Other land class. 
+
+
+__Figure 2: Malawi land cover map 2000 and SIMU grid__
+
+```{r Fig-2}
+Fig_MWI_lc_SIMU
+```
+
+##### Source: @RCMRD2012
+
+__Table 1: Malawi land cover classes 2000__
+
+```{r Tab-1}
+pander(Tab_MWI_lc_classes, round = 2)
+```
+
+##### Source: @RCMRD2012
+
+
+
+
+#Household survey data
+## STEP 1
+
+## STEP 2
+
+
+# Notes
+[^1]: @Haack2015 demonstrate that the results are clustered into two groups: JICA with World Bank and FAO with USAID. Differences between land cover maps are probably caused by the difficulty of consistently mapping landscape imagery to land cover classes. 

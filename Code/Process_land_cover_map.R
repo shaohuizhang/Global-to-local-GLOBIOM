@@ -12,7 +12,7 @@ p_load("tidyverse", "readxl", "stringr", "scales", "RColorBrewer", "rprojroot")
 # Spatial packages
 p_load("rgdal", "ggmap", "raster", "rasterVis", "rgeos", "sp", "mapproj", "maptools", "proj4", "gdalUtils")
 # Additional packages
-p_load("WDI", "countrycode")
+p_load("WDI", "countrycode", "plotKML")
 
 
 ### SET WORKING DIRECTORY
@@ -27,30 +27,39 @@ options(scipen=999) # surpress scientific notation
 options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e.g. csv) is not turned into factors
 options(digits=4)
 
-### LOAD SIMU MAP
+### SOURCE
+source("Code/R2GDX.R")
+
+### CHECK IF THEIR ARE TEMPORARY FILES (CREATED BY RASTER PACKAGE) AND REMOVE
+showTmpFiles()
+removeTmpFiles()
+
+### LOAD SIMU MAPS
 SIMU_LU <- read_csv(file.path(dataPath, "GLOBIOM/simu_lu/SimUIDLUID.csv"))
-SIMU_5min <- raster(file.path(dataPath, "GLOBIOM/simu_raster_5min/rasti_simu_gr.tif"))
+ogrListLayers(file.path(dataPath, "GLOBIOM/simu_poly/SimU_all.shp"))
+SIMU_5min_poly <- readOGR(file.path(dataPath, "GLOBIOM/simu_poly/SimU_all.shp"), layer = "SimU_all")
+
+# Obtain country poly (using iso3c numbering: 454 = Malawi)
+SIMU2country_poly <- SIMU_5min_poly[SIMU_5min_poly$COUNTRY==454,]
 
 ### LOAD GADM MAPS
 # Load previously saved map (Download_GADM.r)
 country_map_raw <- readRDS("Data/GADM_2.8_MWI_adm1.rds")
 spplot(country_map_raw, "OBJECTID")
 
-### LOAD LAND COVER MAP AND PROCESS
+### LOAD LAND COVER MAP 
 # Load map
-#FAO_lum <- readOGR(file.path(dataPath, "Raw\\MWI\\Land_use_maps\\FAO_Land_Cover_Data\\DATA\\NATIONAL_LC\\malawi_lc.shp"))
-land_cover_map_raw <- raster(file.path(dataPath, "Raw\\MWI\\Land_use_maps\\RCMRD\\Final Corrected Land Cover\\Final Corrected Land Cover\\Scheme 1\\malawi 2000 classification scheme1.img"))
+land_cover_map_raw <- raster(file.path(dataPath, "Raw\\MWI\\Land_cover_maps\\RCMRD\\Final Corrected Land Cover\\Final Corrected Land Cover\\Scheme 1\\malawi 2000 classification scheme1.img"))
 land_cover_map_raw
-
-# Reveal the land cover classes if the are stored as factors
+levelplot(land_cover_map_raw, att='Land_Cover', par.settings = RdBuTheme)
 levels(land_cover_map_raw)
 
-### REPROJECT SIMU AND COUNTRY MAP
+### REPROJECT MAPS
 #' It is essential to use the same projection for all maps. If there is a difference we reproject the SIMU and country_map
 #' Another route would be to reproject the country land cover map to the global SIMU projection. 
-#' This is however not recomendable as land cover maps tend to have a very high resolution. Reprojection will therefore costs 
+#' This is however not recomendable as land cover maps tend to have a very high resolution. Reprojection will therefore take 
 #' a lot of time and potentially introduces distortions. 
-#' It is important to set the method to "ngb" as the map presents categorical values, otherwise SIMU IDs will be somehow averaged.
+#' When reprojecting the SIMU map it is important to set the method to "ngb" as the map presents categorical values, otherwise SIMU IDs will be somehow averaged.
 #' It is important to save files to file using filename = or remove temporary files otherwise the HD might be full quickly!
 
 # Compare CRS of SIMU and target country land cover map
@@ -58,93 +67,88 @@ crs(land_cover_map_raw)
 crs(country_map_raw)
 crs(SIMU_5min)
 
+# Set standard crs
 standard_crs <- crs(SIMU_5min)
+country_crs <- crs(land_cover_map_raw)
 
-# Reproject country land use cover map to standard CRS
-land_cover_map <- projectRaster(land_cover_map_raw , crs = standard_crs, method = "ngb", filename = "Data/land_cover_map.grd", overwrite = TRUE)
-levelplot(land_cover_map)
+# Reproject SIMU_poly to country CRS
+SIMU2country_poly_rp <- spTransform(SIMU2country_poly, country_crs)
+levelplot(land_cover_map_raw, att='ID', par.settings = RdBuTheme, margin = F) +
+  layer(sp.polygons(SIMU2country_poly_rp, col = "black"))
 
-SIMU2country <- projectRaster(SIMU2country , crs = country_crs, method = "ngb", filename = "Data/SIMU2country.grd", overwrite = TRUE)
+# Reproject country_map to country CRS
+country_map_rp <-  spTransform(country_map_raw, country_crs)
+levelplot(land_cover_map_raw, att='ID', par.settings = RdBuTheme, margin = F) +
+  layer(sp.polygons(country_map_rp, col = "black"))
 
-# Create mask for each land cover class and calculate value
+### LINK SIMU WITH LAND COVER DATA
+# SIMU link to ID
+p_df <- data.frame(ID=1:length(SIMU2country_poly_rp), SIMU =  SIMU2country_poly_rp@data$SimUID)
 
+# Overlay land cover map and SIMU polygon (THIS TAKES SOME TIME)
+#land_cover_shares_raw <- raster::extract(land_cover_map_raw, SIMU2country_poly_rp, df=T) 
+#saveRDS(land_cover_shares_raw, file.path(dataPath, "Processed\\MWI\\Land_cover_maps/land_cover_shares_2000_raw.rds"))
+land_cover_shares_raw <- readRDS(file.path(dataPath, "Processed\\MWI\\Land_cover_maps/land_cover_shares_2000_raw.rds"))
 
-mask1 <- setValues(raster(land_cover_map), NA)
-## Assign 1 to formask to all cells corresponding to the forest class
-mask1 <- setValues(raster(land_cover_map), NA)
+# Calculate land cover shares per SIMU
+land_cover_shares <- land_cover_shares_raw %>%
+  rename(class = malawi_2000_classification_scheme1) %>%
+  na.omit() %>%
+  group_by(ID, class) %>%
+  summarize(n = n()) %>%
+  mutate(freq = n / sum(n, na.rm = T)) %>%
+  dplyr::select(-n) %>%
+  spread(class, freq) %>%
+  left_join(.,p_df)
 
-# Create SIMU stack
-base
-nclasses <- 1
-## Assign a 1 to rNA wherever an NA is enountered in covs
-for(i in 1:nclasses){
-  classlayer <- setValues(raster(land_cover_map), NA)
-  classlayer[land_cover_map==i] <- i
-  base <- addLayer(base, classlayer)
-}
+# VALIDATE RESULTS
+# Overlap seems ok
+# Compare results with land cover map
+wetlands <- land_cover_shares$SIMU[land_cover_shares$"4" > 0.5]
+missing <- land_cover_shares$SIMU[land_cover_shares$"1" > 0.9]
+settlements <- land_cover_shares$SIMU[land_cover_shares$"5" > 0.1]
+cropland <- land_cover_shares$SIMU[land_cover_shares$"3" > 0.7]
 
+# Create mask for specific class: 3 cropland
+mask3 <- setValues(raster(land_cover_map_raw), NA)
+mask3[land_cover_map_raw==3] <- 3
+plot(mask3)
+plot(SIMU2country_poly_rp[SIMU2country_poly_rp$SimUID %in% cropland,], add = T, border = "red")
 
-plot(formask, col="dark green", legend = FALSE)
-proj4string(country_map)
-CRS()
+# Create mask for specific class: 4 wetlands
+mask4 <- setValues(raster(land_cover_map_raw), NA)
+mask4[land_cover_map_raw==4] <- 4
+plot(mask4)
+plot(SIMU2country_poly_rp, add = T, border = "black")
+plot(SIMU2country_poly_rp[SIMU2country_poly_rp$SimUID %in% wetlands,], add = T, border = "red")
 
+# Create mask for specific class: 5 settlements
+mask5 <- setValues(raster(land_cover_map_raw), NA)
+mask5[land_cover_map_raw==5] <- 5
+plot(mask5)
+plot(SIMU2country_poly_rp[SIMU2country_poly_rp$SimUID %in% settlements,], add = T, border = "red")
 
+# plot one SIMU with lot of missing data
+# Appears to be on the Northern border
+plot(land_cover_map_raw)
+plot(SIMU2country_poly_rp[SIMU2country_poly_rp$SimUID %in% 177235,], add = T, border = "red")
 
+# Check individual SIMUs
+SIMU2country_id <- SIMU2country_poly
+SIMU2country_id$name <- SIMU2country_id$SimUID
+identify(map(SIMU2country_id))
 
+# Overlay maps on Google Earth: Install Google Earth First 
+# Settlements perfectly overlap!
+check <- SIMU2country_poly_rp[SIMU2country_poly_rp$SimUID %in% settlements,]
+plot(check)
+plotKML(check)
 
+# CREATE FINAL SIMU FILE AND WRITE TO GDX
+land_cover_SIMU <- land_cover_shares %>%
 
-
-# Crop SIMU map to country map
-SIMU2country <- crop(SIMU_5min, country_map_raw, updateNA=TRUE)
-SIMU2country
-
-# Reproject SIMU to CRS of target country
-SIMU2country <- projectRaster(SIMU2country , crs = country_crs, method = "ngb", filename = "Data/SIMU2country.grd", overwrite = TRUE)
-
-# Reproject country map
-country_map <- spTransform(country_map_raw, crs(country_crs))
-country_map
-
-# Plot land cover map with country map overlay
-levelplot(SIMU2country) + layer(sp.polygons(country_map, col='black'))
-
-projInfo(type = "proj")
-
-### 
-
-levels(land_cover_map_raw)
-area_brick <- area(land_cover_brick, na.rm = TRUE)
-x <- land_cover_brick[[2]]
-x <- area(land_cover_map_raw)
-
-check <- area(land_cover_brick, na.rm = TRUE)
-
-
-### AGGREGATE LAND COVER MAP TO SIMU
-# 1. 
-
-
-# 2. 
-
-
-# 3. 
-
-# 4. 
-
-# 5. 
-
-
-# 6. 
-
-
-
-land_cover_map <- projectRaster(land_cover_map_raw, crs = standard_crs, method = "ngb", filename = "Data/MWI_land_cover_map.grd")
-land_cover_map
-showTmpFiles()
-?removeTmpFiles(h=24)
-land_cover_brick <- layerize(land_cover_map_raw, filename = "Data/MWI_land_cover_brick.grd", overwrite = T)
-
-
-##############
-JICA_lum <- readOGR(file.path(dataPath, "Raw\\MWI\\Land_use_maps\\JICA Malawi\\LU_data_2000\\LU00-MW-00000.shp"))
-spplot(JICA_lum)
+  mutate(LC = recode(class, c(`1` = "Forest", `2` = "Grass", `3` = "CrpLnd", 
+                              `4` = "WetLnd", `5` = "?", `6` = "OthNatLnd", 
+                              `7` = "NotRel", `8` = "NotRel"))  
+  
+  

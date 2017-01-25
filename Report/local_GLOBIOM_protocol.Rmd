@@ -108,7 +108,6 @@ After the choice is made, the appropriate map(s) can be downloaded from the GADM
 __Download_GADM.r__. This script downloads the GADM maps. Different levels of administrative boundaries can be selected and the maps will be automatically saved in user-selected folder for later use.
 
 # STEP2: Collect land cover map and scale to SIMUs 
-[@also land use map?]
 
 ## Introduction
 Information on land cover are essential for modelling land use change with GLOBIOM. The standard land cover map in GLOBIOM is produced by @ADD and has a resolution of @ADD. Although useful for global assessments, the spatial resolution is too coarse and imprecise to analyse land use change at the subnational level. For this reason, it is important too replace the land cover map for the target country with updated and country specific information that is often published by national agencies and international institutions such as the FAO and the World Bank. 
@@ -116,21 +115,18 @@ Information on land cover are essential for modelling land use change with GLOBI
 To use the new land cover maps in GLOBIOM it is important to (1) the harmonise land cover classification and (2) map the data to the GLOBIOM SIMUs. Land cover information in GLOBIOM is provided at the six classes that are also used by the IPCC for reporting [@check] Table @X presents the six classes with definitions. This is a standard classification that in most cases will also be used for country specific land cover maps. It is also possible that a more detailed classification consisting of  12–15 country-specific classes is used. In such cases, the researcher needs to aggregate the data first before it can be processed further.[^1] The next step is to aggregate the land cover information to SIMU level and write them to GDX.
 
 ## Script
-__Process_land_cover_map.r__. This script loads a country specific land use map, aggregates it to SIMU level and saves the information in GDX format. For the script to work, land cover data need to be presented as a raster and have a smaller resolution than the SIMU map. The following procedure is used to aggregate the land cover data:
+__Process_land_cover_map.r__. This script loads a country specific land use map, aggregates it to SIMU level and saves the information in GDX format. For the script to work, the land cover data needs to be presented in raster format. The following procedure is used to aggregate the land cover data:
 
-1. Load the global SIMU 5 armin map and create a raster with grid cell area size.
-2. Ensure that the country specific land cover map has the same projection as the SIMU map.
-3. Create a map layer for each land use with grid cell area size.
-4. Overlay each land cover layer with the SIMU map and calculate the total area of each land cover class per SIMU.
-5. Calculate the relative area shares of each land cover class per SIMU.
-6. Save the data in GDX format.
+1. Load the global SIMU 5 armin polygon map and select the target country using the iso3c country number. Load the country specific GADM map (only needed for making maps).
+2. If needed, reproject the the SIMU polygon and the GADM map to the target country projection.
+3. Overlay the land cover map with the SIMU polygon map and calculate the share of each land cover class per SIMU. We assume that all raster cells have the same size (which is approximately true if the area is not too large and area is location at a distance from the poles) and therefore we can use the relative number of cells by land cover class as a measure of relative land cover area.
+4. Save the data in GDX format.
 
 
-
-globe for IPCC reporting.is used for most land use maps and in most cases will also be used in the In most cases the classification of the new maps will have The researcher needs to aggegate the country specific land use maps to the same classes.
+__Table X: Standard Land cover classes__
 
 ```{r Tab_1}
-Tab_LC <- read_csv(file.path(root, "Data/Land_cover_class.csv"))
+Tab_LC <- read_csv(file.path(root, "Data/Standard_land_cover_classes.csv"))
 pander(Tab_LC)
 ```
 ###### Source: @Haack2015

@@ -25,10 +25,11 @@ options(scipen=999) # surpress scientific notation
 options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e.g. csv) is not turned into factors
 options(digits=4)
 
-### ETH AND TZA MAPS
-# Download
-ETH_adm1 <- readRDS("Data/GADM_2.8_ETH_adm1.rds")
-TZA_adm1 <- readRDS("Data/GADM_2.8_TZA_adm1.rds")
+### ADMINISTRATIVE REGIONS MAP
+# ETH GADM
+ETH_adm1 <- readRDS(file.path(root, "Data/GADM_maps/GADM_2.8_ETH_adm1.rds"))
+Fig_ETH_adm <- spplot(ETH_adm1, "OBJECTID", main = "Regional states (Kililoch) in Ethiopia", sub = "Source: www.GADM.org", colorkey=FALSE)
 
-ETH_adm <- spplot(ETH_adm1, "OBJECTID", main = "Regional states (Kililoch) in Ethiopia", sub = "Source: www.GADM.org", colorkey=FALSE)
-TZA_adm <- spplot(TZA_adm1, "OBJECTID", main = "Regions (mkoa) in Ethiopia", sub = "Source: www.GADM.org", colorkey=FALSE)
+# TZA GADM
+TZA_adm1 <- readRDS(file.path(root, "Data/GADM_maps/GADM_2.8_TZA_adm1.rds"))
+Fig_TZA_adm <- spplot(TZA_adm1, "OBJECTID", main = "Regions (mkoa) in Tanzania", sub = "Source: www.GADM.org", colorkey=FALSE)
