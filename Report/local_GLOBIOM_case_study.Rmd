@@ -62,7 +62,7 @@ Fig_MWI_adm
 ##### Source: www.GADM.org
 
 ## STEP 2: Collect land cover map and scale to SIMUs 
-Figure 2 depicts the land cover map for 2000 overlaid with the SIMU grid. Land cover is classified into eight categories, which include the six standard classes used by GLOBIOM [@check] and additional classes for Shadow and Clouds. Fortunately, with 0.3% and 0.2% these classes only form a small part of total area (Table 1). We decided to add the Cloud and Shadow areas to the Other land class. 
+Figure 2 depicts the land cover map for 2000 overlaid with the SIMU grid. Land cover is classified into 15 categories, which can be aggregated to the six standard classes used by GLOBIOM [@check]. For relatively small areas, shadow and clouds prevent the identification of the land cover class (Table 1). We decided to add the cloud and shadow areas to the Other land class. 
 
 
 __Figure 2: Malawi land cover map 2000 and SIMU grid__
