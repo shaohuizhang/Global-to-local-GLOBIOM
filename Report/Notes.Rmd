@@ -68,3 +68,8 @@ Collect data on:
 - Nitrogen
 
 Collect additional data on land use etc for case-study regions.
+
+# Questions with reference to MWI
+- Are there numbers for 18 GLOBIOM crops?
+- Where are the vegetables in the crop list?
+- How to map the MWI crops to the GLOBIOM crops?
