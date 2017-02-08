@@ -1,6 +1,6 @@
 #'========================================================================================================================================
 #' Project:  Global-to-local GLOBIOM
-#' Subject:  Location of MWI households
+#' Subject:  Combine data from different parts of the hh survey.
 #' Author:   Michiel van Dijk
 #' Contact:  michiel.vandijk@wur.nl
 #'========================================================================================================================================
@@ -22,18 +22,17 @@ setwd(wdPath)
 ### SET DATAPATH
 dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM\\Data\\Raw\\MWI\\Household_survey\\2010\\IHS3"
 
-### CREATE LOCATION DF
-location_2010_11 <- read_dta(file.path(dataPath, "Household/HH_MOD_A_FILT.dta")) %>%
-  transmute(case_id, ea_id, region=NA, district = as_factor(hh_a01), district_code = hh_a01, rural = as_factor(reside)) %>%
-  mutate(rural)
+### LOCATION
+suppressMessages(source("Code/Household/location_MWI_2010_11.R"))
 
-# there are three regions in Malawi:
-# 2: Central, 1: Northern and 3: Southern. The first 
-# number of the district code tels us which
-# is which
+### OUTPUT
+suppressMessages(source("Code/Household/output_MWI_2010_11.R"))
 
-location_2010_11$region <- with(location_2010_11,
-                             ifelse(district_code < 200, "NORTHERN",
-                                    ifelse(district_code >=200 & district_code < 300, "CENTRAL",
-                                           "SOUTHERN")))
+### PLOT AREA
+suppressMessages(source("Code/Household/plot_area_MWI_2010_11.R"))
+
+### JOIN DATA
+MWI2010 <- left_join(location2010, output2010)
+MWI2010 <- left_join(cs2010, plot_area2010)
+
 

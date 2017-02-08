@@ -1,6 +1,6 @@
 #'========================================================================================================================================
 #' Project:  Global-to-local GLOBIOM
-#' Subject:  Test
+#' Subject:  script to prepare crop level dataframe
 #' Author:   Michiel van Dijk
 #' Contact:  michiel.vandijk@wur.nl
 #'========================================================================================================================================
@@ -27,11 +27,11 @@ options(scipen=999) # surpress scientific notation
 options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e.g. csv) is not turned into factors
 options(digits=4)
 
-### CROPS
+### OUTPUT
 # -------------------------------------
 # Output MWI 2010_11 (wave 1)
 # two seasons rainy and dry
-# crops and permanent crops
+# output and permanent output
 # seed = seed planted in the rainy season for crop (factor)
 # -------------------------------------
 
@@ -39,25 +39,25 @@ options(digits=4)
 crop_list <- read_csv(file.path(dataPath, "Conversion/MWI_crop_list_2010.csv"))
 
 # crop output
-crops2010 <- read_dta(file.path(dataPath, "Agriculture/AG_MOD_G.dta")) %>%
+output2010 <- read_dta(file.path(dataPath, "Agriculture/AG_MOD_G.dta")) %>%
   select(case_id, ea_id, plotnum=ag_g0b, crop_code=ag_g0d,
          crop_stand=ag_g01, crop_share=ag_g03, harv_start = ag_g12a,
          harv_end = ag_g12b, crop_qty_harv=ag_g13a,
          unit=ag_g13b, condition=ag_g13c)
 
 # change one_crop to crop stand
-crops2010$crop_stand <- ifelse(crops2010$crop_stand %in% 1, 1,
-                        ifelse(crops2010$crop_stand %in% 2, 0, NA))
-crops2010$crop_share <- as_factor(crops2010$crop_share)
-crops2010$harv_start <- as_factor(crops2010$harv_start)
-crops2010$harv_end <- as_factor(crops2010$harv_end)
-crops2010$crop_code <- as.integer(crops2010$crop_code)
-crops2010$unit <- as.integer(crops2010$unit)
-crops2010$condition <- as.integer(crops2010$condition)
-crops2010$crop_code <- as.integer(crops2010$crop_code)
+output2010$crop_stand <- ifelse(output2010$crop_stand %in% 1, 1,
+                        ifelse(output2010$crop_stand %in% 2, 0, NA))
+output2010$crop_share <- as_factor(output2010$crop_share)
+output2010$harv_start <- as_factor(output2010$harv_start)
+output2010$harv_end <- as_factor(output2010$harv_end)
+output2010$crop_code <- as.integer(output2010$crop_code)
+output2010$unit <- as.integer(output2010$unit)
+output2010$condition <- as.integer(output2010$condition)
+output2010$crop_code <- as.integer(output2010$crop_code)
 
 # Link cropcodes
-crops2010 <- left_join(crops2010, crop_list)
+output2010 <- left_join(output2010, crop_list)
 
 #' crop quantities are recorded in non-standard units.
 #' The world bank provided (upon request) a file with
@@ -84,7 +84,7 @@ qty2kg$flag <- NULL
 
 # join region variable to the output variables
 # and then join with the conversion factors
-crops2010 <- left_join(crops2010, region)
+output2010 <- left_join(output2010, region)
 
 # attributes in the qty2kg conversion file
 # prevent joining attributes. Strip attributes
@@ -96,13 +96,13 @@ stripAttributes <- function(df){
 qty2kg <- stripAttributes(qty2kg)
 
 # now join works with no errors
-crops2010 <- left_join(crops2010, qty2kg)
+output2010 <- left_join(output2010, qty2kg)
 
 # multiply the recorded quantity by conversion
 # to kilograms
-crops2010$crop_qty_harv2 <- crops2010$crop_qty_harv * crops2010$conversion
-crops2010$unit <- crops2010$shell_unshelled <- crops2010$conversion <-
-  crops2010$condition <- NULL
+output2010$crop_qty_harv2 <- output2010$crop_qty_harv * output2010$conversion
+output2010$unit <- output2010$shell_unshelled <- output2010$conversion <-
+  output2010$condition <- NULL
 
 # crop production from the rainy season of 2010_11
 # in order to get unit prices of each crop.
@@ -127,20 +127,22 @@ crop_unit_priceRS$crop_price <- crop_unit_priceRS$crop_value/crop_unit_priceRS$q
 crop_unit_priceRS <- select(crop_unit_priceRS, case_id, ea_id, crop_code, crop_value, qty_harv, crop_price)
 
 # join prices with output
-crops2010_2 <- left_join(crops2010,
+output2010_2 <- left_join(output2010,
                           crop_unit_priceRS)
 
 # if someone either did not have any output or
 # had 0 output remove them from the data frame
-crops2010 <- crops2010[! is.na(crops2010$crop_qty_harv) & !crops2010$crop_qty_harv %in% 0, ]
+output2010 <- output2010[! is.na(output2010$crop_qty_harv) & !output2010$crop_qty_harv %in% 0, ]
 
 # At this point, in theory, we don't need the units
 # anymore as everything is in kg, and we don't care
 # about whether the crop was shelled or unshelled as
 # this should also be accounted for in the units
 
-crops2010$crop_qty_harv_unit <- crops2010$crop_qty_harvSU <-
-  crops2010$region <- NULL
+output2010$crop_qty_harv_unit <- output2010$crop_qty_harvSU <-
+  output2010$region <- NULL
+
+
 
 # take out the trash
-rm(list=c("dataPath", "region", "qty2kg", "crops2010_2", "crop_unit_priceRS"))
+rm(list=c("dataPath", "region", "qty2kg", "output2010_2", "crop_unit_priceRS"))

@@ -9,6 +9,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
+library(pacman)
 p_load(rprojroot)
 root <- find_root(is_rstudio_project)
 
@@ -76,7 +77,7 @@ Fig_MWI_lc_SIMU
 __Table 1: Malawi land cover classes 2000__
 
 ```{r Tab-1}
-pander(Tab_MWI_lc_classes, round = 2)
+#pander(Tab_MWI_lc_classes, round = 2)
 ```
 
 ##### Source: @RCMRD2012

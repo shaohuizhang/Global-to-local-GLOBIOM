@@ -73,3 +73,5 @@ Collect additional data on land use etc for case-study regions.
 - Are there numbers for 18 GLOBIOM crops?
 - Where are the vegetables in the crop list?
 - How to map the MWI crops to the GLOBIOM crops?
+- How is yield of permanent crops measured (e.g. Mango, cassave etc)? Still output/area?
+- How to deal with multiple seasons in MWI? Only major season or add?
