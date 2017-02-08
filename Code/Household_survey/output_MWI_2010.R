@@ -41,16 +41,15 @@ crop_list <- read_csv(file.path(dataPath, "Conversion/MWI_crop_list_2010.csv"))
 # crop output
 output2010 <- read_dta(file.path(dataPath, "Agriculture/AG_MOD_G.dta")) %>%
   select(case_id, ea_id, plotnum=ag_g0b, crop_code=ag_g0d,
-         crop_stand=ag_g01, crop_share=ag_g03, harv_start = ag_g12a,
-         harv_end = ag_g12b, crop_qty_harv=ag_g13a,
-         unit=ag_g13b, condition=ag_g13c)
+         #crop_stand=ag_g01, crop_share=ag_g03, harv_start = ag_g12a, harv_end = ag_g12b, 
+         crop_qty_harv=ag_g13a,unit=ag_g13b, condition=ag_g13c)
 
 # change one_crop to crop stand
-output2010$crop_stand <- ifelse(output2010$crop_stand %in% 1, 1,
-                        ifelse(output2010$crop_stand %in% 2, 0, NA))
-output2010$crop_share <- as_factor(output2010$crop_share)
-output2010$harv_start <- as_factor(output2010$harv_start)
-output2010$harv_end <- as_factor(output2010$harv_end)
+# output2010$crop_stand <- ifelse(output2010$crop_stand %in% 1, 1,
+#                         ifelse(output2010$crop_stand %in% 2, 0, NA))
+# output2010$crop_share <- as_factor(output2010$crop_share)
+# output2010$harv_start <- as_factor(output2010$harv_start)
+# output2010$harv_end <- as_factor(output2010$harv_end)
 output2010$crop_code <- as.integer(output2010$crop_code)
 output2010$unit <- as.integer(output2010$unit)
 output2010$condition <- as.integer(output2010$condition)
@@ -100,47 +99,47 @@ output2010 <- left_join(output2010, qty2kg)
 
 # multiply the recorded quantity by conversion
 # to kilograms
-output2010$crop_qty_harv2 <- output2010$crop_qty_harv * output2010$conversion
+output2010$crop_qty_harv <- output2010$crop_qty_harv * output2010$conversion
 output2010$unit <- output2010$shell_unshelled <- output2010$conversion <-
   output2010$condition <- NULL
 
-# crop production from the rainy season of 2010_11
-# in order to get unit prices of each crop.
-# These need to be matched with region and then
-# converted as above
-
-crop_unit_priceRS <- read_dta(file.path(dataPath, "Agriculture/AG_MOD_I.dta")) %>%
-  select(case_id, ea_id, crop_code = ag_i0b,
-         qty_harv = ag_i02a, unit = ag_i02b,
-         condition = ag_i02c, crop_value = ag_i03) %>% unique()
-crop_unit_priceRS$crop_code <- as.integer(crop_unit_priceRS$crop_code)
-crop_unit_priceRS$unit <- as.integer(crop_unit_priceRS$unit)
-crop_unit_priceRS$condition <- as.integer(crop_unit_priceRS$condition)
-
-# Join with region and then conversion factor
-crop_unit_priceRS <- left_join(crop_unit_priceRS, region)
-crop_unit_priceRS <- left_join(crop_unit_priceRS, qty2kg)
-
-# make conversion and calculate the crop prices
-crop_unit_priceRS$qty_harv <- crop_unit_priceRS$qty_harv * crop_unit_priceRS$conversion
-crop_unit_priceRS$crop_price <- crop_unit_priceRS$crop_value/crop_unit_priceRS$qty_harv
-crop_unit_priceRS <- select(crop_unit_priceRS, case_id, ea_id, crop_code, crop_value, qty_harv, crop_price)
-
-# join prices with output
-output2010_2 <- left_join(output2010,
-                          crop_unit_priceRS)
-
-# if someone either did not have any output or
-# had 0 output remove them from the data frame
-output2010 <- output2010[! is.na(output2010$crop_qty_harv) & !output2010$crop_qty_harv %in% 0, ]
-
+# # crop production from the rainy season of 2010_11
+# # in order to get unit prices of each crop.
+# # These need to be matched with region and then
+# # converted as above
+# 
+# crop_unit_priceRS <- read_dta(file.path(dataPath, "Agriculture/AG_MOD_I.dta")) %>%
+#   select(case_id, ea_id, crop_code = ag_i0b,
+#          qty_harv = ag_i02a, unit = ag_i02b,
+#          condition = ag_i02c, crop_value = ag_i03) %>% unique()
+# crop_unit_priceRS$crop_code <- as.integer(crop_unit_priceRS$crop_code)
+# crop_unit_priceRS$unit <- as.integer(crop_unit_priceRS$unit)
+# crop_unit_priceRS$condition <- as.integer(crop_unit_priceRS$condition)
+# 
+# # Join with region and then conversion factor
+# crop_unit_priceRS <- left_join(crop_unit_priceRS, region)
+# crop_unit_priceRS <- left_join(crop_unit_priceRS, qty2kg)
+# 
+# # make conversion and calculate the crop prices
+# crop_unit_priceRS$qty_harv <- crop_unit_priceRS$qty_harv * crop_unit_priceRS$conversion
+# crop_unit_priceRS$crop_price <- crop_unit_priceRS$crop_value/crop_unit_priceRS$qty_harv
+# crop_unit_priceRS <- select(crop_unit_priceRS, case_id, ea_id, crop_code, crop_value, qty_harv, crop_price)
+# 
+# # join prices with output
+# output2010_2 <- left_join(output2010,
+#                           crop_unit_priceRS)
+# 
+# # if someone either did not have any output or
+# # had 0 output remove them from the data frame
+# output2010 <- output2010[! is.na(output2010$crop_qty_harv) & !output2010$crop_qty_harv %in% 0, ]
+# 
 # At this point, in theory, we don't need the units
 # anymore as everything is in kg, and we don't care
 # about whether the crop was shelled or unshelled as
 # this should also be accounted for in the units
-
+ 
 output2010$crop_qty_harv_unit <- output2010$crop_qty_harvSU <-
-  output2010$region <- NULL
+   output2010$region <- NULL
 
 
 

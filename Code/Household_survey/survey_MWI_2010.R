@@ -1,6 +1,6 @@
 #'========================================================================================================================================
-#' Project:  Global-to-local GLOBIOM
-#' Subject:  Combine data from different parts of the hh survey.
+#' Project:  Global-to-local GLOBIOM  
+#' Subject:  Script to collect survey data (e.g. clusters and weights)
 #' Author:   Michiel van Dijk
 #' Contact:  michiel.vandijk@wur.nl
 #'========================================================================================================================================
@@ -12,27 +12,18 @@ p_load("tidyverse", "readxl", "stringr", "scales", "RColorBrewer", "rprojroot")
 # Spatial packages
 #p_load("rgdal", "ggmap", "raster", "rasterVis", "rgeos", "sp", "mapproj", "maptools", "proj4", "gdalUtils")
 # Additional packages
-p_load("haven")
+#p_load("WDI", "countrycode", "survey")
 
-
-### SET WORKING DIRECTORY
-wdPath<-"~/Global-to-local-GLOBIOM"
-setwd(wdPath)
 
 ### SET DATAPATH
 dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM\\Data\\Raw\\MWI\\Household_survey\\2010\\IHS3"
 
-### LOCATION
-suppressMessages(source("Code/Household/location_MWI_2010_11.R"))
-
-### OUTPUT
-suppressMessages(source("Code/Household/output_MWI_2010_11.R"))
-
-### PLOT AREA
-suppressMessages(source("Code/Household/plot_area_MWI_2010_11.R"))
-
-### JOIN DATA
-MWI2010 <- left_join(location2010, output2010)
-MWI2010 <- left_join(cs2010, plot_area2010)
+### R SETTINGS
+options(scipen=999) # surpress scientific notation
+options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e.g. csv) is not turned into factors
+options(digits=4)
 
 
+## SURVEY DATA
+survey2010 <- read_dta(file.path(dataPath, "IHS3_Summary_DTA/ihs3_summary.dta")) %>%
+  select(case_id, ea_id, strata, cluster, hhweight)

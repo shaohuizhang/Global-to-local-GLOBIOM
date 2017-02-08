@@ -16,8 +16,6 @@ p_load("tidyverse", "readxl", "stringr", "scales", "RColorBrewer", "rprojroot")
 
 
 ### SET WORKING DIRECTORY
-# wdPath<-"~/Global-to-local-GLOBIOM"
-# setwd(wdPath)
 
 ### SET DATAPATH
 dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM\\Data\\Raw\\MWI\\Household_survey\\2010\\IHS3"

@@ -24,16 +24,28 @@ dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM\\Data\\Raw\\MWI\
 
 ### CREATE LOCATION DF
 location2010 <- read_dta(file.path(dataPath, "Household/HH_MOD_A_FILT.dta")) %>%
-  transmute(case_id, ea_id, region=NA, district = as_factor(hh_a01), district_code = hh_a01, rural = as_factor(reside)) %>%
-  mutate(rural)
+  transmute(case_id, ea_id, region=NA, district = as.character(as_factor(hh_a01)), district_code = hh_a01, rural = as_factor(reside)) %>%
+  mutate(rural) 
 
 # there are three regions in Malawi:
 # 2: Central, 1: Northern and 3: Southern. The first 
 # number of the district code tels us which
 # is which
 
-location2010$region <- with(location2010,
-                             ifelse(district_code < 200, "NORTHERN",
-                                    ifelse(district_code >=200 & district_code < 300, "CENTRAL",
-                                           "SOUTHERN")))
+location2010 <- location2010 %>%
+  mutate(region = ifelse(district_code < 200, "NORTH",
+                    ifelse(district_code >=200 & district_code < 300, "CENTRAL",
+                       "SOUTH"))) %>%
+  select(-district_code)
+
+# Rename districts so they match up with GADM map. 
+# Allocate the four urban regions (cities) to the regions they are located in. Mzuzu City is located in the Mzimba District
+location2010 <- location2010 %>%
+  mutate(district = recode(district, "Blantyre City" = "Blantyre",
+                                     "Lilongwe City" = "Lilongwe",
+                                     "Mzuzu City" = "Mzimba",
+                                     "Zomba City" = "Zomba",
+                                     "Nkhatabay" = "Nkhata Bay",
+                                     "Nkhota kota" = "Nkhotakota",
+                                     "Blanytyre" = "Blantyre"))
 
