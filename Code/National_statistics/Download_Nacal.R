@@ -31,6 +31,10 @@ options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e
 options(digits=4)
 
 
+### LOAD DISTRICT LIST
+adm_list_MWI <- read_csv(file.path(dataPath, "Processed/MWI/GADM_maps/adm_list_MWI.csv"))
+
+
 ### EXTRACT TABLES FROM NACAL REPORT
 # Select pdf
 doc <- file.path(dataPath, "Raw\\MWI\\National_statistics\\MWI\\Nacal_Report.pdf")
@@ -45,9 +49,8 @@ districts <- c("Karonga", "Rumphi", "Nkhata Bay", "Mzimba", "Mzuzu city", "Kasun
 # Function to clean raw table from pdf
 clean_tab_f <- function(df, name_df, unit){
   cut <- which(grepl("District", df$X))
-  mwi <- which(grepl("Malawi", df$X.1))
   nrow <- nrow(df)
-  sel <- df[c(mwi,cut:nrow),c(-1)]
+  sel <- df[c(cut:nrow),c(-1)]
   sel <- sel[colSums(!is.na(sel)) > 0] # Remove columns that are all NA
   names(sel) <- c("District", name_df)
   for(i in name_df) {
@@ -55,9 +58,32 @@ clean_tab_f <- function(df, name_df, unit){
     sel[[i]] = gsub(",", "", sel[[i]])
     sel[[i]] = as.numeric(sel[[i]])
   }
-  sel$unit <- unit
+  sel <- sel %>% 
+    mutate(unit = unit,
+           district = trimws(District)) %>%
+    dplyr::select(-District)
   return(sel)
 }
+
+Table3_10$District
+check <- dplyr::filter(Table3_10, District != "Malawi")
+sum(check$Local, na.rm=T)
+Table3_10$District=="Malawi"
+str(Table3_10)
+process_adm_f <-function(tbl){
+  tbl2 <- tbl %>%
+    gather(variable, value, -District, unit)
+    mutate(adm = recode(District, "Blantyre City" = "Blantyre",
+                            "Blantyre rural" = "Blantyre",
+                            "Lilongwe City" = "Lilongwe",
+                            "Lilongwe rural" = "Lilongwe",
+                            "Mzuzu City" = "Mzimba",
+                            "Zomba City" = "Zomba",
+                            "Zomba rural" = "Zomba")) %>%
+    group_by(adm) %>%
+    summarize(value = sum(value))
+}
+
 
 # Table 3.6
 Table3_6_name <- c("Local", "Composite", "Recycled", "Hybrid", "production", "Total")
@@ -93,7 +119,7 @@ Table3_13 <- clean_tab_f(pdf_raw[[8]], Table3_13_name, "ha")
 
 # Table 3.14
 Table3_14_name <- c("Cotton", "Tobacco", "Sunflower")
-Table3_14 <- clean_tab_f(pdf_raw[[9]], Table3_14_name)
+Table3_14 <- clean_tab_f(pdf_raw[[9]], Table3_14_name, "ha")
 
 # Table 5.2
 Table5_2_name <- c("Cattle", "Goats", "Sheep", "Pigs", "Chicken")

@@ -93,3 +93,9 @@ Land cover classifciation
 - Check set admin.
 - copy Congo datafile to data in Globiom
 - Data for 2000.
+
+# Micro simulation
+- need information on number of people in agric and non-agric in future => Use this to reallocte HH sample
+- Average income is scaled using alpha (see 2.4, first paragraph)
+- Beta's for wages are replaced by model results => how to do this with PE?
+

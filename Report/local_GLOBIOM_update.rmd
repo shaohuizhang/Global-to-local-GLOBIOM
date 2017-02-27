@@ -1,0 +1,65 @@
+---
+title: 'Global-to-local modelling with GLOBIOM: update'
+author: "Michiel van Dijk"
+date: "16 February 2017"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+For several projects it would be interesting to expand/improve the subnational modelling of GLOBIOM, adding information from household surveys, national statistics and country specific land use and land cover maps. In a previous document (November 28, 2016) I presented some first ideas and entry points. Broadly defined, micro and other country specific data can be used for two purposes to extend GLOBIOM:
+
+1. Improve the input-side, including an improved representation of farming systems and consumption.
+2. Improve the output-side, for example by providing new or more disaggregated indicators on issues like poverty, food security and health.
+
+# Improve the input-side.
+Following discussions with Esther, Aline and others, I have a reasonably clear picture on how to proceed with this. I am currently developing a procedure in R (with case study for Malawi) that does the following:
+
+1. Scale land cover maps to Simu level and calculate share of land class per simu. 
+2. Compile a database with information on crop production, area and possible fertilizer use, costs, etc at administrative level 1 or 2, depending on the country and data availability. Data is either taken from national statistics at administrative zone level, from a representative household survey or a combination of the two.
+3. Evaluate different data sources by means of maps, graphs etc, also using FAOSTAT data and population maps.
+4. Downscale crop production data to simu and harmonise with land cover maps (probably better to do this in GAMS)
+
+The 'Global-to-local' procedure will be similar to the one used for Congo, Indonesia and Brazil developed by Aline but fully documented and coded in R and GAMS. It is possible to extend the procedure by building on the work of Esther, who used  household data for Ethiopia to  model farm types. This approach is, however, very data demanding and it is not clear if it can be implemented for the ISWEL countries, given data availability. I will postpone this for now. The final objective is to produce a fully documented and scripted 'pipeline' in which raw data is read, cleaned and processed in R (step 1-3 above) and written to GDX. These files can then be read into GAMS for step 4 and used as input in GLOBIOM. Although data sources and structure may differ considerably between regions and manual adjustment of the code will always necessary, it is expected that the Global-to-local procedure can be relatively easy implemented to prepare subnational assessment of other regions than Malawi.
+
+A second thing I would like to explore is the improvement of cost data in GLOBIOM for target regions. As became clear from Andre's presentation on cost data in GLOBIOM, there is much to be improved. It should be possible to extract subnational data from the household surveys on costs of fertilizer, seeds and other inputs as well as output prices. Fulvio shared more information on the agri-cost model, which I will study and if possible try to implement.
+
+
+# Improve the output-side
+I finalised the literature review on how to use global models to provide projections for poverty and food security. On the basis of this, I can see three options to do this (somehow) in combination with GLOBIOM. All of the options have their dificulties, which should be discussed before moving forward. 
+
+## Estimating structural equations on the basis of household survey data. 
+Most of the previous attempts to project food security and poverty use a CGE model [@Hertel2015, @KuiperLindsayShutes2014, @Bussolo2010]. The obvious advantage of using a CGE model (despite the many disadvantages) over a PE model is that it provides information on the income of (different types of) households, including income from non-agricultural activities. Total household income is key to provide projections on poverty and food security. 
+
+I have found two interesting and related approaches that combine the richness of household survey data and estimation of structural relationships with (global) modelling Both use CGE models to make projections but, perhaps with additional assumptions, the approaches can be implemented in combination with GLOBIOM. Broadly the approaches can be summarised as follows (but in reality it is somewhat more complicated):
+
+__STEP 1:__ Estimate a structural relationship between household level income [@Bussolo2010] and/or a food security indicator [e.g. such as calorie consumption, stunting and wasting @Breisinger2014]. A Mincer equation is used to express household income per capita $(Y_h)$ as a function of schooling $(S)$, employment (e.g. employed in agriculture) $(A)$, wages $(W_h)$ and a random error ($(\epsilon)$:
+
+$$ Y_h=\alpha + \beta S_h+ \delta A_h + \gamma W_h + \epsilon $$
+
+Similarly, the food security indicator $(FS_h)$ is related to household expenditure $(E_h)$, household characteristics (e.g. sex of household head, occupation, etc) $(C_h)$ and the households' living environment (e.g. access to clean water, AEZ, etc) $(L_h)$:
+
+$$ {FS}_h=\alpha + \beta E_h+ \delta C_h + \gamma L_h + \epsilon $$
+
+__STEP 2__: Run a simulation model and, depending on the model derive projections for several exogenous variabels in the two equations above. In the World Bank GIDD model, the global CGE model only captures a single representative household and is therefore not able to present projections on the income of different households. The run the model to provide projections for (1) relative agriculture/non-agricultural wage and (2) share of people employed in agricultural/non-agricultural sector. The single-country model of @Breisinger2014 explicitely models the expenditure of different households, which can be plugged into equation 2 above.
+
+__STEP 3:__ Prepare projections for exogenous variables that are not modelled, such as demographic changes, schooling and the households living environment. Some of these are in fact provided as part of the SSPs, such as education, age structure and urbanisation.
+
+__STEP 4:__ Reweight the household sample weights to take into account changes in demographic structure.
+
+__STEP 5:__ Combine the structural equations from STEP 1, with the projections from STEP 2 and STEP 3, and the new weights from STEP 4 to estimate a new distribution of income per capita and food security at the household level. These can subsequently be combined with minimum income and minimum calorie requirement levels to estimate the prevalence of poverty and undernourishment.
+
+Key question now is, if the aforementioned approach, in some way, can be combined with GLOBIOM output. The main problem is that GLOBIOM only covers the agricultural sector and therefore does not provide projections for (1) income/expenditure that are needed to project household level food security indicators,  nor (2)  relative wages or employment shares that are required for the estimation of future household income per capita. Obviously we can make exogenous assumptions on some of these but it is highly preferably to somehow make the link with GLOBIOM and the two structural equations above. 
+
+## Model food consumption at the subnational level in GLOBIOM
+A potential other route to provide subnational food security indicators is to model regional consumption within GLOBIOM. Hugo is doing this for India at this moment. This would, then, substitute for the food security equation above. Perhaps together 
+
+
+## Estimate a macro-level structural equation
+
+
+
+

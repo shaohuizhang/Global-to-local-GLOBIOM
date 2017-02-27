@@ -20,6 +20,7 @@ wdPath<-"~/Global-to-local-GLOBIOM"
 setwd(wdPath)
 
 ### SET DATAPATH
+dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM\\Data"
 
 ### R SETTINGS
 options(scipen=999) # surpress scientific notation
@@ -38,13 +39,20 @@ GADM_f <- function(iso3c, lev=0, proj = "+proj=longlat +datum=WGS84", dataPath =
   return(country.sp)
 }
 
-# List of countries
-dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM\\Data\\Processed\\MWI\\GADM_maps"
-MWI_adm0 <- GADM_f("MWI", lev = 0, dataPath = dataPath)
-MWI_adm1 <- GADM_f("MWI", lev = 1, dataPath = dataPath)
-MWI_adm2 <- GADM_f("MWI", lev = 2, dataPath = dataPath)
-MWI_adm3 <- GADM_f("MWI", lev = 3, dataPath = dataPath)
+### MWI
+# Download relevant maps
+mapPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM\\Data\\Processed\\MWI\\GADM_maps"
+MWI_adm0 <- GADM_f("MWI", lev = 0, dataPath = mapPath)
+MWI_adm1 <- GADM_f("MWI", lev = 1, dataPath = mapPath)
+MWI_adm2 <- GADM_f("MWI", lev = 2, dataPath = mapPath)
+MWI_adm3 <- GADM_f("MWI", lev = 3, dataPath = mapPath)
 
+# Save list of adm level 1 districts that will be used as regional identifiers
+adm_list_MWI <- MWI_adm1@data %>%
+  dplyr::select(iso3c = ISO, adm_list = NAME_1)
+write_csv(adm_list_MWI, file.path(dataPath, "Processed/MWI/GADM_maps/adm_list_MWI.csv"))
 
+### OTHERS
 TZA_adm1 <- GADM_f("TZA", lev = 1, dataPath = file.path(getwd(), "Data/GADM_maps"))
 EHT_adm1 <- GADM_f("ETH", lev = 1, dataPath = file.path(getwd(), "Data/GADM_maps"))
+
