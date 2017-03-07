@@ -1,7 +1,7 @@
 ---
 title: 'Global-to-local modelling with GLOBIOM: update'
 author: "Michiel van Dijk"
-date: "16 February 2017"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
 output: pdf_document
 bibliography: ../common/Global-to-local-GLOBIOM.bib
 ---
