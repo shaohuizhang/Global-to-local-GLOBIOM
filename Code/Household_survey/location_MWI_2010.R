@@ -20,10 +20,10 @@ wdPath<-"~/Global-to-local-GLOBIOM"
 setwd(wdPath)
 
 ### SET DATAPATH
-dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM\\Data\\Raw\\MWI\\Household_survey\\2010\\IHS3"
+dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM\\Data"
 
 ### CREATE LOCATION DF
-location2010 <- read_dta(file.path(dataPath, "Household/HH_MOD_A_FILT.dta")) %>%
+location <- read_dta(file.path(dataPath, "\\Raw\\MWI\\Household_survey\\2010\\IHS3\\Household/HH_MOD_A_FILT.dta")) %>%
   transmute(case_id, ea_id, region=NA, district = as.character(as_factor(hh_a01)), district_code = hh_a01, rural = as_factor(reside)) %>%
   mutate(rural) 
 
@@ -32,7 +32,7 @@ location2010 <- read_dta(file.path(dataPath, "Household/HH_MOD_A_FILT.dta")) %>%
 # number of the district code tels us which
 # is which
 
-location2010 <- location2010 %>%
+location <- location %>%
   mutate(region = ifelse(district_code < 200, "NORTH",
                     ifelse(district_code >=200 & district_code < 300, "CENTRAL",
                        "SOUTH"))) %>%
@@ -40,7 +40,7 @@ location2010 <- location2010 %>%
 
 # Rename districts so they match up with GADM map. 
 # Allocate the four urban regions (cities) to the regions they are located in. Mzuzu City is located in the Mzimba District
-location2010 <- location2010 %>%
+location <- location %>%
   mutate(district = recode(district, "Blantyre City" = "Blantyre",
                                      "Lilongwe City" = "Lilongwe",
                                      "Mzuzu City" = "Mzimba",
