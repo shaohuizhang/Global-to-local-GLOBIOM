@@ -73,6 +73,10 @@ crs(SIMU2country_poly)
 # Set country crs
 #country_crs <- crs(land_cover_map_raw)
 
+# Crop and mas land_cover map to polygon
+#land_cover_map <- crop(land_cover_map_raw, extent(SIMU2country_poly))
+land_cover_map <- mask(land_cover_map_raw, SIMU2country_poly)
+                      
 # Reproject SIMU_poly to country CRS
 #SIMU2country_poly_rp <- spTransform(SIMU2country_poly, country_crs)
 levelplot(land_cover_map_raw, att='Land_Cover', par.settings = RdBuTheme, margin = F) +
