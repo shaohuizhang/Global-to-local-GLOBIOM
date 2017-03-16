@@ -100,7 +100,7 @@ land_cover_shares <- land_cover_shares_raw %>%
   summarize(n = n()) %>%
   mutate(freq = n / sum(n, na.rm = T)) %>%
   dplyr::select(-n) %>%
-  spread(class, freq) %>%
+  spread(class, freq) %>%qbeta(shape1 = shape1)
   left_join(.,p_df)
 
 # VALIDATE RESULTS

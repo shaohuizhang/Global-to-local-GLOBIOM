@@ -38,7 +38,20 @@ source(file.path(root, "Code/Map.R"))
 GLOBIOM has been designed as global asssessment tool. Most input data is defined at the [0.5 degree] spatial level. Recently, there has been increasing demand for regional and subnational assessments that focus an a specific geographical region. Examples are land use change studies for Brazil, Congo, Ethiopia and Indonesia and an assessment of the water-land-energy nexus in the Zambezi and Indus river basins.The global datasets that are normally used for assessments are too coarse to arrive at the level of detail that is demanded for this type of studies and therefore needs to be replaced more detailed information that have a higher spatial resolution, if available.  
 
 This document describes the various steps to prepare GLOBIOM for regional or subnational assessments. Refining the land use and land cover data for subnational assessments can be very time and resource-demanding and demands a certain craftsmanship. It is recommended to only follow the full process for relative large projects that take at least around two years. It is also advisable to involve local partners and stakeholders to provide input data (e.g. land use maps and production statistics) and validate processed information (e.g. updated land use map that is used in GLOBIOM) 
- 
+
+# Data sources and types
+Although the sources of data may vary, the following three pieces of data are needed to optimally improve the input structure of GLOBIOM for Global-to-local analysis:
+
+## Household surveys
+
+## Land cover maps
+
+## 
+
+# Folder structure and naming.
+
+## Folder structure
+As we are using data from a variety of sources, it is important to apply a coherent and standardised structure for the location of the data for the target region (in most cases a country) for the local analysis is done.
 
 # Data processing pipeline
 Figure X shows a flowchart for all the steps to prepare the data. We will discuss them one by one. 
