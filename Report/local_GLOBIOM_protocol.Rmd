@@ -39,19 +39,43 @@ GLOBIOM has been designed as global asssessment tool. Most input data is defined
 
 This document describes the various steps to prepare GLOBIOM for regional or subnational assessments. Refining the land use and land cover data for subnational assessments can be very time and resource-demanding and demands a certain craftsmanship. It is recommended to only follow the full process for relative large projects that take at least around two years. It is also advisable to involve local partners and stakeholders to provide input data (e.g. land use maps and production statistics) and validate processed information (e.g. updated land use map that is used in GLOBIOM) 
 
-# Data sources and types
+# Data sources
 Although the sources of data may vary, the following three pieces of data are needed to optimally improve the input structure of GLOBIOM for Global-to-local analysis:
 
-## Household surveys
-
 ## Land cover maps
+The global land cover map that is used by GLOBIOM is very coarse and is not detailed enough for subnational analysis. It is therefore very important to try to find high-resolution land cover maps. Land cover (and land use) maps are often prepared by specialist government agencies (often under the Ministry of Agriculture or Forestry) or companies. The latter are sometimes contracted by international institutions or donors to provide new land cover maps [@Haack2015]. Sources for recent land cover maps are the Regional Centre of Mapping of Resources for Development (RCMRD) geoportal (http://geoportal.rcmrd.org.and) and Servir Global (https://www.servirglobal.net)
 
-## 
+## Agricultural statistics
 
-# Folder structure and naming.
 
-## Folder structure
-As we are using data from a variety of sources, it is important to apply a coherent and standardised structure for the location of the data for the target region (in most cases a country) for the local analysis is done.
+## Household surveys
+In particularly useful as a source of information are household surveys that contain information for a large number of units, which are in most cases households. However, in most recent surveys, it is not uncommon to also provide data at the level of household members, plots or fields and communities as well as data from additional sources such as geo-spatial information that can be linked using geo-codes. Nationally representative surveys, preferably stratified at the district or zonal level, are the most useful source of information because they provide information for the complete country or region, which can be mapped to the simu level in GLOBIOM.
+
+In particular three initiatives present nationally representative household information that can be used as a source of information. These are described below. Some of these datasets only cover a handfull of countries, while others have a wider coverage. A number of other data collection initiatives (e.g. IMPACT-lite; ILRI/CCAFS-CGIAR; RIGA, FAO-World Bank) might also present useful and interesting information but are not first choice because they address only a limited number of countries, cannot be compared across countries or are not nationally representative.
+
+### The Living Standards Measurement Study (LSMS)
+The Living Standards Measurement Study (LSMS) is an ongoing household survey program supported by the World Bank. Since the 1980s the LSMS surveys have been organised in a large number of countries. Depending on the country and year, the surveys present household and/or regional information on production, consumption and prices.       
+
+### The Living Standards Measurement Study - Integrated Surveys on Agriculture (LSMS-ISA)
+The Living Standards Measurement Study - Integrated Surveys on Agriculture (LSMS-ISA) is a project funded by the Bill and Melinda Gates foundation and implemented by the World Bank to undertake nationally representative households surveys in a eight African countries: Burkina Faso, Ethiopia, Malawi, Mali, Niger, Nigeria, Tanzania and Uganda. In each country multiple survey rounds are supported that make it possible to analyse long-term developments and apply econometric panel approaches. 
+
+The surveys cover a wide range of topics and are particularly designed to improve the understanding between agricultural, socio-economic status and non-farm income activities. They cover around 3000 to 5000 households per country and include questions on a large number of topics, including agricultural production (including fishery and livestock) at crop and plot level, diets and consumption patterns and household composition and income. The dataset also include the coordinates of each sampling site and can therefore be linked with and compared to geo-spatial datasets. The LSMS-ISA surveys already include an additional data file with geo-linked information on precipitation, temperature and infrastructure.
+
+### The Demographic and Health Surveys (DHS)
+The Demographic and Health Surveys (DHS) Program is a large survey program to collect nationally representative information on fertility,  family  planning,  maternal  and  child  health,  nutrition, mortality,  environmental  health,  HIV/AIDS, malaria, and provision of health services funded by USAID. To date, the program has collected data for more than 90 countries in more than 300 surveys. The advantage of the DHS surveys is that they can easily be compared internationally because of the use of (nearly) similar questionnaires. A disadvantage is the limited information on agricultural activities, income and infrastructure. Recent DHS data has been geo-coded and can therefore be easily depicted on a map (see example below). Several recent studies have applied spatial interpolation techniques to provide higher resolution maps. 
+
+
+# Folder structure
+As we are using data from a variety of sources, it is important to apply a coherent and standardised structure for the location of the data and related R code that are used to process the information. We use a fixed structure for each of the target regions, which in most cases willl be a country. For practical reasons it is useful to use different main folders for data and scripts.
+
+## Data folder
+two main folders, one for the dataFor each, target region, we have two main folders thdata and code are organised stored in four main foldersusing the same folder names but are stored in two different main folders. The folder with all the da
+
+
+## Code folder
+
+
+
 
 # Data processing pipeline
 Figure X shows a flowchart for all the steps to prepare the data. We will discuss them one by one. 

@@ -82,5 +82,13 @@ In the context of ISWEL and other potential subnational studies, the 1st and per
 - Is is possible, perhaps with some bold assumptions, to make the link between the structural equations 1 and 2 based on household surveys and GLOBIOM results? If so, how?
 - Is it useful estimate country-specific price and income elasticities and apply them in GLOBIOM? 
 
+# Follow up after discussion
+- Start with input side. This is essential anyway to start modelling.
+- Use MWI and ZBI as case studies for data storage etc (contact Victor)
+- Decide on which countries to focus when analysing Zambezi river basin. Only updating cost structure of one country might artifically increase competitiveness of country => contact other groups.
+- Explore split of population into: rich rural, poor rural, rich urban and poor urban population.
+- Compare GLOBIOM food commidities with household consumption shares of these products in household survey.
+- Compare GLOBIOM food commidities with income from crop sales.
+ 
 
 # References
