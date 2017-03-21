@@ -15,16 +15,16 @@ p_load("tidyverse", "readxl", "stringr", "scales", "RColorBrewer", "rprojroot")
 p_load("haven")
 
 
-### SET WORKING DIRECTORY
-wdPath<-"~/Global-to-local-GLOBIOM"
-setwd(wdPath)
+### DETERMINE ROOT PATH AND SET WORKING DIRECTORY
+root <- find_root(is_rstudio_project)
+setwd(root)
 
 ### SET DATAPATH
-dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM\\Data\\"
+source(file.path(root, "Code/get_dataPath.r"))
 
 ### LOAD DATA
 # Survey
-suppressMessages(source("Code/Household/survey_MWI_2010.R"))
+suppressMessages(source("Code/MWI/Household_surveys/survey_MWI_2010.R"))
 summary(survey2010)
 
 # Location

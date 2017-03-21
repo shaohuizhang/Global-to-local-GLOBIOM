@@ -32,8 +32,8 @@ ZMB_adm2 <- readRDS(file.path(dataPath, "Processed\\ZMB\\GADM_maps\\GADM_2.8_ZMB
 
 # Save list of adm level 1 districts that will be used as regional identifiers
 adm_list_ZMB <- ZMB_adm2@data %>%
-  dplyr::select(iso3c = ISO, adm1 = NAME_1, adm2 = NAME_2)
-write_csv(adm_list_ZMB, file.path(dataPath, "Processed/ZMB/GADM_maps/adm_list_ZMB.csv"))
+  transmute(iso3c = ISO, adm1 = toupper(NAME_1), adm2 = toupper(NAME_2))
+write_csv(adm_list_ZMB, file.path(dataPath, "Processed/ZMB/Mappings/adm_list_ZMB.csv"))
 
 # Load adm regions as in various national statistics databases
 adm_nat_stat1_raw <- read_excel(file.path(dataPath, "Raw\\ZMB\\National_statistics/ag_statistics_1987_2014.xlsx"), sheet = "processed")

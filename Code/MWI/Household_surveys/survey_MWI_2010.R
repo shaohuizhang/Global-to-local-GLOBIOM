@@ -14,9 +14,11 @@ p_load("tidyverse", "readxl", "stringr", "scales", "RColorBrewer", "rprojroot")
 # Additional packages
 #p_load("WDI", "countrycode", "survey")
 
+### DETERMINE ROOT PATH AND SET WORKING DIRECTORY
+root <- find_root(is_rstudio_project)
 
 ### SET DATAPATH
-dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM\\Data\\Raw\\MWI\\Household_survey\\2010\\IHS3"
+source(file.path(root, "Code/get_dataPath.r"))
 
 ### R SETTINGS
 options(scipen=999) # surpress scientific notation
@@ -25,5 +27,5 @@ options(digits=4)
 
 
 ## SURVEY DATA
-survey2010 <- read_dta(file.path(dataPath, "IHS3_Summary_DTA/ihs3_summary.dta")) %>%
+survey2010 <- read_dta(file.path(dataPath, "Raw/MWI/Household_surveys/2010/IHS3/IHS3_Summary_DTA/ihs3_summary.dta")) %>%
   select(case_id, ea_id, strata, cluster, hhweight)

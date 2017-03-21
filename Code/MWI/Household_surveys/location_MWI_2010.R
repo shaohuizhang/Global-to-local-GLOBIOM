@@ -15,15 +15,15 @@ p_load("tidyverse", "readxl", "stringr", "scales", "RColorBrewer", "rprojroot")
 p_load("haven")
 
 
-### SET WORKING DIRECTORY
-wdPath<-"~/Global-to-local-GLOBIOM"
-setwd(wdPath)
+### DETERMINE ROOT PATH AND SET WORKING DIRECTORY
+root <- find_root(is_rstudio_project)
 
 ### SET DATAPATH
-dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM\\Data"
+source(file.path(root, "Code/get_dataPath.r"))
 
 ### CREATE LOCATION DF
-location <- read_dta(file.path(dataPath, "\\Raw\\MWI\\Household_survey\\2010\\IHS3\\Household/HH_MOD_A_FILT.dta")) %>%
+# Load region and district information
+location <- read_dta(file.path(dataPath, "\\Raw\\MWI\\Household_surveys\\2010\\IHS3\\Household/HH_MOD_A_FILT.dta")) %>%
   transmute(case_id, ea_id, region=NA, district = as.character(as_factor(hh_a01)), district_code = hh_a01, rural = as_factor(reside)) %>%
   mutate(rural) 
 
@@ -36,12 +36,17 @@ location <- location %>%
   mutate(region = ifelse(district_code < 200, "NORTH",
                     ifelse(district_code >=200 & district_code < 300, "CENTRAL",
                        "SOUTH"))) %>%
-  select(-district_code)
+  dplyr::select(-district_code)
+
+# Load geo-location
+geo <- read_dta(file.path(dataPath, "\\Raw\\MWI\\Household_surveys\\2010\\IHS3\\HouseholdGeovariables_DTA/HouseholdGeovariables.dta")) %>%
+  rename(lon = lon_modified, lat = lat_modified)
+
 
 # Rename districts so they match up with GADM map. 
 # Allocate the four urban regions (cities) to the regions they are located in. Mzuzu City is located in the Mzimba District
 location <- location %>%
-  mutate(district = recode(district, "Blantyre City" = "Blantyre",
+  mutate(district = dplyr::recode(district, "Blantyre City" = "Blantyre",
                                      "Lilongwe City" = "Lilongwe",
                                      "Mzuzu City" = "Mzimba",
                                      "Zomba City" = "Zomba",
@@ -49,3 +54,5 @@ location <- location %>%
                                      "Nkhota kota" = "Nkhotakota",
                                      "Blanytyre" = "Blantyre"))
 
+# Join location and geo 
+location <- left_join(location, geo)

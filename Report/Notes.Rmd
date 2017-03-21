@@ -15,6 +15,23 @@ output:
 -	Includes a simple yield response function to model production but this is spatially explicit.
 - More information can be found in Havlik (2011)
 
+
+# GAMS
+- Open project first to set relative folder.
+- To execute files consecutively use: execute "gams 2_compagri.gms  %env%  -r .\t\a1     -s .\t\a2         pw 130";      
+%env% means that the code is run  in a certain environment
+-r .\t\a1 reads a1.g00 file from t folder to start with.
+-s .\t\a1 saves a a1.g00 file in the t folder. This is a sort of cache file in machine language
+p2 130 is the widht of some text files
+
+= One can also add:
+-gdx .\gdx\a1 saves a gdx files with the latest information
+-rf a1 saves a nice reference file with all sets, parameters and where they are used.
+
+
+
+
+
 ## Improvement of supply side
 ### Previous work
 #### Improving farming systems in Ethiopia and Indonesia
@@ -99,3 +116,6 @@ Land cover classifciation
 - Average income is scaled using alpha (see 2.4, first paragraph)
 - Beta's for wages are replaced by model results => how to do this with PE?
 
+# Cost structure in GLOBIOM
+- rent data is hardcoded for regions in the base year (very coarse!): model/3-precompute
+- Data on cost structures should be added here: Data/2-comp_cropdata

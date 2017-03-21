@@ -49,7 +49,7 @@ spplot(country_map_raw, "OBJECTID")
 
 ### LOAD LAND COVER MAP 
 # Load map
-land_cover_map_raw <- raster(file.path(dataPath, "Raw\\ZMB\\Land_cover_maps\\Zambia_LandCover_2000_Scheme_II\\Zambia_Landcover2_2000_Scheme_II.tif"))
+land_cover_map_raw <- raster(file.path(dataPath, "Raw\\ZMB\\Spatial_data\\Zambia_LandCover_2000_Scheme_II\\Zambia_Landcover2_2000_Scheme_II.tif"))
 land_cover_map_raw
 levelplot(land_cover_map_raw, att='Land_Cover', par.settings = RdBuTheme)
 levels(land_cover_map_raw)
@@ -83,8 +83,8 @@ p_df <- data.frame(ID=1:length(SIMU2country_poly), SIMU =  SIMU2country_poly@dat
 
 # Overlay land cover map and SIMU polygon (THIS TAKES SOME TIME)
 land_cover_shares_raw <- raster::extract(land_cover_map_raw, SIMU2country_poly, df=T) 
-saveRDS(land_cover_shares_raw, file.path(dataPath, "Processed\\ZMB\\Land_cover_maps/ZMB_land_cover_shares_2000_raw.rds"))
-land_cover_shares_raw <- readRDS(file.path(dataPath, "Processed\\ZMB\\Land_cover_maps/ZMB_land_cover_shares_2000_raw.rds"))
+saveRDS(land_cover_shares_raw, file.path(dataPath, "Processed\\ZMB\\Spatial_data/land_cover_shares_2000_ZMB_raw.rds"))
+land_cover_shares_raw <- readRDS(file.path(dataPath, "Processed\\ZMB\\Spatial_data/land_cover_shares_2000_ZMB_raw.rds"))
 
 # Calculate land cover shares per SIMU
 land_cover_shares <- land_cover_shares_raw %>%
@@ -150,3 +150,4 @@ land_cover_SIMU <- land_cover_shares %>%
                               `7` = "NotRel", `8` = "NotRel"))  
   
   
+test <- rastertoPoints(land_cover_map_raw)

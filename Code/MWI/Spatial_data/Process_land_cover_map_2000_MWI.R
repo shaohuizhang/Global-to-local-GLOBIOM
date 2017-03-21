@@ -50,10 +50,11 @@ spplot(country_map_raw, "OBJECTID")
 ### LOAD LAND COVER MAP 
 # Load map
 #land_cover_map_raw <- raster(file.path(dataPath, "Raw\\MWI\\Land_cover_maps\\RCMRD\\Final Corrected Land Cover\\Final Corrected Land Cover\\Scheme 1\\malawi 2000 classification scheme1.img"))
-land_cover_map_raw <- raster(file.path(dataPath, "Raw\\MWI\\Land_cover_maps\\RCMRD\\Final Corrected Land Cover\\Final Corrected Land Cover\\Scheme 2\\malawi 2000 classification scheme2.img"))
+land_cover_map_raw <- raster(file.path(dataPath, "Raw\\MWI\\Spatial_data\\RCMRD\\Final Corrected Land Cover\\Final Corrected Land Cover\\Scheme 2\\malawi 2000 classification scheme2.img"))
 land_cover_map_raw
 levelplot(land_cover_map_raw, att='Land_Cover', par.settings = RdBuTheme)
-levels(land_cover_map_raw)
+land_class <- as.data.frame(levels(land_cover_map_raw))
+write_csv(land_class, file.path(dataPath, "Processed/MWI/Spatial_data/land_class_MWI.csv"))
 
 ### REPROJECT MAPS
 #' It is essential to use the same projection for all maps. If there is a difference we reproject the SIMU and country_map
@@ -86,8 +87,8 @@ p_df <- data.frame(ID=1:length(SIMU2country_poly_rp), SIMU =  SIMU2country_poly_
 
 # Overlay land cover map and SIMU polygon (THIS TAKES SOME TIME)
 land_cover_shares_raw <- raster::extract(land_cover_map_raw, SIMU2country_poly_rp, df=T) 
-saveRDS(land_cover_shares_raw, file.path(dataPath, "Processed\\MWI\\Land_cover_maps/land_cover_shares_2000_raw.rds"))
-land_cover_shares_raw <- readRDS(file.path(dataPath, "Processed\\MWI\\Land_cover_maps/land_cover_shares_2000_raw.rds"))
+saveRDS(land_cover_shares_raw, file.path(dataPath, "Processed\\MWI\\Spatial_data/land_cover_shares_2000_MWI_raw.rds"))
+land_cover_shares_raw <- readRDS(file.path(dataPath, "Processed\\MWI\\Spatial_data/land_cover_shares_2000_MWI_raw.rds"))
 
 # Calculate land cover shares per SIMU
 land_cover_shares <- land_cover_shares_raw %>%
@@ -146,6 +147,9 @@ plot(check)
 plotKML(check)
 
 # CREATE FINAL SIMU FILE AND WRITE TO GDX
+# Read land class mapping 
+MWI2GLOBIOM_landc <- read_excel(file.path(dataPath, "Processed/MWI/Mappings/Mappings_MWI.xlsx"), sheet = "MWI2GLOBIOM_landc")
+
 land_cover_SIMU <- land_cover_shares %>%
 
   mutate(LC = recode(class, c(`1` = "Forest", `2` = "Grass", `3` = "CrpLnd", 

@@ -74,12 +74,14 @@ crs(SIMU2country_poly)
 #country_crs <- crs(land_cover_map_raw)
 
 # Crop and mas land_cover map to polygon
+# Remove cells with No Data
 #land_cover_map <- crop(land_cover_map_raw, extent(SIMU2country_poly))
 land_cover_map <- mask(land_cover_map_raw, SIMU2country_poly)
-                      
+land_cover_map_raw[land_cover_map_raw==0] <- NA
+
 # Reproject SIMU_poly to country CRS
 #SIMU2country_poly_rp <- spTransform(SIMU2country_poly, country_crs)
-levelplot(land_cover_map_raw, att='Land_Cover', par.settings = RdBuTheme, margin = F) +
+levelplot(land_cover_map, att='Land_Cover', par.settings = RdBuTheme, margin = F) +
   layer(sp.polygons(SIMU2country_poly, col = "black"))
 
 # Reproject country_map to country CRS
@@ -92,8 +94,8 @@ levelplot(land_cover_map_raw, att='Land_Cover', par.settings = RdBuTheme, margin
 p_df <- data.frame(ID=1:length(SIMU2country_poly), SIMU =  SIMU2country_poly@data$SimUID)
 
 # Overlay land cover map and SIMU polygon (THIS TAKES SOME TIME)
-land_cover_shares_raw <- raster::extract(land_cover_map_raw, SIMU2country_poly, df=T) 
-saveRDS(land_cover_shares_raw, file.path(dataPath, "Processed\\ZMB\\Land_cover_maps/ZMB_land_cover_shares_2010_raw.rds"))
+#land_cover_shares_raw <- raster::extract(land_cover_map_raw, SIMU2country_poly, df=T) 
+#saveRDS(land_cover_shares_raw, file.path(dataPath, "Processed\\ZMB\\Land_cover_maps/ZMB_land_cover_shares_2010_raw.rds"))
 land_cover_shares_raw <- readRDS(file.path(dataPath, "Processed\\ZMB\\Land_cover_maps/ZMB_land_cover_shares_2010_raw.rds"))
 
 # Calculate land cover shares per SIMU
@@ -153,10 +155,28 @@ plot(check)
 plotKML(check)
 
 # CREATE FINAL SIMU FILE AND WRITE TO GDX
-land_cover_SIMU <- land_cover_shares %>%
 
-  mutate(LC = recode(class, c(`1` = "Forest", `2` = "Grass", `3` = "CrpLnd", 
-                              `4` = "WetLnd", `5` = "?", `6` = "OthNatLnd", 
-                              `7` = "NotRel", `8` = "NotRel"))  
+r <- raster(ncol=10, nrow=10)
+r[] <- 1:100
+r
+x <- r
+
+land_cover_test <- rasterToPoints(land_cover_map_raw)
+
+
+f4 <- function(x, a, filename) {
+         out <- raster(x)
+         bs <- blockSize(out)
+         out <- writeStart(out, filename, overwrite=TRUE)
+         for (i in 1:bs$n) {
+           v <- getValues(x, row=bs$row[i], nrows=bs$nrows[i] )
+           v[v==a]<-NA
+           out <- writeValues(out, v, bs$row[i])
+      }
+    out <- writeStop(out)
+    return(out)
+}
   
-  
+s <- f4(land_cover_map_raw, 0, filename='test.grd') 
+
+rasterFromXYZ

@@ -68,6 +68,8 @@ The Demographic and Health Surveys (DHS) Program is a large survey program to co
 # Folder structure
 As we are using data from a variety of sources, it is important to apply a coherent and standardised structure for the location of the data and related R code that are used to process the information. We use a fixed structure for each of the target regions, which in most cases willl be a country. For practical reasons it is useful to use different main folders for data and scripts.
 
+As most data refers to a country, we consistently use the ISO 3166-1 alpha-3 codes to indicate the region (https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3). This means that 'iso3c' in the text below should be replaced with the respective country code.The R package countrycode  (https://cran.r-project.org/web/packages/countrycode/index.html) can be used to transer iso3c codes in any other use country identifiers (e.g. ISO 3166-1 numeric, UN and FAO).
+
 ## Data folder
 two main folders, one for the dataFor each, target region, we have two main folders thdata and code are organised stored in four main foldersusing the same folder names but are stored in two different main folders. The folder with all the da
 
@@ -80,30 +82,7 @@ two main folders, one for the dataFor each, target region, we have two main fold
 # Data processing pipeline
 Figure X shows a flowchart for all the steps to prepare the data. We will discuss them one by one. 
 
-## Collect additional data
-Preferably the following information should be updated in GLOBIOM:
-- Area and production for each product (see Annex) by administrative unit in 2000 (and 2010)
-- Land cover map classes by simulation unit for 2000 and (2010) [@Are there standard classes?]
-- Protected areas map.
-- Costs. At the moment only fertilizer and irrigation costs. Additional household data might improve the present information that is used in GLOBIOM, which is provided at a very high level (national/regional.)
-- Productivity [?]
-
-It highly depends on the region, which data is available and at which level. We recommend to take a pragmatic approach, using data from household surveys (e.g. LSMS-ISA, LSMS, etc), national statistics and specialised ministries and institutes. The following sections describe some rules of thumb that can be used to update the information.
-
-## Area and production.
-National statistics and household surveys provide the best information for detailed information on agricultural production. In most cases it should be possible to collect information on total production, crop area and/or harvested area at the second administrative level (e.g. province). Sometimes it will be necessary to add additional crops that are not part of the standard GLOBIOM crop classification (e.g. teff in Ethiopia) 
-
-When production data is not available, another approach can be to collect information on average consumption or diets and combine this with population density maps to approximate total consumption at the level of the administrative unit. As in many poor countries, the agricultural sector is characterised by subsistince farming, consumption is a reasonable proxy for production in case no other information is available.
-
-## Land cover map
-Many countries publish detailed land cover maps, that provide information on the location of crop land, forest land, agro-industrial plantation (consessions), timeber plantations (concesstions), forest land, urbanised land and unused areas (i.e. rock). These maps can be used to improve the land cover map in GLOBIOM at the simulation unit level. 
-
-## Harmonise data 
-- Ensure to harmonise the administrative boundaries over time. In many countries they tend to change over time. 
-- Compare data from different sources and over time.
-
-## Downscale land use and production data
-Code in GAMS is provided to downscale and harmonise the land use and land cover data to the GLOBIOM simu levels. Downscaling is performed using priors that provide information on the suitability of certain crops or transportation costs. Downscaling is mostly down for crops as only limited information tends to be available on livestock. It is a separate optimization problem for each of the administrative units for which detailed production data is collected and can therefore be treated as a large number of parallel processes. 
+ number of parallel processes. 
 
 
 # GLOBIOM set up
@@ -121,12 +100,37 @@ Have to decide if you would keep one region or split countries. In latter case, 
  
 ## Consumption
 
-## Summary of steps
-1. Download GADM maps for the target region
+
+# STEP 1: Collect (sub)national data
+Preferably the following information should be updated in GLOBIOM:
+- Area and production for each product (see Annex) by administrative unit in 2000 (and 2010)
+- Land cover map classes by simulation unit for 2000 and (2010) [@Are there standard classes?]
+- Protected areas map.
+- Costs. At the moment only fertilizer and irrigation costs. Additional household data might improve the present information that is used in GLOBIOM, which is provided at a very high level (national/regional.)
+- Productivity [?]
+
+It highly depends on the region, which data is available and at which level. We recommend to take a pragmatic approach, using data from household surveys (e.g. LSMS-ISA, LSMS, etc), national statistics and specialised ministries and institutes. The following sections describe some rules of thumb that can be used to update the information.
+
+- Agricultural statistics (as)
+- Household surveys (hs)
+- Spatial data (sd)
+
+The abbreviations (as, hs and lc) are used in the names of the mappings and files to refer to the source.
+
+National statistics and household surveys provide the best information for detailed information on agricultural production. In most cases it should be possible to collect information on total production, crop area and/or harvested area at the second administrative level (e.g. province). Sometimes it will be necessary to add additional crops that are not part of the standard GLOBIOM crop classification (e.g. teff in Ethiopia) 
+
+When production data is not available, another approach can be to collect information on average consumption or diets and combine this with population density maps to approximate total consumption at the level of the administrative unit. As in many poor countries, the agricultural sector is characterised by subsistince farming, consumption is a reasonable proxy for production in case no other information is available.
+
+## Land cover map
+Many countries publish detailed land cover maps, that provide information on the location of crop land, forest land, agro-industrial plantation (consessions), timeber plantations (concesstions), forest land, urbanised land and unused areas (i.e. rock). These maps can be used to improve the land cover map in GLOBIOM at the simulation unit level. 
+
+## Harmonise data 
+- Ensure to harmonise the administrative boundaries over time. In many countries they tend to change over time. 
+- Compare data from different sources and over time.
 
 
 
-# STEP 1: Select administrative regions and download maps.
+# STEP 2: Select administrative regions and download map
 ## Introduction
 To improve the modelling with GLOBIOM, we want to use detailed information that is available at the subnational level. Data can defined at the grid level with resolutions of 5 arcmin or 0.5 degree, or at some the administrative area. Administrative areas include the country level and lower level subdivisions such as provinces, districts and departments ofting using country specific names. National statistics (and sometimes international institutions, @See section X) often provide information on agricultural producttion such as output, yield and inputs at an administrative area lower than country level. Alternatively, as will be shown in section @X, the researcher can also calculate these aggregates if detailed household surveys are available.
 
@@ -139,12 +143,31 @@ TZA_adm
 ```
 
 
-After the choice is made, the appropriate map(s) can be downloaded from the GADM database (http://www.gadm.org). GADM is a saptial database of the location of the world's administrative areas for use in GIS software. The data are available in various formats and can be downloaded from the website. Be aware that the administrative areas of countries may change over time, in particular at the lower subdivions such as districts and divisions. For this reason the GADM is updated regularly but it is also possible to download older versions. 
+After the choice is made, the appropriate map(s) can be downloaded from the GADM database (http://www.gadm.org). GADM is a spatial database of the location of the world's administrative areas for use in GIS software. The data are available in various formats and can be downloaded from the website. Be aware that the administrative areas of countries may change over time, in particular at the lower subdivions such as districts and divisions. For this reason the GADM is updated regularly but it is also possible to download older versions.
+
+In order to link data from the land cover maps, agricultural statistics and household surveys, it is important to create a list with administrative areas that will be used throughout the analysis to link data. For mapping purposes it is most convenient to use the GADM areas as a basis. Next, one has to compare and link the 
 
 ## Script
 __Download_GADM.r__. This script downloads the GADM maps. Different levels of administrative boundaries can be selected and the maps will be automatically saved in user-selected folder for later use.
 
-# STEP2: Collect land cover map and scale to SIMUs 
+
+# STEP 3: Create mappings to harmonise data
+## Introduction
+Although often from the same data source (e.g. national statistical agencies), definitions of administrative areas, agricultural crops and inputs (e.g. types of fertilizer) are no consistent across household surveys, agriculatural statistics and GADM. In order to harmonise the data, it is essential to create mappings that link information from various sources. For further use all mapping are gathered in a single Excel file (Mappings_iso3c.xlsx), where each sheet contains a different mapping. Below, each mapping is briefly discussed. We use the following conventions to create the mappings:
+
+- The abbreviations for the three main sources are used in the mappings to indicate the source of the data: agricultural statistics (ag), household surveys (hs) and land cover maps (lc)
+- All names from the three sources are capitalised to remove the problem that sometimes parts of region and crop names are capitalised in one source, while they are not in others (e.g. Mzuzu city versus Mzuzu City).
+- Lists of GLOBIOM crops and inputs are the same as in GLOBIOM and therefore only partially capitalised.
+
+### Land cover classes: MWI2GLOBIOM_lc
+
+### Administrative areas: iso3c2ADM_reg
+
+### Crops: 
+
+###
+
+# STEP 4: Downscale land cover maps to SIMUs 
 
 ## Introduction
 Information on land cover are essential for modelling land use change with GLOBIOM. The standard land cover map in GLOBIOM is produced by @ADD and has a resolution of @ADD. Although useful for global assessments, the spatial resolution is too coarse and imprecise to analyse land use change at the subnational level. For this reason, it is important too replace the land cover map for the target country with updated and country specific information that is often published by national agencies and international institutions such as the FAO and the World Bank. 
@@ -179,6 +202,26 @@ kable(products)
 
 ```
 
+# STEP X: Create land use database
+
+
+
+# STEP X: Create cost database
+
+# STEP X: Consistenty checks
+- Compare ag land cover with ag production.
+- Compare population density with land cover and ag production
+- Compute share of 
+
+
+# STEP X: Downscale land use and production data to Simu
+## Introduction
+Code in GAMS is provided to downscale and harmonise the land use and land cover data to the GLOBIOM simu levels. Downscaling is performed using priors that provide information on the suitability of certain crops or transportation costs. Downscaling is mostly down for crops as only limited information tends to be available on livestock. It is a separate optimization problem for each of the administrative units for which detailed production data is collected and can therefore be treated as a large
+
+
+# ANNEX
+- GLOBIOM Crops
+- GLOBIOM Inputs
 
 # Footnotes
 [^1] This can easily be done with R using the raster package. At the moment no code is provided for this. 
