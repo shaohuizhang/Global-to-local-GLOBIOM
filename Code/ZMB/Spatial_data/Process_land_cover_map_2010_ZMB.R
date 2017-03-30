@@ -14,7 +14,6 @@ p_load("rgdal", "ggmap", "raster", "rasterVis", "rgeos", "sp", "mapproj", "mapto
 # Additional packages
 p_load("WDI", "countrycode", "plotKML")
 
-
 ### SET WORKING DIRECTORY
 wdPath <- "~/Global-to-local-GLOBIOM"
 setwd(wdPath)
@@ -28,7 +27,7 @@ options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e
 options(digits=4)
 
 ### SOURCE
-source("Code/R2GDX.R")
+source("Code/process_large_raster_f.R")
 
 ### CHECK IF THEIR ARE TEMPORARY FILES (CREATED BY RASTER PACKAGE) AND REMOVE
 showTmpFiles()
@@ -73,15 +72,9 @@ crs(SIMU2country_poly)
 # Set country crs
 #country_crs <- crs(land_cover_map_raw)
 
-# Crop and mas land_cover map to polygon
-# Remove cells with No Data
-#land_cover_map <- crop(land_cover_map_raw, extent(SIMU2country_poly))
-land_cover_map <- mask(land_cover_map_raw, SIMU2country_poly)
-land_cover_map_raw[land_cover_map_raw==0] <- NA
-
 # Reproject SIMU_poly to country CRS
 #SIMU2country_poly_rp <- spTransform(SIMU2country_poly, country_crs)
-levelplot(land_cover_map, att='Land_Cover', par.settings = RdBuTheme, margin = F) +
+levelplot(land_cover_map_raw, att='Land_Cover', par.settings = RdBuTheme, margin = F) +
   layer(sp.polygons(SIMU2country_poly, col = "black"))
 
 # Reproject country_map to country CRS
@@ -90,93 +83,84 @@ levelplot(land_cover_map_raw, att='Land_Cover', par.settings = RdBuTheme, margin
   layer(sp.polygons(country_map_raw, col = "black"))
 
 ### LINK SIMU WITH LAND COVER DATA
-# SIMU link to ID
-p_df <- data.frame(ID=1:length(SIMU2country_poly), SIMU =  SIMU2country_poly@data$SimUID)
+# Create SimuID list
+# Add unique as several SimuS consist of multiple polygons!
+SimUID_list <- unique(SIMU2country_poly@data$SimUID)
 
-# Overlay land cover map and SIMU polygon (THIS TAKES SOME TIME)
-#land_cover_shares_raw <- raster::extract(land_cover_map_raw, SIMU2country_poly, df=T) 
-#saveRDS(land_cover_shares_raw, file.path(dataPath, "Processed\\ZMB\\Land_cover_maps/ZMB_land_cover_shares_2010_raw.rds"))
-land_cover_shares_raw <- readRDS(file.path(dataPath, "Processed\\ZMB\\Land_cover_maps/ZMB_land_cover_shares_2010_raw.rds"))
+# Overlay land cover map and SIMU polygon per simu
+# function to extract values by SimU (polygon)
+extract_simu_f <- function(polyID){
+  print(polyID)
+  poly_simu <- SIMU2country_poly[SIMU2country_poly$SimUID==polyID,]
+  df_poly <- raster::extract(land_cover_map_raw, poly_simu, df = T) %>%
+    setNames(c("ID", "class")) %>%
+    na.omit() %>%
+    group_by(class) %>%
+    summarize(n = n()) %>%
+    mutate(freq = n / sum(n, na.rm = T)) %>%
+    dplyr::select(-n) %>%
+    spread(class, freq) %>%
+    mutate(SimUID = polyID)
+  return(df_poly)
+}
 
-# Calculate land cover shares per SIMU
+# Run function and combine
+land_cover_shares_raw <- bind_rows(lapply(SimUID_list, extract_simu_f))
+saveRDS(land_cover_shares_raw, file.path(dataPath, "Processed\\ZMB\\Spatial_data/land_cover_shares_2010_ZMB_raw.rds"))
+land_cover_shares_raw <- readRDS(file.path(dataPath, "Processed\\ZMB\\Spatial_data/land_cover_shares_2010_ZMB_raw.rds"))
+
+# Check total of shares
+check_total <- land_cover_shares_raw %>%
+  gather(variable, value, -SimUID) %>%
+  group_by(SimUID) %>%
+  summarize(total = sum(value, na.rm=T))
+
 land_cover_shares <- land_cover_shares_raw %>%
-  rename(class = malawi_2010_classification_scheme2) %>%
-  na.omit() %>%
-  group_by(ID, class) %>%
-  summarize(n = n()) %>%
-  mutate(freq = n / sum(n, na.rm = T)) %>%
-  dplyr::select(-n) %>%
-  spread(class, freq) %>%qbeta(shape1 = shape1)
-  left_join(.,p_df)
+  dplyr::select(SimUID, everything()) %>%
+  replace(is.na(.), 0) 
 
+  
 # VALIDATE RESULTS
 # Overlap seems ok
 # Compare results with land cover map
-waterbody <- land_cover_shares$SIMU[land_cover_shares$"11" > 0.5]
-settlements <- land_cover_shares$SIMU[land_cover_shares$"12" > 0.1]
-Annual_cropland <- land_cover_shares$SIMU[land_cover_shares$"9" > 0.7]
+waterbody <- land_cover_shares$SimUID[land_cover_shares$"11" > 0.1]
+settlements <- land_cover_shares$SimUID[land_cover_shares$"12" > 0.005]
+cropland <- land_cover_shares$SimUID[land_cover_shares$"9" > 0.7]
+missing <- land_cover_shares$SimUID[land_cover_shares$"0" > 0]
 
 # Create mask for specific class: 9 annual cropland
-mask3 <- setValues(raster(land_cover_map_raw), NA)
-mask3[land_cover_map_raw==9] <- 9
-plot(mask3)
-plot(SIMU2country_poly_rp[SIMU2country_poly_rp$SimUID %in% cropland,], add = T, border = "red")
-rm(mask3)
+check_r <- keep_value_r_f(land_cover_map_raw, 9, filename= "Cache/check.grd")
+plot(check_r)
+plot(SIMU2country_poly[SIMU2country_poly$SimUID %in% cropland,], add = T, border = "red")
+rm(check_r)
+file.remove("Cache/check.grd")
+file.remove("Cache/checkr.gri")
 
 # Create mask for specific class: 11 waterbody
-mask4 <- setValues(raster(land_cover_map_raw), NA)
-mask4[land_cover_map_raw==11] <- 11
-plot(mask4)
-plot(SIMU2country_poly_rp, add = T, border = "black")
-plot(SIMU2country_poly_rp[SIMU2country_poly_rp$SimUID %in% waterbody,], add = T, border = "red")
-rm(mask4)
+check_r <- keep_value_r_f(land_cover_map_raw, 11, filename= "Cache/check.grd")
+plot(check_r)
+plot(SIMU2country_poly[SIMU2country_poly$SimUID %in% waterbody,], add = T, border = "red")
+rm(check_r)
+file.remove("Cache/check.grd")
+file.remove("Cache/checkr.gri")
 
 # Create mask for specific class: 12 settlements
-mask5 <- setValues(raster(land_cover_map_raw), NA)
-mask5[land_cover_map_raw==12] <- 12
-plot(mask5)
-plot(SIMU2country_poly_rp[SIMU2country_poly_rp$SimUID %in% settlements,], add = T, border = "red")
-rm(mask5)
+check_r <- keep_value_r_f(land_cover_map_raw, 12, filename= "Cache/check.grd")
+plot(check_r)
+plot(SIMU2country_poly[SIMU2country_poly$SimUID %in% settlements,], add = T, border = "red")
+rm(check_r)
+file.remove("Cache/check.grd")
+file.remove("Cache/checkr.gri")
 
-# plot one SIMU with lot of missing data
+# plot SIMUs with missing data
 # Appears to be on the Northern border
 plot(land_cover_map_raw)
-plot(SIMU2country_poly_rp[SIMU2country_poly_rp$SimUID %in% 177235,], add = T, border = "red")
-
-# Check individual SIMUs
-SIMU2country_id <- SIMU2country_poly
-SIMU2country_id$name <- SIMU2country_id$SimUID
-identify(map(SIMU2country_id))
+plot(SIMU2country_poly[SIMU2country_poly$SimUID %in% missing,], add = T, border = "black")
 
 # Overlay maps on Google Earth: Install Google Earth First 
-# Settlements perfectly overlap!
-check <- SIMU2country_poly_rp[SIMU2country_poly_rp$SimUID %in% settlements,]
+# Settlements overlap but for some reason Lusaka is not identified as settlement
+check <- SIMU2country_poly[SIMU2country_poly$SimUID %in% settlements,]
 plot(check)
 plotKML(check)
 
 # CREATE FINAL SIMU FILE AND WRITE TO GDX
-
-r <- raster(ncol=10, nrow=10)
-r[] <- 1:100
-r
-x <- r
-
-land_cover_test <- rasterToPoints(land_cover_map_raw)
-
-
-f4 <- function(x, a, filename) {
-         out <- raster(x)
-         bs <- blockSize(out)
-         out <- writeStart(out, filename, overwrite=TRUE)
-         for (i in 1:bs$n) {
-           v <- getValues(x, row=bs$row[i], nrows=bs$nrows[i] )
-           v[v==a]<-NA
-           out <- writeValues(out, v, bs$row[i])
-      }
-    out <- writeStop(out)
-    return(out)
-}
-  
-s <- f4(land_cover_map_raw, 0, filename='test.grd') 
-
-rasterFromXYZ

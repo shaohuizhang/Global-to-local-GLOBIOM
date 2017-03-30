@@ -37,7 +37,7 @@ adm_list_MWI <- read_csv(file.path(dataPath, "Processed/MWI/Mappings/adm_list_MW
 
 ### EXTRACT TABLES FROM NACAL REPORT
 # Select pdf
-doc <- file.path(dataPath, "Raw\\MWI\\National_statistics\\MWI\\Nacal_Report.pdf")
+doc <- file.path(dataPath, "Raw\\MWI\\Agricultural_statistics\\Nacal_Report.pdf")
 
 # Extract tables
 pdf_raw <- extract_tables(doc, pages = c(102:110, 131, 132), method = "data.frame")
@@ -146,13 +146,16 @@ MWI_as2GLOBIOM <- bind_rows(MWI_as2GLOBIOM_anim, MWI_as2GLOBIOM_crop)
   
 
 # Aggregate production and regroup  
-NACAL <- bind_rows(NACAL) %>%
+# Donkeys and rabbits not matched 
+NACAL <- bind_rows(NACAL)
+NACAL <- NACAL %>%
   mutate(adm1_as = ifelse(adm1_as == "NKHOTAKOTA", "NKHOTA KOTA", adm1_as)) %>% # repair coding that occurs in two differnt forms in NACAL
-  dplyr::filter(unit == "tons") %>%
+  #dplyr::filter(unit == "tons") %>%
   left_join(MWI2ADM) %>%
   left_join(MWI_as2GLOBIOM) %>%
   filter(!is.na(ALLPRODUCT)) %>% # Filter out non-mapped crops
   group_by(ALLPRODUCT, adm1, unit) %>%
-  summarize(value = sum(value, na.rm = T))
+  summarize(value = sum(value, na.rm = T)) %>%
+  mutate(year = 2007)
 
-write_csv(NACAL, file.path(dataPath , "Processed/MWI/Agricultural_statistics/NACAL.csv"))
+write_csv(NACAL, file.path(dataPath , "Processed/MWI/Agricultural_statistics/ag_stat_MWI.csv"))

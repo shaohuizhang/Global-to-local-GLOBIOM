@@ -1,0 +1,27 @@
+---
+title: "Data processing sources and notes MWI"
+author: "Michiel van Dijk"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  word_document:
+    reference_docx: ../Common//word_styles_01.docx
+bibliography: ../Common/Sources_MWI.bib
+---
+
+# Data sources
+@NSO2010 also referred to as NACAL provides the result of a national agricultural census that was undertaken for the year 2006/2007. It provides data at national and district level. 
+
+@NationalStatisticalOffice2012 presents basic information about the hird Integrated Household Survey (IHS3). The data of the survey can be downloaded from the LSMS World Bank website: http://econ.worldbank.org/WBSITE/EXTERNAL/EXTDEC/EXTRESEARCH/EXTLSMS/0,,contentMDK:23635577~pagePK:64168445~piPK:64168309~theSitePK:3358997,00.html. 
+
+@RCMRD2012 describes the procedure to prepare the 2000 and 2010 land cover maps for Malawi.
+
+# Notes
+## Agricultural statistics
+- The tables on production, area and yield in @NSO2010 do not present information on sugar cane cropping. Nonetheless, on p. 264 information is presented that sugar cane is grown in the country.  
+- Donkeys and rabbits are not matched to a GLOBIOM category
+- Check matching of MWI crops to GLOBIOM
+- Check land use class aggregation to GLOBIOM
+- Data on area om @NSO2010 is for pure stand crop. This might explain why total country values from FAOSTAT are much higher.
+- According to FAOSTAT there are no sweet potatoes in MWI, while according to @NSO2010 these form the largest share of potatoes. Probably the FAOSTAT sums both types and classifies them as potatoes.
+
+# References

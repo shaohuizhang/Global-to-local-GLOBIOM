@@ -1,0 +1,49 @@
+---
+title: 'Spatial predictions using GLOBIOM spatial results'
+author: "Michiel van Dijk"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: pdf_document
+bibliography: ../common/Global-to-local-GLOBIOM.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+key question is how to use GLOBIOM for making spatially explicit projections for poverty and food security. Several updates I prepared before provide some possibilities but all are difficult to implement because GLOBIOM does not provide projections for income, which are key to make projections for food security and poverty. This note provides an additional approach which might work but requires some more thinking.
+
+# Idea
+Recently, several methodologies have been proposed to map poverty using high-resolution spatial data using machine learning and baysian approaches [@Steele2017, @Tatem2012] - also see the worldpop.org.uk. The basic idea is that point estimates from survey data are spatially distributed using spatial co-variates. Perhaps a similar approach can be used to make projections as well. 
+
+For the base year we have:
+- Point estimates of poverty and food security from household surveys and DHs.
+- Land cover and land use maps from GLOBIOM, incl crops used for consumption.
+- Climate data.
+- Population density.
+- A large number of covariates, including travel time/road maps.
+- Elevation
+- Slope
+
+For the projection we have:
+- Population density from SSPs.
+- Climate projections (precipitation and climate)
+- Land cover maps from GLOBIOM
+- Land use maps from GLOBIOM
+- Elevation
+- Slope
+- New transport maps?
+
+Problem/challenge
+- SSP projections provide GDP/capita projections. Poverty should match with total GDP and population levels. 
+- We expect high differences between rural and population models [also see @Steele2017 Annex]
+
+Potential solutions
+- Add total GDP/capita as explanatory variable - difficult because not panel. 
+- Check GIDD approach that also some scales up by GDP/capita growth in constant => perhaps we can do some postprocessing were we harmonize the total => see @Stevens2015 for how worldpop did it!
+- Run separate rural and urban models.
+
+Examples
+http://www.worldpop.org.uk/about_our_work/projects/index.php?sheet=Stunting-mapping
+
+- 

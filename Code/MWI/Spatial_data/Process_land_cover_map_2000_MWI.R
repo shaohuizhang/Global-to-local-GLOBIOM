@@ -72,88 +72,89 @@ crs(country_map_raw)
 country_crs <- crs(land_cover_map_raw)
 
 # Reproject SIMU_poly to country CRS
-SIMU2country_poly_rp <- spTransform(SIMU2country_poly, country_crs)
+SIMU2country_poly <- spTransform(SIMU2country_poly, country_crs)
 levelplot(land_cover_map_raw, att='Land_Cover', par.settings = RdBuTheme, margin = F) +
-  layer(sp.polygons(SIMU2country_poly_rp, col = "black"))
+  layer(sp.polygons(SIMU2country_poly, col = "black"))
 
 # Reproject country_map to country CRS
-country_map_rp <-  spTransform(country_map_raw, country_crs)
+country_map <-  spTransform(country_map_raw, country_crs)
 levelplot(land_cover_map_raw, att='Land_Cover', par.settings = RdBuTheme, margin = F) +
-  layer(sp.polygons(country_map_rp, col = "black"))
+  layer(sp.polygons(country_map, col = "black"))
 
 ### LINK SIMU WITH LAND COVER DATA
-# SIMU link to ID
-p_df <- data.frame(ID=1:length(SIMU2country_poly_rp), SIMU =  SIMU2country_poly_rp@data$SimUID)
+# Create SimuID list
+# Add unique as several SimuS consist of multiple polygons!
+SimUID_list <- unique(SIMU2country_poly@data$SimUID)
 
-# Overlay land cover map and SIMU polygon (THIS TAKES SOME TIME)
-land_cover_shares_raw <- raster::extract(land_cover_map_raw, SIMU2country_poly_rp, df=T) 
+# Overlay land cover map and SIMU polygon per simu
+# function to extract values by SimU (polygon)
+extract_simu_f <- function(polyID){
+  print(polyID)
+  poly_simu <- SIMU2country_poly[SIMU2country_poly$SimUID==polyID,]
+  df_poly <- raster::extract(land_cover_map_raw, poly_simu, df = T) %>%
+    setNames(c("ID", "class")) %>%
+    na.omit() %>%
+    group_by(class) %>%
+    summarize(n = n()) %>%
+    mutate(freq = n / sum(n, na.rm = T)) %>%
+    dplyr::select(-n) %>%
+    spread(class, freq) %>%
+    mutate(SimUID = polyID)
+  return(df_poly)
+}
+
+# Run function and combine
+land_cover_shares_raw <- bind_rows(lapply(SimUID_list, extract_simu_f))
 saveRDS(land_cover_shares_raw, file.path(dataPath, "Processed\\MWI\\Spatial_data/land_cover_shares_2000_MWI_raw.rds"))
 land_cover_shares_raw <- readRDS(file.path(dataPath, "Processed\\MWI\\Spatial_data/land_cover_shares_2000_MWI_raw.rds"))
 
-# Calculate land cover shares per SIMU
+# Check total of shares
+check_total <- land_cover_shares_raw %>%
+  gather(variable, value, -SimUID) %>%
+  group_by(SimUID) %>%
+  summarize(total = sum(value, na.rm=T))
+
 land_cover_shares <- land_cover_shares_raw %>%
-  rename(class = malawi_2000_classification_scheme2) %>%
-  na.omit() %>%
-  group_by(ID, class) %>%
-  summarize(n = n()) %>%
-  mutate(freq = n / sum(n, na.rm = T)) %>%
-  dplyr::select(-n) %>%
-  spread(class, freq) %>%
-  left_join(.,p_df)
+  dplyr::select(SimUID, everything()) %>%
+  replace(is.na(.), 0) 
+
 
 # VALIDATE RESULTS
 # Overlap seems ok
 # Compare results with land cover map
-waterbody <- land_cover_shares$SIMU[land_cover_shares$"11" > 0.5]
-settlements <- land_cover_shares$SIMU[land_cover_shares$"12" > 0.1]
-Annual_cropland <- land_cover_shares$SIMU[land_cover_shares$"9" > 0.7]
+waterbody <- land_cover_shares$SimUID[land_cover_shares$"11" > 0.5]
+settlements <- land_cover_shares$SimUID[land_cover_shares$"12" > 0.1]
+annual_cropland <- land_cover_shares$SimUID[land_cover_shares$"9" > 0.7]
 
 # Create mask for specific class: 9 annual cropland
 mask3 <- setValues(raster(land_cover_map_raw), NA)
 mask3[land_cover_map_raw==9] <- 9
 plot(mask3)
-plot(SIMU2country_poly_rp[SIMU2country_poly_rp$SimUID %in% cropland,], add = T, border = "red")
+plot(SIMU2country_poly[SIMU2country_poly$SimUID %in% annual_cropland,], add = T, border = "red")
 rm(mask3)
 
 # Create mask for specific class: 11 waterbody
 mask4 <- setValues(raster(land_cover_map_raw), NA)
 mask4[land_cover_map_raw==11] <- 11
 plot(mask4)
-plot(SIMU2country_poly_rp, add = T, border = "black")
-plot(SIMU2country_poly_rp[SIMU2country_poly_rp$SimUID %in% waterbody,], add = T, border = "red")
+plot(SIMU2country_poly[SIMU2country_poly$SimUID %in% waterbody,], add = T, border = "red")
 rm(mask4)
 
 # Create mask for specific class: 12 settlements
 mask5 <- setValues(raster(land_cover_map_raw), NA)
 mask5[land_cover_map_raw==12] <- 12
 plot(mask5)
-plot(SIMU2country_poly_rp[SIMU2country_poly_rp$SimUID %in% settlements,], add = T, border = "red")
+plot(SIMU2country_poly[SIMU2country_poly$SimUID %in% settlements,], add = T, border = "red")
 rm(mask5)
 
 # plot one SIMU with lot of missing data
 # Appears to be on the Northern border
 plot(land_cover_map_raw)
-plot(SIMU2country_poly_rp[SIMU2country_poly_rp$SimUID %in% 177235,], add = T, border = "red")
-
-# Check individual SIMUs
-SIMU2country_id <- SIMU2country_poly
-SIMU2country_id$name <- SIMU2country_id$SimUID
-identify(map(SIMU2country_id))
+plot(SIMU2country_poly[SIMU2country_poly$SimUID %in% 177235,], add = T, border = "red")
 
 # Overlay maps on Google Earth: Install Google Earth First 
 # Settlements perfectly overlap!
-check <- SIMU2country_poly_rp[SIMU2country_poly_rp$SimUID %in% settlements,]
+check <- SIMU2country_poly[SIMU2country_poly$SimUID %in% settlements,]
 plot(check)
 plotKML(check)
 
-# CREATE FINAL SIMU FILE AND WRITE TO GDX
-# Read land class mapping 
-MWI2GLOBIOM_landc <- read_excel(file.path(dataPath, "Processed/MWI/Mappings/Mappings_MWI.xlsx"), sheet = "MWI2GLOBIOM_landc")
-
-land_cover_SIMU <- land_cover_shares %>%
-
-  mutate(LC = recode(class, c(`1` = "Forest", `2` = "Grass", `3` = "CrpLnd", 
-                              `4` = "WetLnd", `5` = "?", `6` = "OthNatLnd", 
-                              `7` = "NotRel", `8` = "NotRel"))  
-  
-  
