@@ -112,7 +112,7 @@ area_rank_FAOSTAT <- area_FAOSTAT %>%
   dplyr::select(item, ALLPRODUCT, value, share)
 
 # Rank area of crops using ag stat
-area_rank_nat <- area %>%
+area_rank_nat <- area_nat %>%
   ungroup() %>%
   mutate(share = round(value/sum(value, na.rm=T)*100, 2)) %>%
   arrange(desc(share)) 
@@ -152,9 +152,6 @@ MWI_adm1@data <- MWI_adm1_df
 plot_length <- length(unique(area_nat$ALLPRODUCT)) + 2
 spplot(MWI_adm1, c(3:plot_length), main = "Share of crop area within country",
        colorkey=list(space="bottom"))
-
-
-
 
 
 ### COMPARE FAOSTAT AND AG STAT MWI

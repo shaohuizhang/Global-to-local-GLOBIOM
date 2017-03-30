@@ -262,11 +262,13 @@ There are a number of packages to perform the tasks listed above. In particular 
 ## Introduction
 After processing, it is important to analyse, and if needed, clean the agricultural statistics. We use national figures from FAOSTAT to benchmark the regional statistics on crop production, area, yield and heads of livestock. Since data from FAOSTAT represent national totals and averages, they should be comparable to the regional information. In case there are large differences, a decision has to be taken on how to deal with the data. As GLOBIOM relies heavily on FAOSTAT data, it will be leading in most cases. It is also important to check the data for outliers. Extremely high yields in one district that perhaps are caused by data errors can have dramatic consequences for the allocation of land. Finally, plotting and mapping the data also helps to get a 'feeling' about the target region as it reveals the relative importance of crops and the mayor crop areas in the region.
 
-We conduct the following analysis:
+We conduct the following analysis and cleaning
 
-- Analyse which are the most important crops in the country measured by area and compare with FAOSTAT.
-- Analyse whicha re the most important crops per administrative zone level
-
+- Importance of crops at national level. We calculate the share of crop area in total national crop area using agricultural statistics and FAOSTAT. This will give an impression which crops are most important to combine with the land cover maps. 
+- Importance of regions by crop. For each crop we calculate the crop area per adm. This will give information which regions produce the most of a crop. It will, for example, reveal the 'bread basket' of a country. We also prepare maps for each crop. 
+- Importance of crops within adms. We calculate the share of crop area of total adm crop area to determine if there is specialisation within regions.
+- Distribution of yield for each crop in comparison to FAOSTAT. Boxplots diagrams reveal if yield of adms can be regarded as outliers. Comparison with FAOSTAT shows if the adm distribution is comparable to the national average as presented in FAOSTAT. We winsor all yield to the crop-specific IQC.
+- Comparison of totals with FAOSTAT. To investigate if the regional information from agricultural statistics is comparable to FAOSTAT we compare national level production, area, yield and heads from FAOSTAT with totals from the agricultural statistics.
 
 
 
