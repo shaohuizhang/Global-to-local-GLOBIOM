@@ -33,8 +33,10 @@ options(digits=4)
 
 
 ### DOWNLOAD MAPPINGS AND GLOBIOM CROP LIST
-GLOBIOM_cropanim <- read_excel(file.path(dataPath, "GLOBIOM/Concordance/GLOBIOM_mappings.xlsx"), sheet = "GLOBIOM_cropanim")
-GLOBIOM_itemCode <- read_excel(file.path(dataPath, "GLOBIOM/Concordance/GLOBIOM_mappings.xlsx"), sheet = "GLOBIOM_itemCode") %>%
+GLOBIOM_cropanim <- read_excel(file.path(dataPath, "Data/GLOBIOM/Concordance/GLOBIOM_mappings.xlsx"), sheet = "GLOBIOM_cropanim")
+GLOBIOM_itemCode <- read_excel(file.path(dataPath, "Data/GLOBIOM/Concordance/GLOBIOM_mappings.xlsx"), sheet = "GLOBIOM_itemCode") %>%
+  dplyr::select(ALLPRODUCT, itemCode) 
+GLOBIOM_itemCode <- read_excel(file.path(dataPath, "Data/GLOBIOM/Concordance/GLOBIOM_mappings.xlsx"), sheet = "GLOBIOM_itemCode") %>%
   dplyr::select(ALLPRODUCT, itemCode) 
 
 
@@ -42,6 +44,13 @@ GLOBIOM_itemCode <- read_excel(file.path(dataPath, "GLOBIOM/Concordance/GLOBIOM_
 # Download
 FAOSTAT_prod_raw <- read_csv(file.path(FAOSTATPath, "Production_Crops_E_All_Data_(Normalized).csv"))
 FAOSTAT_lvst_raw <- read_csv(file.path(FAOSTATPath, "Production_Livestock_E_All_Data_(Normalized).csv"))
+
+
+### DOWNLOAD REGIONAL MAPPING
+MWI2ADM_2000 <- read_excel(file.path(dataPath, "Data/MWI/Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI2ADM_2000") %>%
+  dplyr::select(adm1_hs, adm2_GAUL) %>%
+  na.omit() %>%
+  unique()
 
 # process production stat
 FAOSTAT_prod <- FAOSTAT_prod_raw %>%
@@ -76,8 +85,8 @@ number_FAOSTAT <- FAOSTAT_lvst %>%
 
 ### AGGREGATE AGRICULTURAL STATISTICS
 # Read data
-ag_stat <- read_csv(file.path(dataPath, "Data/Processed/MWI/Agricultural_statistics/ag_stat_MWI.csv"))
-tot_pop_adm <- read_csv(file.path(dataPath, "Data/Processed/MWI/Spatial_data/tot_pop_adm_2000_MWI.csv"))
+ag_stat <- read_csv(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/ag_stat_MWI.csv"))
+tot_pop_adm <- read_csv(file.path(dataPath, "Data/MWI/Processed/Spatial_data/tot_pop_adm_2000_MWI.csv"))
 
 # Aggregate area and production to country level
 area_nat <- ag_stat %>%
@@ -122,11 +131,11 @@ area_rank_nat <- area_nat %>%
 area_share_within_reg <- ag_stat %>%
   filter(unit == "ha") %>%
   ungroup() %>%
-  group_by(year, adm1) %>%
+  group_by(year, adm2_GAUL) %>%
   mutate(share = round(value/sum(value, na.rm=T)*100, 2)) %>%
-  dplyr::select(adm1, year, share, ALLPRODUCT) %>%
+  dplyr::select(adm2_GAUL, year, share, ALLPRODUCT) %>%
   arrange(desc(share)) %>%
-  spread(adm1, share)
+  spread(adm2_GAUL, share)
 
 ### ANALYSE WHICH ARE THE MOST IMPORTANT CROPS AT THE NATIONAL LEVEL, COMPARING ADMs
 # Area share of crops within country by crop
@@ -135,46 +144,46 @@ area_share_within_country <- ag_stat %>%
   ungroup() %>%
   group_by(year, ALLPRODUCT) %>%
   mutate(share = round(value/sum(value, na.rm=T)*100, 2)) %>%
-  dplyr::select(adm1, year, share, ALLPRODUCT) %>%
+  dplyr::select(adm2_GAUL, year, share, ALLPRODUCT) %>%
   arrange(desc(share)) %>%
   spread(ALLPRODUCT, share)
 
 # Maps of total area per region
-MWI_adm1 <- readRDS(file.path(dataPath, "Data\\Processed\\MWI\\GADM_maps\\GADM_2.8_MWI_adm1.rds"))
-MWI_adm1_df <- MWI_adm1@data %>%
-  rename(adm1 = NAME_1) %>%
-  mutate(adm1 = toupper(adm1)) %>%
+MWI_adm2 <- readRDS(file.path(dataPath, "Data\\MWI\\Processed\\maps\\GAUL_MWI_adm2_2000.rds"))
+MWI_adm2_df <- MWI_adm2@data %>%
+  rename(adm2_GAUL = ADM2_NAME) %>%
+  mutate(adm2_GAUL = toupper(adm2_GAUL)) %>%
+  left_join(., MWI2ADM_2000) %>%
   left_join(., area_share_within_country) %>%
-  dplyr::select(OBJECTID, adm1, BeaD:Toba)
-MWI_adm1@data <- MWI_adm1_df
-
+  dplyr::select(ADM2_CODE, adm2_GAUL, BeaD:Toba)
+MWI_adm2@data <- MWI_adm2_df
 
 plot_length <- length(unique(area_nat$ALLPRODUCT)) + 2
-spplot(MWI_adm1, c(3:plot_length), main = "Share of crop area within country",
+Fig_area_share <- spplot(MWI_adm2, c(3:plot_length), main = "Share of crop area within country",
        colorkey=list(space="bottom"))
 
 
 ### COMPARE FAOSTAT AND AG STAT MWI
 # Area
-ggplot() + 
+area_compare <- ggplot() + 
   geom_line(data = area_FAOSTAT, aes(x = year, y = value)) +
   facet_wrap(~ALLPRODUCT, scales = "free") +
   geom_point(data = area_nat, aes(x = year, y = value), colour = "red")
 
 # Prod
-ggplot() + 
+prod_compare <- ggplot() + 
   geom_line(data = prod_FAOSTAT, aes(x = year, y = value)) +
   facet_wrap(~ALLPRODUCT, scales = "free") +
   geom_point(data = prod_nat, aes(x = year, y = value), colour = "red")
 
 # yield
-ggplot() + 
+yld_compare <- ggplot() + 
   geom_line(data = yield_FAOSTAT, aes(x = year, y = value)) +
   facet_wrap(~ALLPRODUCT, scales = "free") +
   geom_point(data = yield_nat, aes(x = year, y = value), colour = "red")
 
-# Number
-ggplot() + 
+# Heads
+heads_compare <- ggplot() + 
   geom_line(data = number_FAOSTAT, aes(x = year, y = value)) +
   facet_wrap(~ALLPRODUCT, scales = "free") +
   geom_point(data = number_nat, aes(x = year, y = value), colour = "red")
@@ -195,30 +204,42 @@ winsor <- function (x){
 }
 
 # Yield per adm
-yield_adm <- ag_stat %>%
+yld_adm <- ag_stat %>%
   filter(unit %in% c("ha","tons")) %>%
   spread(unit, value) %>%
   mutate(value = tons/ha) %>%
   na.omit %>%
   filter(value >0, !is.infinite(value)) %>% # remove zero values that decrease average and inf
   group_by(ALLPRODUCT) %>%
-  mutate(outlier = ifelse(is_outlier(value), adm1, NA))
+  mutate(outlier = ifelse(is_outlier(value), adm2_GAUL, NA))
 
 # Distribution of yield across regions and outliers
-ggplot(data = yield_adm, aes(y = value, x = ALLPRODUCT)) +
-  geom_boxplot()+
-  geom_text(aes(label = outlier), na.rm = TRUE, hjust = -0.3)
+yld_outlier <- ggplot(data = yld_adm, aes(y = value, x = ALLPRODUCT)) +
+  geom_boxplot(fill = "light grey") +
+  stat_boxplot(geom ='errorbar') +
+  #geom_text(aes(label = outlier), na.rm = TRUE, hjust = -0.3) +
+  labs(title = "Yield comparison between national agricultural statistics and FAOSTAT",
+       caption = "Source: FAOSTAT and Malawi National Census of Agriculture and Livestock 2006/07)",
+       y = "tons/ha",
+       x ="",
+       colour = "Year (FAOSTAT)") +
+  theme_bw() +
+  theme(legend.position="bottom",
+        plot.title = element_text(hjust = 0.5)) +
+  coord_flip() 
+
 
 # Winsor values
-yield_adm <- yield_adm %>%
+yld_adm_winsor <- yld_adm %>%
   mutate(value = winsor(value))
 
 # Plot new values and compare with FAO
-ggplot(data = yield_adm, aes(y = value, x = ALLPRODUCT)) +
+yld_winsor <- ggplot(data = yld_adm_winsor, aes(y = value, x = ALLPRODUCT)) +
   geom_boxplot(fill = "light grey") +
-  geom_point(data = filter(yield_FAOSTAT, year %in% c(2005:2008), ALLPRODUCT %in% yield_adm$ALLPRODUCT), 
+  stat_boxplot(geom ='errorbar') +
+  geom_point(data = filter(yield_FAOSTAT, year %in% c(2005:2008), ALLPRODUCT %in% yld_adm$ALLPRODUCT), 
              aes(y = value, x = ALLPRODUCT, colour = factor(year)), size = 2.5) +
-  labs(title = "Yield comparison between national agricultural statistics and FAOSTAT",
+  labs(title = "Yield comparison between winsorised national agricultural statistics and FAOSTAT",
        caption = "Source: FAOSTAT and Malawi National Census of Agriculture and Livestock 2006/07)",
       y = "tons/ha",
       x ="",

@@ -23,7 +23,7 @@ wdPath<-"~/Global-to-local-GLOBIOM"
 setwd(wdPath)
 
 ### SET DATAPATH
-dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM\\Data"
+dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM"
 
 ### R SETTINGS
 options(scipen=999) # surpress scientific notation
@@ -37,7 +37,7 @@ adm_list_MWI <- read_csv(file.path(dataPath, "Processed/MWI/Mappings/adm_list_MW
 
 ### EXTRACT TABLES FROM NACAL REPORT
 # Select pdf
-doc <- file.path(dataPath, "Raw\\MWI\\Agricultural_statistics\\Nacal_Report.pdf")
+doc <- file.path(dataPath, "Data\\MWI\\Raw\\Agricultural_statistics\\Nacal_Report.pdf")
 
 # Extract tables
 pdf_raw <- extract_tables(doc, pages = c(102:110, 131, 132), method = "data.frame")
@@ -127,17 +127,17 @@ rm(Table5_3_name)
 
 ### COMBINE DATA
 # Read adm mappping
-MWI2ADM <- read_excel(file.path(dataPath, "Processed/MWI/Mappings/Mappings_MWI.xlsx"), sheet = "MWI2ADM") %>%
-  dplyr::select(adm1, adm1_as) %>%
+MWI2ADM_2000 <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI2ADM_2000") %>%
+  dplyr::select(adm2_GAUL, adm1_as) %>%
   na.omit
 
 # Read crop mapping
-MWI_as2GLOBIOM_crop <- read_excel(file.path(dataPath, "Processed/MWI/Mappings/Mappings_MWI.xlsx"), sheet = "MWI_as2GLOBIOM_crop") %>%
+MWI_as2GLOBIOM_crop <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI_as2GLOBIOM_crop") %>%
   dplyr::select(crop_as, ALLPRODUCT) %>%
   na.omit()
 
 # Read animal mapping
-MWI_as2GLOBIOM_anim <- read_excel(file.path(dataPath, "Processed/MWI/Mappings/Mappings_MWI.xlsx"), sheet = "MWI_as2GLOBIOM_anim") %>%
+MWI_as2GLOBIOM_anim <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI_as2GLOBIOM_anim") %>%
   dplyr::select(crop_as = anim_as, ALLPRODUCT= ANIMALS) %>%
   na.omit()
 
@@ -151,11 +151,11 @@ NACAL <- bind_rows(NACAL)
 NACAL <- NACAL %>%
   mutate(adm1_as = ifelse(adm1_as == "NKHOTAKOTA", "NKHOTA KOTA", adm1_as)) %>% # repair coding that occurs in two differnt forms in NACAL
   #dplyr::filter(unit == "tons") %>%
-  left_join(MWI2ADM) %>%
+  left_join(MWI2ADM_2000) %>%
   left_join(MWI_as2GLOBIOM) %>%
   filter(!is.na(ALLPRODUCT)) %>% # Filter out non-mapped crops
-  group_by(ALLPRODUCT, adm1, unit) %>%
+  group_by(ALLPRODUCT, adm2_GAUL, unit) %>%
   summarize(value = sum(value, na.rm = T)) %>%
   mutate(year = 2007)
 
-write_csv(NACAL, file.path(dataPath , "Processed/MWI/Agricultural_statistics/ag_stat_MWI.csv"))
+write_csv(NACAL, file.path(dataPath , "Data/MWI/Processed/Agricultural_statistics/ag_stat_MWI.csv"))
