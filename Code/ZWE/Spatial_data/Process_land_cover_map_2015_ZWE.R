@@ -34,16 +34,15 @@ showTmpFiles()
 removeTmpFiles()
 
 ### LOAD SIMU MAPS
-SIMU_LU <- read_csv(file.path(dataPath, "Data/GLOBIOM/simu_lu/SimUIDLUID.csv"))
-ogrListLayers(file.path(dataPath, "Data/GLOBIOM/simu_poly/SimU_all.shp"))
-SIMU_5min_poly <- readOGR(file.path(dataPath, "Data/GLOBIOM/simu_poly/SimU_all.shp"), layer = "SimU_all")
+ogrListLayers(file.path(dataPath, "Data/GLOBIOM/Simu/Simu_poly/SimU_all.shp"))
+simu_5min_poly <- readOGR(file.path(dataPath, "Data/GLOBIOM/Simu/Simu_poly/SimU_all.shp"), layer = "SimU_all")
 
 # Obtain country poly (using iso3c numbering: 716 = Zimbabwe)
-SIMU2country_poly <- SIMU_5min_poly[SIMU_5min_poly$COUNTRY==716,]
+simu2country_poly <- simu_5min_poly[simu_5min_poly$COUNTRY==716,]
 
-### LOAD GADM MAPS
+### LOAD GAUL MAPS
 # Load previously saved map (Download_GADM.r)
-country_map_raw <- readRDS(file.path(dataPath, "Data\\Processed\\ZWE\\GADM_maps/GADM_2.8_ZWE_adm1.rds"))
+country_map_raw <- readRDS(file.path(dataPath, "Data\\Processed\\ZWE\\Maps/GAUL_ZWE_adm1_2000.rds"))
 spplot(country_map_raw, "OBJECTID")
 country_map_raw
 
@@ -81,20 +80,24 @@ levelplot(land_cover_map, par.settings = RdBuTheme)
 
 # Add attributes
 # Load ESA legend
-ESA_legend <- read_csv2(file.path(dataPath, "Data\\Raw\\Global\\ESA\\ESACCI-LC-Legend.csv")) %>%
-  rename(ID = NB_LAB,
-         land_cover = LCCOwnLabel) 
+ESA_legend <- read_csv(file.path(dataPath, "Data\\Global\\ESA\\ESACCI-LC-Legend.csv"))
 
-# Create colours using RGB info and order same as in levelplot (alphabetically)
-ESA_colour <- ESA_legend %>%
-  mutate(colour= rgb(R, G, B, max = 255))
-ESA_colour <- ESA_colour[order(ESA_colour$land_cover),]
 
 # Add attributes
 # http://stackoverflow.com/questions/19586945/how-to-legend-a-raster-using-directly-the-raster-attribute-table-and-displaying
 land_cover_map <- ratify(land_cover_map)
 rat <- levels(land_cover_map)[[1]] #get the values of the unique cell frot the attribute table
 rat <- left_join(rat, ESA_legend)
+
+# Create colours for legend and sort in right order
+ESA_colour <- rat
+ESA_colour <- ESA_colour %>%
+  filter(ID %in% seq(0, 220, 10)) %>%
+  mutate(colour= rgb(R, G, B, max = 255)) %>%
+  unique()
+ESA_colour <- ESA_colour[order(ESA_colour$land_cover_short, decreasing = F),]
+
+# Links levels
 levels(land_cover_map) <- rat
 levels(land_cover_map)
 rm(rat)
@@ -106,11 +109,10 @@ levelplot(land_cover_map, att='ID', col.regions = ESA_colour$colour, margin = F)
 levelplot(land_cover_map, att='ID', col.regions = ESA_colour$colour, margin = F) +
   layer(sp.polygons(country_map, col = "black", lwd = 2))
 
-# need to zoom map for viewing classes
-levelplot(land_cover_map, att='land_cover', col.regions = ESA_colour$colour, margin = F) +
+levelplot(land_cover_map, att='land_cover_short', col.regions = ESA_colour$colour, margin = F) +
   layer(sp.polygons(SIMU2country_poly, col = "black", lwd = 2))
 
-levelplot(land_cover_map, att='land_cover', col.regions = ESA_colour$colour, margin = F) +
+levelplot(land_cover_map, att='land_cover_short', col.regions = ESA_colour$colour, margin = F) +
   layer(sp.polygons(country_map, col = "black", lwd = 2))
 
 
@@ -124,7 +126,7 @@ SimUID_list <- unique(SIMU2country_poly@data$SimUID)
 extract_simu_f <- function(polyID){
   print(polyID)
   poly_simu <- SIMU2country_poly[SIMU2country_poly$SimUID==polyID,]
-  df_poly <- raster::extract(land_cover_map_raw, poly_simu, df = T) %>%
+  df_poly <- raster::extract(land_cover_map, poly_simu, df = T) %>%
     setNames(c("ID", "class")) %>%
     na.omit() %>%
     group_by(class) %>%
@@ -138,8 +140,8 @@ extract_simu_f <- function(polyID){
 
 # Run function and combine
 land_cover_shares_raw <- bind_rows(lapply(SimUID_list, extract_simu_f))
-saveRDS(land_cover_shares_raw, file.path(dataPath, "Processed\\ZWE\\Spatial_data/land_cover_shares_2015_ZWE_raw.rds"))
-land_cover_shares_raw <- readRDS(file.path(dataPath, "Processed\\ZWE\\Spatial_data/land_cover_shares_2015_ZWE_raw.rds"))
+saveRDS(land_cover_shares_raw, file.path(dataPath, "Data/Processed\\ZWE\\Spatial_data/land_cover_shares_2015_ZWE_raw.rds"))
+land_cover_shares_raw <- readRDS(file.path(dataPath, "Data/Processed\\ZWE\\Spatial_data/land_cover_shares_2015_ZWE_raw.rds"))
 
 # Check total of shares
 check_total <- land_cover_shares_raw %>%
@@ -155,43 +157,43 @@ land_cover_shares <- land_cover_shares_raw %>%
 # VALIDATE RESULTS
 # Overlap seems ok
 # Compare results with land cover map
-waterbody <- land_cover_shares$SimUID[land_cover_shares$"11" > 0.1]
-settlements <- land_cover_shares$SimUID[land_cover_shares$"12" > 0.005]
-cropland <- land_cover_shares$SimUID[land_cover_shares$"9" > 0.7]
+waterbody <- land_cover_shares$SimUID[land_cover_shares$"210" > 0.1]
+urban_areas <- land_cover_shares$SimUID[land_cover_shares$"190" > 0.1]
+cropland <- land_cover_shares$SimUID[land_cover_shares$"10" > 0.5]
 missing <- land_cover_shares$SimUID[land_cover_shares$"0" > 0]
 
-# Create mask for specific class: 9 annual cropland
-check_r <- keep_value_r_f(land_cover_map_raw, 9, filename= "Cache/check.grd")
+# Create mask for specific class: 10 annual cropland
+check_r <- keep_value_r_f(land_cover_map, 10, filename= "Cache/check.grd")
 plot(check_r)
 plot(SIMU2country_poly[SIMU2country_poly$SimUID %in% cropland,], add = T, border = "red")
 rm(check_r)
 file.remove("Cache/check.grd")
-file.remove("Cache/checkr.gri")
+file.remove("Cache/check.gri")
 
-# Create mask for specific class: 11 waterbody
-check_r <- keep_value_r_f(land_cover_map_raw, 11, filename= "Cache/check.grd")
+# Create mask for specific class: 210 waterbody
+check_r <- keep_value_r_f(land_cover_map, 210, filename= "Cache/check.grd")
 plot(check_r)
 plot(SIMU2country_poly[SIMU2country_poly$SimUID %in% waterbody,], add = T, border = "red")
 rm(check_r)
 file.remove("Cache/check.grd")
-file.remove("Cache/checkr.gri")
+file.remove("Cache/check.gri")
 
-# Create mask for specific class: 12 settlements
-check_r <- keep_value_r_f(land_cover_map_raw, 12, filename= "Cache/check.grd")
+# Create mask for specific class: 190 urban areas
+check_r <- keep_value_r_f(land_cover_map, 190, filename= "Cache/check.grd")
 plot(check_r)
-plot(SIMU2country_poly[SIMU2country_poly$SimUID %in% settlements,], add = T, border = "red")
+plot(SIMU2country_poly[SIMU2country_poly$SimUID %in% urban_areas,], add = T, border = "red")
 rm(check_r)
 file.remove("Cache/check.grd")
 file.remove("Cache/checkr.gri")
 
 # plot SIMUs with missing data
 # Appears to be on the Northern border
-plot(land_cover_map_raw)
+plot(land_cover_map)
 plot(SIMU2country_poly[SIMU2country_poly$SimUID %in% missing,], add = T, border = "black")
 
 # Overlay maps on Google Earth: Install Google Earth First 
 # Settlements overlap but for some reason Lusaka is not identified as settlement
-check <- SIMU2country_poly[SIMU2country_poly$SimUID %in% settlements,]
+check <- SIMU2country_poly[SIMU2country_poly$SimUID %in% urban_areas,]
 plot(check)
 plotKML(check)
 

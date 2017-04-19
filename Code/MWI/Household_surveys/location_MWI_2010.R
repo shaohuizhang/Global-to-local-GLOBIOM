@@ -19,11 +19,11 @@ p_load("haven")
 root <- find_root(is_rstudio_project)
 
 ### SET DATAPATH
-source(file.path(root, "Code/get_dataPath.r"))
+dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM"
 
 ### CREATE LOCATION DF
 # Load region and district information
-location <- read_dta(file.path(dataPath, "\\Raw\\MWI\\Household_surveys\\2010\\IHS3\\Household/HH_MOD_A_FILT.dta")) %>%
+location <- read_dta(file.path(dataPath, "Data\\MWI\\Raw\\Household_surveys\\2010\\IHS3\\Household/HH_MOD_A_FILT.dta")) %>%
   transmute(case_id, ea_id, region=NA, district = as.character(as_factor(hh_a01)), district_code = hh_a01, rural = as_factor(reside)) %>%
   mutate(rural) 
 
@@ -39,7 +39,7 @@ location <- location %>%
   dplyr::select(-district_code)
 
 # Load geo-location
-geo <- read_dta(file.path(dataPath, "\\Raw\\MWI\\Household_surveys\\2010\\IHS3\\HouseholdGeovariables_DTA/HouseholdGeovariables.dta")) %>%
+geo <- read_dta(file.path(dataPath, "Data\\MWI\\Raw\\Household_surveys\\2010\\IHS3\\HouseholdGeovariables_DTA/HouseholdGeovariables.dta")) %>%
   rename(lon = lon_modified, lat = lat_modified)
 
 

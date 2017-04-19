@@ -18,7 +18,7 @@ if(Sys.info()["user"] == "dijk158") {
 
 # Michiel IIASA
 if(Sys.info()["user"] == "vandijkm") {
-  dataPath <- dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM\\Data\\"}
+  dataPath <- dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM\\"}
 
 # Anybody else:
 if(Sys.info()["user"] == "") {
