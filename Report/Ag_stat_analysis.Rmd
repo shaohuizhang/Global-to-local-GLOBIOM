@@ -1,0 +1,57 @@
+---
+title: 'Analysis of agricultural statistics MWI'
+author: "Michiel van Dijk"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(rprojroot)
+root <- find_root(is_rstudio_project)
+
+library(knitr)
+knitr::opts_chunk$set(
+  fig.width=12, fig.height=8,
+  dpi = 300,
+  echo=FALSE, warning=FALSE, message=FALSE,
+  fig.path = file.path(root,"FigTabMap/out-"),
+  dev = "CairoPNG",
+  dev.args = list(CairoPNG = list(bg = "transparent"))
+  )
+
+library(pander)
+panderOptions('table.alignment.default', function(df)
+    ifelse(sapply(df, is.numeric), 'right', 'left'))
+panderOptions('table.split.table', Inf)
+panderOptions('big.mark', ",")
+panderOptions('keep.trailing.zeros', TRUE)
+
+source(file.path(root, "Code/MWI/Agricultural_statistics/Analyse_ag_stat_MWI.R"))
+```
+
+```{r area_rank}
+pander(area_rank_FAOSTAT)
+pander(area_rank_nat)
+
+
+```
+
+```{r FAOSTAT_ag_stat_compare}
+area_compare
+prod_compare
+yld_compare
+heads_compare
+```
+
+```{r region}
+pander(area_share_within_reg)
+Fig_area_share
+```
+
+
+
+```{r yld_winsor}
+yld_outlier
+yld_winsor
+
+```
