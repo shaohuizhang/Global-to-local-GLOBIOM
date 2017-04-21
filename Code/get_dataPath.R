@@ -1,10 +1,9 @@
-#'=================================================================================================
-#' Project:  CIMMYT
+#'========================================================================================================================================
+#' Project:  Global-to-local GLOBIOM
 #' Subject:  get data path 
-#' Author:   Tom Morley
-#' Contact:  tomas.morley@wur.nl
-#' Output:   correct datapath for user
-#'=================================================================================================
+#' Author:   Michiel van Dijk
+#' Contact:  michiel.vandijk@wur.nl
+#'========================================================================================================================================
 
 # Use this file to set your path to the data
 # check your computer username using
@@ -12,14 +11,16 @@
 # statement. Then add your dataPath within 
 # the {} brackets
 
-# Michiel WEcR
-if(Sys.info()["user"] == "dijk158") {
-  dataPath <- "C:\\Users\\dijk158\\OneDrive - IIASA\\SurveyData\\MWI/"}
-
 # Michiel IIASA
 if(Sys.info()["user"] == "vandijkm") {
-  dataPath <- dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM\\"}
+  dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM\\"}
+
+if(Sys.info()["user"] == "vandijkm") {
+  FAOSTATPath <- "C:\\Users\\vandijkm\\DATA\\FAOSTAT_20170117"}
+
 
 # Anybody else:
 if(Sys.info()["user"] == "") {
   dataPath <- ""}
+
+

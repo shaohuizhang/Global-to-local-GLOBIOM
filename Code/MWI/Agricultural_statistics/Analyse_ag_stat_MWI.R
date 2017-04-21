@@ -16,14 +16,14 @@ p_load("tidyverse", "readxl", "stringr", "car", "scales", "RColorBrewer", "rproj
 p_load("countrycode")
 
 
+
 ### SET ROOT AND WORKING DIRECTORY
 root <- find_root(is_rstudio_project)
 setwd(root)
 
 
 ### SET DATAPATH
-dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM"
-FAOSTATPath <- "C:\\Users\\vandijkm\\DATA\\FAOSTAT_20170117"
+source(file.path(root, "Code/get_dataPath.r"))
 
 
 ### R SETTINGS
@@ -68,7 +68,7 @@ prod_FAOSTAT <- FAOSTAT_prod %>%
 
 yield_FAOSTAT <- FAOSTAT_prod %>%
   filter(unit == "hg/ha", year >1990, element == "Yield") %>%
-  mutate(value = value/10000)
+  mutate(value = value/10000) # convert to tons/ha
 
 # process livestock stat
 FAOSTAT_lvst <- FAOSTAT_lvst_raw %>%
@@ -168,25 +168,45 @@ Fig_area_share <- spplot(MWI_adm2, c(3:plot_length), main = "Share of crop area 
 area_compare <- ggplot() + 
   geom_line(data = area_FAOSTAT, aes(x = year, y = value)) +
   facet_wrap(~ALLPRODUCT, scales = "free") +
-  geom_point(data = area_nat, aes(x = year, y = value), colour = "red")
+  geom_point(data = area_nat, aes(x = year, y = value), colour = "red") +
+  labs(title = "Area comparison between national agricultural statistics and FAOSTAT",
+       caption = "Source: FAOSTAT and Malawi National Census of Agriculture and Livestock 2006/07)",
+       y = "ha",
+       x ="") +
+  theme_bw()
 
 # Prod
 prod_compare <- ggplot() + 
   geom_line(data = prod_FAOSTAT, aes(x = year, y = value)) +
   facet_wrap(~ALLPRODUCT, scales = "free") +
-  geom_point(data = prod_nat, aes(x = year, y = value), colour = "red")
+  geom_point(data = prod_nat, aes(x = year, y = value), colour = "red") +
+  labs(title = "Production comparison between national agricultural statistics and FAOSTAT",
+       caption = "Source: FAOSTAT and Malawi National Census of Agriculture and Livestock 2006/07)",
+       y = "tons",
+       x ="") +
+  theme_bw()
 
 # yield
 yld_compare <- ggplot() + 
   geom_line(data = yield_FAOSTAT, aes(x = year, y = value)) +
   facet_wrap(~ALLPRODUCT, scales = "free") +
-  geom_point(data = yield_nat, aes(x = year, y = value), colour = "red")
+  geom_point(data = yield_nat, aes(x = year, y = value), colour = "red") +
+  labs(title = "Yield comparison between national agricultural statistics and FAOSTAT",
+       caption = "Source: FAOSTAT and Malawi National Census of Agriculture and Livestock 2006/07)",
+       y = "tons/ha",
+       x ="") +
+  theme_bw()
 
 # Heads
 heads_compare <- ggplot() + 
   geom_line(data = number_FAOSTAT, aes(x = year, y = value)) +
   facet_wrap(~ALLPRODUCT, scales = "free") +
-  geom_point(data = number_nat, aes(x = year, y = value), colour = "red")
+  geom_point(data = number_nat, aes(x = year, y = value), colour = "red") +
+  labs(title = "Heads comparison between national agricultural statistics and FAOSTAT",
+       caption = "Source: FAOSTAT and Malawi National Census of Agriculture and Livestock 2006/07)",
+       y = "heads",
+       x ="") +
+  theme_bw()
 
 ### CHECK YIELD FOR OUTLIERS
 # Functions

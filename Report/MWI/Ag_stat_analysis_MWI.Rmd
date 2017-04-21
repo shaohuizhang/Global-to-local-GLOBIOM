@@ -3,6 +3,7 @@ title: 'Analysis of agricultural statistics MWI'
 author: "Michiel van Dijk"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output: pdf_document
+classoption: landscape
 ---
 
 ```{r setup, include=FALSE}
@@ -31,27 +32,50 @@ source(file.path(root, "Code/MWI/Agricultural_statistics/Analyse_ag_stat_MWI.R")
 
 ```{r area_rank}
 pander(area_rank_FAOSTAT)
-pander(area_rank_nat)
-
-
 ```
 
-```{r FAOSTAT_ag_stat_compare}
+\pagebreak
+```{r area_rank_nat}
+pander(area_rank_nat)
+```
+
+\pagebreak
+```{r area_compare}
 area_compare
+```
+
+\pagebreak
+```{r prod_compare}
 prod_compare
+```
+
+\pagebreak
+```{r yld_compare}
 yld_compare
+```
+
+\pagebreak
+```{r heads_compare}
 heads_compare
 ```
 
-```{r region}
+\pagebreak
+```{r area_share_within_reg}
 pander(area_share_within_reg)
+```
+
+\pagebreak
+```{r Fig_area_share}
 Fig_area_share
 ```
 
-
-
-```{r yld_winsor}
+\pagebreak
+```{r yld_outlier}
 yld_outlier
-yld_winsor
-
 ```
+
+\pagebreak
+```{r yld_winsor}
+yld_winsor
+```
+

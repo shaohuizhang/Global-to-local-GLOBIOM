@@ -19,12 +19,14 @@ p_load("rgdal", "ggmap", "raster", "rasterVis", "rgeos", "sp", "mapproj", "mapto
 # Additional packages
 p_load("ghit", "tabulizer")
 
-wdPath<-"~/Global-to-local-GLOBIOM"
-setwd(wdPath)
+
+### SET ROOT AND WORKING DIRECTORY
+root <- find_root(is_rstudio_project)
+setwd(root)
+
 
 ### SET DATAPATH
-dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM"
-
+source(file.path(root, "Code/get_dataPath.r"))
 ### R SETTINGS
 options(scipen=999) # surpress scientific notation
 options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e.g. csv) is not turned into factors
@@ -32,7 +34,7 @@ options(digits=4)
 
 
 ### LOAD DISTRICT MAPPING
-adm_list_MWI <- read_csv(file.path(dataPath, "Processed/MWI/Mappings/adm_list_MWI.csv"))
+#adm_list_MWI <- read_csv(file.path(dataPath, "MWI/Processed/Mappings/adm_list_MWI.csv"))
 
 
 ### EXTRACT TABLES FROM NACAL REPORT

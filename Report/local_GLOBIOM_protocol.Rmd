@@ -46,7 +46,10 @@ The use of national, country, subnational, region, district, zone, etc can be so
 Although the sources of data may vary, the following three pieces of data are needed to optimally improve the input structure of GLOBIOM for Global-to-local analysis:
 
 ## Land cover maps
-The global land cover map that is used by GLOBIOM is very coarse and is not detailed enough for subnational analysis. It is therefore very important to try to find high-resolution land cover maps. Land cover (and land use) maps are often prepared by specialist government agencies (often under the Ministry of Agriculture or Forestry) or companies. The latter are sometimes contracted by international institutions or donors to provide new land cover maps [@Haack2015]. Sources for recent land cover maps are the Regional Centre of Mapping of Resources for Development (RCMRD) geoportal (http://geoportal.rcmrd.org.and) and Servir Global (https://www.servirglobal.net)
+The global land cover map that is used by GLOBIOM is very coarse and is not detailed enough for subnational analysis. It is therefore very important to try to find high-resolution land cover maps. Land cover (and land use) maps are often prepared by specialist government agencies (often under the Ministry of Agriculture or Forestry) or companies. The latter are sometimes contracted by international institutions or donors to provide new land cover maps [@Haack2015]. Sources for recent land cover maps are the Regional Centre of Mapping of Resources for Development (RCMRD) geoportal (http://geoportal.rcmrd.org.and) and Servir Global (https://www.servirglobal.net). 
+
+Recently, the European Space Agency (ESA) has released a new time series of consistent global LC maps at 300 m spatial resolution on an annual basis from 1992 to 2015 (https://www.esa-landcover-cci.org/), which can also be used if national maps are not available. More research is needed to determine whether it is better to use one source of consistent data, such as the ESA for all case studies, albeit with (slightly) higher resolution, or use national data that is probably more precise. 
+
 
 ## Agricultural statistics
 Agricultural statistics of developing countries are often not easy to find and demands a pragmatic approach. It works best to consult and combine several sources, including:
@@ -58,8 +61,6 @@ Agricultural statistics of developing countries are often not easy to find and d
 - Contacting CGIAR institutes that are active in the region.
 - Contacting any of the national organisations listed above, preferably by means of a personal visit.
 - Large companies that are active in the agricultural sector (mainly for statistics on cash crops such as palm oil, tea and coffee)
-
-
 
 
 ## Household surveys
@@ -162,12 +163,10 @@ Many countries publish detailed land cover maps, that provide information on the
 
 
 # STEP 2: Select administrative regions and download map
-NB: CHECK if we want to use GAUL (FAO) or GADM subnational regions.
-
 ## Introduction
-To improve the modelling with GLOBIOM, we want to use detailed information that is available at the subnational level. Data can defined at the grid level with resolutions of 5 arcmin or 0.5 degree, or at some the administrative area. Administrative areas include the country level and lower level subdivisions such as provinces, districts and departments ofting using country specific names. National statistics (and sometimes international institutions, @See section X) often provide information on agricultural producttion such as output, yield and inputs at an administrative area lower than country level. Alternatively, as will be shown in section @X, the researcher can also calculate these aggregates if detailed household surveys are available.
+To improve the modelling with GLOBIOM, we want to use detailed information that is available at the subnational level. Data can defined at the grid level with resolutions of 5 arcmin or 0.5 degree, or at some the administrative area. Administrative areas include the country level and lower level subdivisions such as provinces, districts and departments ofting using country specific names. National statistics (and sometimes international institutions, @See section X) often provide information on agricultural production such as output, yield and inputs at an administrative area lower than country level. Alternatively, as will be shown in section @X, the researcher can also calculate these aggregates if detailed household surveys are available.
 
-The size of administrative areas differ by country. For example, the first administrative area in Ethiopia are nine regional states (or *Kililoch*) that are based on ethnic territoriality (https://en.wikipedia.org/wiki/Subdivisions_of_Ethiopia). These are fairly large areas. In contrast, in Tanzania, the first administrative area is made up of thirty regions (or *mkoa*), which are much smaller in (https://en.wikipedia.org/wiki/Subdivisions_of_Tanzania). To select the appropriate region, the researcher needs to study administrative division of the target country and compare this with available statistics. 
+The size of administrative areas differ by country. For example, the first administrative area in Ethiopia are nine regional states (or *Kililoch*) that are based on ethnic territoriality (https://en.wikipedia.org/wiki/Subdivisions_of_Ethiopia). These are fairly large areas. In contrast, in Tanzania, the first administrative area is made up of thirty regions (or *mkoa*), which are much smaller in (https://en.wikipedia.org/wiki/Subdivisions_of_Tanzania). To select the appropriate region, the researcher needs to study administrative division of the target country and compare this with available statistics. It is also important to check the extent to which adms have changed over time.
 
 ```{r Fig_1, fig.show = 'hold', out.width='33%'}
 # https://bookdown.org/yihui/bookdown/figures.html for figures side by side
@@ -175,13 +174,12 @@ ETH_adm
 TZA_adm
 ```
 
+After the choice is made, the appropriate map(s) can be downloaded. There are two sources for adm maps: the GADM database of Global Administrative Areas (http://www.gadm.org) and the Global Administrative Unit Layers (GAUL) prepared by the FAO (http://www.fao.org/geonetwork/srv/en/metadata.show?id=12691). We prefer to use the GAUL because previous GLOBIOM input maps, in particular the simu information is prepared using GAUL. Furthermore, GAUL is available at an annual basis and therefore takes into account the changes in adms over time, while GADM tends to present only the most recent information. The latter is important as we need adm information for the base year of GLOBIOM (2000) and later years to validate the simulation (e.g 2010). 
 
-After the choice is made, the appropriate map(s) can be downloaded from the GADM database (http://www.gadm.org). GADM is a spatial database of the location of the world's administrative areas for use in GIS software. The data are available in various formats and can be downloaded from the website. Be aware that the administrative areas of countries may change over time, in particular at the lower subdivions such as districts and divisions. For this reason the GADM is updated regularly but it is also possible to download older versions.
-
-In order to link data from the land cover maps, agricultural statistics and household surveys, it is important to create a list with administrative areas that will be used throughout the analysis to link data. For mapping purposes it is most convenient to use the GADM areas as a basis. Next, one has to compare and link the 
 
 ## Script
-__Download_GADM.r__. This script downloads the GADM maps. Different levels of administrative boundaries can be selected and the maps will be automatically saved in user-selected folder for later use.
+__Location: Code/iso3c/Maps/__
+__Select_GAUL_iso3c.r__. This script extracts the country specific map from the GAUL. Different levels of administrative boundaries can be selected and the maps will be automatically saved in user-selected folder for later use.
 
 
 # STEP 3: Create mappings to harmonise data
@@ -196,9 +194,8 @@ We use the following conventions to create the mappings:
 
 ### Land cover classes: MWI2GLOBIOM_lc
 
-### Administrative areas: iso3c2ADM_reg
-- Ensure to harmonise the administrative boundaries over time. In many countries they tend to change over time. 
-- Compare data from different sources and over time.
+### Administrative areas: iso3c2ADM_2000
+In order to link data from the land cover maps, agricultural statistics and household surveys, it is important to create a list with administrative areas that will be used throughout the analysis to link data. For mapping purposes it is most convenient to use the GAUL area names (and code) as a basis. As names are often spelled differently, it is essential to prepare a concordance table that links all versions of adm names that are used by the various data sources. The table is stored in a sheet called __iso3c2ADM_2000__ in the __Mappings_iso3c.xlsx__ file. 
 
 ### Crops: 
 Map all crops that are produced in the country to one of the crop codes that are used in GLOBIOM. In some cases this is straigtforward, while in other cases it requires some thinking and creativity. Many tropical countries produce a large variety of beans (e.g. ordinary beans, ground beans, etc), which are all mapped to Beans, dry (BeaD). Similarly, cow peas and pigeon peas are typically mapped to chick peas [@check].
@@ -239,6 +236,7 @@ products <- read_excel(file.path(root ,"Data/GLOBIOM_products.xlsx"))
 kable(products)
 
 ```
+
 
 # STEP 5: Processing agricultural statistics
 ## Introduction
@@ -296,6 +294,9 @@ Code in GAMS is provided to downscale and harmonise the land use and land cover 
 # ANNEX
 - GLOBIOM Crops
 - GLOBIOM Inputs
+- List of key files (Mappings_iso3c.xlsx)
+- List of scripts and purpose
+
 
 # Footnotes
 [^1] This can easily be done with R using the raster package. At the moment no code is provided for this. 

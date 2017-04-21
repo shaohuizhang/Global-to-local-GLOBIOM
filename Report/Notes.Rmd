@@ -119,3 +119,8 @@ Land cover classifciation
 # Cost structure in GLOBIOM
 - rent data is hardcoded for regions in the base year (very coarse!): model/3-precompute
 - Data on cost structures should be added here: Data/2-comp_cropdata
+
+
+
+# QUESTIONS ON DATA PROCEDURE
+- Can we drop SIMUs that do not match with GAUL (MALAWI CASE for Lake Malawi)

@@ -14,24 +14,30 @@ p_load("rgdal", "ggmap", "raster", "rasterVis", "rgeos", "sp", "mapproj", "mapto
 # Additional packages
 p_load("WDI", "countrycode", "plotKML")
 
-### SET WORKING DIRECTORY
-wdPath <- "~/Global-to-local-GLOBIOM"
-setwd(wdPath)
+
+### SET ROOT AND WORKING DIRECTORY
+root <- find_root(is_rstudio_project)
+setwd(root)
+
 
 ### SET DATAPATH
-dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM"
+source(file.path(root, "Code/get_dataPath.r"))
+
 
 ### R SETTINGS
 options(scipen=999) # surpress scientific notation
 options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e.g. csv) is not turned into factors
 options(digits=4)
 
+
 ### SOURCE
 source("Code/process_large_raster_f.R")
+
 
 ### CHECK IF THEIR ARE TEMPORARY FILES (CREATED BY RASTER PACKAGE) AND REMOVE
 showTmpFiles()
 removeTmpFiles()
+
 
 ### LOAD SIMU MAPS
 ogrListLayers(file.path(dataPath, "Data/GLOBIOM/Simu/Simu_poly/SimU_all.shp"))

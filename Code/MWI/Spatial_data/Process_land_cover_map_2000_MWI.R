@@ -15,12 +15,14 @@ p_load("rgdal", "ggmap", "raster", "rasterVis", "rgeos", "sp", "mapproj", "mapto
 p_load("WDI", "countrycode", "plotKML")
 
 
-### SET WORKING DIRECTORY
-wdPath<-"~/Global-to-local-GLOBIOM"
-setwd(wdPath)
+### SET ROOT AND WORKING DIRECTORY
+root <- find_root(is_rstudio_project)
+setwd(root)
+
 
 ### SET DATAPATH
-dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM"
+source(file.path(root, "Code/get_dataPath.r"))
+
 
 ### R SETTINGS
 options(scipen=999) # surpress scientific notation
@@ -32,24 +34,26 @@ options(digits=4)
 showTmpFiles()
 removeTmpFiles()
 
-### LOAD SIMU MAPS
-ogrListLayers(file.path(dataPath, "Data/GLOBIOM/Simu/Simu_poly/SimU_all.shp"))
-simu_5min_poly <- readOGR(file.path(dataPath, "Data/GLOBIOM/Simu/Simu_poly/SimU_all.shp"), layer = "SimU_all")
 
-# Obtain country poly (using iso3c numbering: 454 = Malawi)
-simu2country_poly <- simu_5min_poly[simu_5min_poly$COUNTRY==454,]
+### LOAD SIMU MAP
+simu2country_poly <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/simu_MWI.rds"))
+plot(simu2country_poly)
+
 
 ### LOAD GAUL MAPS
-country_map_raw <- readRDS(file.path(dataPath, "Data\\Processed\\MWI\\Maps/GAUL_MWI_adm1_2000.rds"))
-plot(country_map_raw)
+country_map <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm2_2000.rds"))
+plot(country_map)
+
 
 ### LOAD LAND COVER MAP 
 # Load map
-land_cover_map_raw <- raster(file.path(dataPath, "Data\\Raw\\MWI\\Spatial_data\\RCMRD\\Final Corrected Land Cover\\Final Corrected Land Cover\\Scheme 2\\malawi 2000 classification scheme2.img"))
+land_cover_map_raw <- raster(file.path(dataPath, "Data\\MWI\\Raw\\Spatial_data\\RCMRD\\Final Corrected Land Cover\\Final Corrected Land Cover\\Scheme 2\\malawi 2000 classification scheme2.img"))
 land_cover_map_raw
-levelplot(land_cover_map_raw, att='Land_Cover', par.settings = RdBuTheme)
-land_class <- as.data.frame(levels(land_cover_map_raw))
-write_csv(land_class, file.path(dataPath, "Data/Processed/MWI/Spatial_data/land_class_MWI.csv"))
+
+# Save land class
+land_class <- levels(land_cover_map_raw)[[1]]
+write_csv(land_class, file.path(dataPath, "Data/MWI/processed/Spatial_data/land_class_MWI.csv"))
+
 
 ### REPROJECT MAPS
 #' It is essential to use the same projection for all maps. If there is a difference we reproject the SIMU and country_map
@@ -61,31 +65,42 @@ write_csv(land_class, file.path(dataPath, "Data/Processed/MWI/Spatial_data/land_
 
 # Compare CRS of SIMU and target country land cover map
 crs(land_cover_map_raw)
-crs(country_map_raw)
+crs(country_map)
 
 # Set country crs
 country_crs <- crs(land_cover_map_raw)
 
 # Reproject SIMU_poly to country CRS
 simu2country_poly <- spTransform(simu2country_poly, country_crs)
-levelplot(land_cover_map_raw, att='Land_Cover', par.settings = RdBuTheme, margin = F) +
-  layer(sp.polygons(simu2country_poly, col = "black"))
 
 # Reproject country_map to country CRS
-country_map <-  spTransform(country_map_raw, country_crs)
-levelplot(land_cover_map_raw, att='Land_Cover', par.settings = RdBuTheme, margin = F) +
-  layer(sp.polygons(country_map, col = "black"))
+country_map <-  spTransform(country_map, country_crs)
+
+# Add colours based on RGB information
+map_colour <- levels(land_cover_map_raw)[[1]] %>%
+  mutate(colour = rgb(Red, Green, Blue, max = 255),
+         colour = ifelse(colour == "#000000", "#FFFFFF", colour)) %>% # replace black with white for shadows and no data
+  unique()
+map_colour <- map_colour[order(map_colour$Land_Cover, decreasing = F),]
+
+# Plot
+levelplot(land_cover_map_raw, att='Land_Cover', col.regions = map_colour$colour, margin = F) +
+  layer(sp.polygons(simu2country_poly, col = "black", lwd = 2))
+
+levelplot(land_cover_map_raw, att='Land_Cover', col.regions = map_colour$colour, margin = F) +
+  layer(sp.polygons(country_map, col = "black", lwd = 2))
+
 
 ### LINK SIMU WITH LAND COVER DATA
 # Create SimuID list
 # Add unique as several SimuS consist of multiple polygons!
-SimUID_list <- unique(simu2country_poly@data$SimUID)
+simuid_list <- unique(simu2country_poly@data$SimUID)
 
 # Overlay land cover map and SIMU polygon per simu
 # function to extract values by SimU (polygon)
 extract_simu_f <- function(polyID){
   print(polyID)
-  poly_simu <- SIMU2country_poly[SIMU2country_poly$SimUID==polyID,]
+  poly_simu <- simu2country_poly[simu2country_poly$SimUID==polyID,]
   df_poly <- raster::extract(land_cover_map_raw, poly_simu, df = T) %>%
     setNames(c("ID", "class")) %>%
     na.omit() %>%
@@ -99,7 +114,7 @@ extract_simu_f <- function(polyID){
 }
 
 # Run function and combine
-land_cover_shares_raw <- bind_rows(lapply(SimUID_list, extract_simu_f))
+land_cover_shares_raw <- bind_rows(lapply(simuid_list, extract_simu_f))
 saveRDS(land_cover_shares_raw, file.path(dataPath, "Data\\MWI\\Processed\\Spatial_data/land_cover_shares_2000_MWI_raw.rds"))
 land_cover_shares_raw <- readRDS(file.path(dataPath, "Data\\MWI\\Processed\\Spatial_data/land_cover_shares_2000_MWI_raw.rds"))
 
