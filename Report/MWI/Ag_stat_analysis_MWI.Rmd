@@ -31,51 +31,53 @@ source(file.path(root, "Code/MWI/Agricultural_statistics/Analyse_ag_stat_MWI.R")
 ```
 
 ```{r area_rank}
-pander(area_rank_FAOSTAT)
+pander(tab_area_rank_FAOSTAT, caption = "Area and area share per crop using FAOSTAT")
 ```
 
 \pagebreak
-```{r area_rank_nat}
-pander(area_rank_nat)
+```{r tab_area_rank_nat}
+pander(tab_area_rank_nat, caption = "Area and area share per crop using national agricultural statistics")
 ```
 
 \pagebreak
-```{r area_compare}
-area_compare
+```{r fig_area_compare}
+fig_area_compare
 ```
 
 \pagebreak
-```{r prod_compare}
-prod_compare
+```{r fig_prod_compare}
+fig_prod_compare
 ```
 
 \pagebreak
-```{r yld_compare}
-yld_compare
+```{r fig_yld_compare}
+fig_yld_compare
 ```
 
 \pagebreak
-```{r heads_compare}
-heads_compare
+```{r fig_heads_compare}
+fig_heads_compare
 ```
 
 \pagebreak
-```{r area_share_within_reg}
-pander(area_share_within_reg)
+\footnotesize
+```{r tab_area_share_within_reg}
+pander(tab_area_share_within_reg, caption = "Area share per crop within adm using national agricultural statistics")
+```
+\normalsize
+
+\pagebreak
+```{r fig_area_share}
+fig_area_share
 ```
 
 \pagebreak
-```{r Fig_area_share}
-Fig_area_share
+```{r fig_yld_outlier}
+fig_yld_outlier
 ```
 
 \pagebreak
-```{r yld_outlier}
-yld_outlier
-```
-
-\pagebreak
-```{r yld_winsor}
-yld_winsor
+```{r fig_yld_winsor}
+fig_yld_winsor
 ```
 

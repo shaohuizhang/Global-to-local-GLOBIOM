@@ -114,28 +114,29 @@ number_nat <- ag_stat %>%
 
 ### ANALYSE WHICH ARE THE MOST IMPORTANT CROPS AT THE NATIONAL LEVEL
 # Rank area of crops using FAOSTAT in base year
-area_rank_FAOSTAT <- area_FAOSTAT %>%
+tab_area_rank_FAOSTAT <- area_FAOSTAT %>%
   filter(year == 2000) %>%
   mutate(share = round(value/sum(value, na.rm=T)*100, 2)) %>%
   arrange(desc(share)) %>%
-  dplyr::select(item, ALLPRODUCT, value, share)
+  dplyr::select(item, ALLPRODUCT, `area (ha)` = value, share)
 
 # Rank area of crops using ag stat
-area_rank_nat <- area_nat %>%
+tab_area_rank_nat <- area_nat %>%
   ungroup() %>%
   mutate(share = round(value/sum(value, na.rm=T)*100, 2)) %>%
-  arrange(desc(share)) 
+  arrange(desc(share)) %>%
+  rename(`area (ha)` = value)
 
 ### ANALYSE WHICH ARE THE MOST IMPORTANT CROPS PER ADM
 # Area share of crops within regions
-area_share_within_reg <- ag_stat %>%
+tab_area_share_within_reg <- ag_stat %>%
   filter(unit == "ha") %>%
   ungroup() %>%
   group_by(year, adm2_GAUL) %>%
   mutate(share = round(value/sum(value, na.rm=T)*100, 2)) %>%
   dplyr::select(adm2_GAUL, year, share, ALLPRODUCT) %>%
   arrange(desc(share)) %>%
-  spread(adm2_GAUL, share)
+  spread(ALLPRODUCT, share)
 
 ### ANALYSE WHICH ARE THE MOST IMPORTANT CROPS AT THE NATIONAL LEVEL, COMPARING ADMs
 # Area share of crops within country by crop
@@ -159,13 +160,13 @@ MWI_adm2_df <- MWI_adm2@data %>%
 MWI_adm2@data <- MWI_adm2_df
 
 plot_length <- length(unique(area_nat$ALLPRODUCT)) + 2
-Fig_area_share <- spplot(MWI_adm2, c(3:plot_length), main = "Share of crop area within country",
+fig_area_share <- spplot(MWI_adm2, c(3:plot_length), main = "Share of crop area within country",
        colorkey=list(space="bottom"))
 
 
 ### COMPARE FAOSTAT AND AG STAT MWI
 # Area
-area_compare <- ggplot() + 
+fig_area_compare <- ggplot() + 
   geom_line(data = area_FAOSTAT, aes(x = year, y = value)) +
   facet_wrap(~ALLPRODUCT, scales = "free") +
   geom_point(data = area_nat, aes(x = year, y = value), colour = "red") +
@@ -173,10 +174,12 @@ area_compare <- ggplot() +
        caption = "Source: FAOSTAT and Malawi National Census of Agriculture and Livestock 2006/07)",
        y = "ha",
        x ="") +
-  theme_bw()
+  scale_y_continuous(labels=comma) +
+  theme_bw() +
+  theme(text = element_text(size=10))
 
 # Prod
-prod_compare <- ggplot() + 
+fig_prod_compare <- ggplot() + 
   geom_line(data = prod_FAOSTAT, aes(x = year, y = value)) +
   facet_wrap(~ALLPRODUCT, scales = "free") +
   geom_point(data = prod_nat, aes(x = year, y = value), colour = "red") +
@@ -184,10 +187,12 @@ prod_compare <- ggplot() +
        caption = "Source: FAOSTAT and Malawi National Census of Agriculture and Livestock 2006/07)",
        y = "tons",
        x ="") +
-  theme_bw()
+  scale_y_continuous(labels=comma) +
+  theme_bw() +
+  theme(text = element_text(size=10))
 
 # yield
-yld_compare <- ggplot() + 
+fig_yld_compare <- ggplot() + 
   geom_line(data = yield_FAOSTAT, aes(x = year, y = value)) +
   facet_wrap(~ALLPRODUCT, scales = "free") +
   geom_point(data = yield_nat, aes(x = year, y = value), colour = "red") +
@@ -195,10 +200,12 @@ yld_compare <- ggplot() +
        caption = "Source: FAOSTAT and Malawi National Census of Agriculture and Livestock 2006/07)",
        y = "tons/ha",
        x ="") +
-  theme_bw()
+  scale_y_continuous(labels=comma) +
+  theme_bw() +
+  theme(text = element_text(size=10))
 
 # Heads
-heads_compare <- ggplot() + 
+fig_heads_compare <- ggplot() + 
   geom_line(data = number_FAOSTAT, aes(x = year, y = value)) +
   facet_wrap(~ALLPRODUCT, scales = "free") +
   geom_point(data = number_nat, aes(x = year, y = value), colour = "red") +
@@ -206,7 +213,9 @@ heads_compare <- ggplot() +
        caption = "Source: FAOSTAT and Malawi National Census of Agriculture and Livestock 2006/07)",
        y = "heads",
        x ="") +
-  theme_bw()
+  scale_y_continuous(labels=comma) +
+  theme_bw() +
+  theme(text = element_text(size=10))
 
 ### CHECK YIELD FOR OUTLIERS
 # Functions
@@ -234,7 +243,7 @@ yld_adm <- ag_stat %>%
   mutate(outlier = ifelse(is_outlier(value), adm2_GAUL, NA))
 
 # Distribution of yield across regions and outliers
-yld_outlier <- ggplot(data = yld_adm, aes(y = value, x = ALLPRODUCT)) +
+fig_yld_outlier <- ggplot(data = yld_adm, aes(y = value, x = ALLPRODUCT)) +
   geom_boxplot(fill = "light grey") +
   stat_boxplot(geom ='errorbar') +
   #geom_text(aes(label = outlier), na.rm = TRUE, hjust = -0.3) +
@@ -245,7 +254,8 @@ yld_outlier <- ggplot(data = yld_adm, aes(y = value, x = ALLPRODUCT)) +
        colour = "Year (FAOSTAT)") +
   theme_bw() +
   theme(legend.position="bottom",
-        plot.title = element_text(hjust = 0.5)) +
+        plot.title = element_text(hjust = 0.5),
+        text = element_text(size=10)) +
   coord_flip() 
 
 
@@ -254,7 +264,7 @@ yld_adm_winsor <- yld_adm %>%
   mutate(value = winsor(value))
 
 # Plot new values and compare with FAO
-yld_winsor <- ggplot(data = yld_adm_winsor, aes(y = value, x = ALLPRODUCT)) +
+fig_yld_winsor <- ggplot(data = yld_adm_winsor, aes(y = value, x = ALLPRODUCT)) +
   geom_boxplot(fill = "light grey") +
   stat_boxplot(geom ='errorbar') +
   geom_point(data = filter(yield_FAOSTAT, year %in% c(2005:2008), ALLPRODUCT %in% yld_adm$ALLPRODUCT), 
@@ -266,7 +276,8 @@ yld_winsor <- ggplot(data = yld_adm_winsor, aes(y = value, x = ALLPRODUCT)) +
       colour = "Year (FAOSTAT)") +
   theme_bw() +
   theme(legend.position="bottom",
-        plot.title = element_text(hjust = 0.5)) +
+        plot.title = element_text(hjust = 0.5),
+        text = element_text(size=10)) +
   coord_flip() 
   
 
