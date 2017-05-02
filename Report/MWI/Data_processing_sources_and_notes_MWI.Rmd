@@ -41,9 +41,12 @@ source(file.path(root, "Code/MWI/Agricultural_statistics/Analyse_ag_stat_MWI.R")
 
 @RCMRD2012 describes the procedure to prepare the 2000 and 2010 land cover maps for Malawi.
 
-# Notes
 
 ## Agricultural statistics
+- We only have agricultural statistics data at the adm2 GAUL level for 2007. The following procedure was used to project the data to 2000, the base year of GLOBIOM:
+  + We created a moving average of FAOSTAT yield series using a window of five years to smooth annual spikes.
+  + We calculate the growth in yield between 2001 and 2007.
+  + We scale the yield data from national statistics using the national growth rates for each region.
 - The tables on production, area and yield in @NSO2010 do not present information on sugar cane cropping. Nonetheless, on p. 264 information is presented that sugar cane is grown in the country  
 - Donkeys and rabbits are not matched to a GLOBIOM category
 - Check matching of MWI crops to GLOBIOM
@@ -53,9 +56,6 @@ source(file.path(root, "Code/MWI/Agricultural_statistics/Analyse_ag_stat_MWI.R")
 
 
 \blandscape
-
-# Analysis of agricultural statistics
-
 ```{r area_rank}
 pander(tab_area_rank_FAOSTAT, caption = "Area and area share per crop using FAOSTAT")
 ```
@@ -106,6 +106,14 @@ fig_yld_outlier
 ```{r fig_yld_winsor}
 fig_yld_winsor
 ```
+
+\pagebreak
+```{r fig_yld_winsor}
+fig_yld_winsor_2000
+```
+
+
+
 \elandscape
 
 

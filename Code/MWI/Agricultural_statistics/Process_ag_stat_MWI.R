@@ -281,4 +281,86 @@ fig_yld_winsor <- ggplot(data = yld_adm_winsor, aes(y = value, x = ALLPRODUCT)) 
   coord_flip() 
   
 
+### PROJECT AGRICULTURAL STATISTICS TO 2000 USING FAOSTAT TRENDS
+# Calculate FAOSTAT growth in yields between 2000 and 2007 (base year nat ag stat)
 
+# Yld comparison shows data for Soya in 2000. We assume yield has been the same as last year available for historical period.
+soya_2003 <- yld_FAOSTAT %>%
+  filter(ALLPRODUCT == "Soya", year == 2003)
+
+soya_fix <- soya_2003[rep(1,6),]
+soya_fix$year <- c(1997:2002)
+
+
+# There is no data on SwPo, we substitute by yield for potatoes.
+swpo_fix <- yld_FAOSTAT %>%
+  filter(ALLPRODUCT == "Pota") %>%
+  mutate(ALLPRODUCT = "SwPo")
+
+# Add fixes
+yld_FAOSTAT <- bind_rows(yld_FAOSTAT, soya_fix, swpo_fix)
+
+# Clean up
+rm(soya_fix, soya_2003, swpo_fix)
+
+# We first create a moving average over five years to smooth the data
+ma <- function(x,n=5){stats::filter(x,rep(1/n,n), sides=2)}
+yld_FAOSTAT <- yld_FAOSTAT %>%
+  ungroup() %>%
+  group_by(ALLPRODUCT) %>%
+  mutate(value = ma(value))
+
+yld_FAOSTAT_gr <- yld_FAOSTAT %>%
+  ungroup() %>%
+  group_by(ALLPRODUCT) %>%
+  filter(year %in% c(2000, 2007)) %>%
+  spread(year, value) %>%
+  mutate(yld_gr = unique(`2007`/`2000`)) %>%
+  select(ALLPRODUCT, yld_gr)
+
+# Combine with nat ag stat and rebase
+yld_adm_winsor_2000 <- yld_adm_winsor %>%
+  select(-ha, -tons, -outlier) %>%
+  left_join(., yld_FAOSTAT_gr) %>%
+  mutate(value = value/yld_gr,
+         year = 2000) %>%
+  select(-yld_gr)
+
+# Boxplots
+fig_yld_winsor_2000 <- ggplot(data = yld_adm_winsor_2000, aes(y = value, x = ALLPRODUCT)) +
+  geom_boxplot(fill = "light grey") +
+  stat_boxplot(geom ='errorbar') +
+  geom_point(data = filter(yld_FAOSTAT, year %in% c(1999:2001), ALLPRODUCT %in% yld_adm$ALLPRODUCT), 
+             aes(y = value, x = ALLPRODUCT, colour = factor(year)), size = 2.5) +
+  labs(title = "Yield comparison between winsorised national agricultural statistics and FAOSTAT for 2000",
+       caption = "Source: FAOSTAT and Malawi National Census of Agriculture and Livestock 2006/07)",
+       y = "tons/ha",
+       x ="",
+       colour = "Year (FAOSTAT)") +
+  theme_bw() +
+  theme(legend.position="bottom",
+        plot.title = element_text(hjust = 0.5),
+        text = element_text(size=10)) +
+  coord_flip() 
+
+
+### ADD AVERAGE NATIONAL YIELD FOR CROPS THAT ARE MISSING IN NATIONAL STATISTICS
+
+
+
+### SET YIELD AT SIMU LEVEL
+# Load area_sh_simu_adm
+area_sh_simu_in_adm_MWI <- read_csv(file.path(dataPath, "Data\\MWI\\Processed\\Spatial_data\\area_sh_simu_in_adm_MWI.csv"))
+
+# Calculate yield at simu level. Use weighted average if simu is located in multiple adms.
+# If yield data is only available for one adm but simu is split, average yield will be artificially low. 
+# Shares are recalculated where yield data is available
+yld_simu_2000 <- yld_adm_winsor_2000 %>%
+  left_join(area_sh_simu_in_adm_MWI,.) %>%
+  ungroup() %>%
+  group_by(SimUID, ALLPRODUCT) %>%
+  mutate(share = share/sum(share, na.rm = T)) %>%
+  summarize(yld = sum(value*share)) 
+
+# Save file
+write_csv(yld_simu_2000, file.path(dataPath, "Data\\MWI\\Processed\\Spatial_data\\yld_simu_2000.csv"))

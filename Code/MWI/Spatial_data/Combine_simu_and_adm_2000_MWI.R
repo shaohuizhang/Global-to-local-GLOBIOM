@@ -68,7 +68,10 @@ area_sh_simu_in_adm <- area_simu_adm %>%
   mutate(share = area/area_simu) %>%
   dplyr::select(SimUID, ADM2_NAME, share) %>%
   spread(ADM2_NAME, share) %>%
-  replace(is.na(.), 0)
+  replace(is.na(.), 0) %>% # Add zeros where there are no values
+  gather(ADM2_NAME, share, -SimUID) %>%
+  rename(adm2_GAUL = ADM2_NAME) %>% # set standard name for adm
+  mutate(adm2_GAUL = toupper(adm2_GAUL))
 
 # Save
 write_csv(area_sh_simu_in_adm, file.path(dataPath, "Data/MWI/Processed/Spatial_data/area_sh_simu_in_adm_MWI.csv"))
