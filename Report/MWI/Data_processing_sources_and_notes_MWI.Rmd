@@ -2,11 +2,37 @@
 title: "Data processing sources and notes MWI"
 author: "Michiel van Dijk"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
-output: 
-  word_document:
-    reference_docx: ../Common//word_styles_01.docx
-bibliography: ../Common/Sources_MWI.bib
+header-includes:
+- \usepackage{pdflscape}
+- \newcommand{\blandscape}{\begin{landscape}}
+- \newcommand{\elandscape}{\end{landscape}}
+output: pdf_document
+bibliography: ../../Common/Global-to-local-GLOBIOM-MWI.bib
 ---
+
+```{r setup, include=FALSE}
+library(rprojroot)
+root <- find_root(is_rstudio_project)
+
+library(knitr)
+knitr::opts_chunk$set(
+  fig.width=12, fig.height=8,
+  dpi = 300,
+  echo=FALSE, warning=FALSE, message=FALSE,
+  fig.path = file.path(root,"FigTabMap/out-"),
+  dev = "CairoPNG",
+  dev.args = list(CairoPNG = list(bg = "transparent"))
+  )
+
+library(pander)
+panderOptions('table.alignment.default', function(df)
+    ifelse(sapply(df, is.numeric), 'right', 'left'))
+panderOptions('table.split.table', Inf)
+panderOptions('big.mark', ",")
+panderOptions('keep.trailing.zeros', TRUE)
+
+source(file.path(root, "Code/MWI/Agricultural_statistics/Analyse_ag_stat_MWI.R"))
+```
 
 # Data sources
 @NSO2010 also referred to as NACAL provides the result of a national agricultural census that was undertaken for the year 2006/2007. It provides data at national and district level. 
@@ -16,12 +42,74 @@ bibliography: ../Common/Sources_MWI.bib
 @RCMRD2012 describes the procedure to prepare the 2000 and 2010 land cover maps for Malawi.
 
 # Notes
+
 ## Agricultural statistics
-- The tables on production, area and yield in @NSO2010 do not present information on sugar cane cropping. Nonetheless, on p. 264 information is presented that sugar cane is grown in the country.  
+- The tables on production, area and yield in @NSO2010 do not present information on sugar cane cropping. Nonetheless, on p. 264 information is presented that sugar cane is grown in the country  
 - Donkeys and rabbits are not matched to a GLOBIOM category
 - Check matching of MWI crops to GLOBIOM
 - Check land use class aggregation to GLOBIOM
 - Data on area om @NSO2010 is for pure stand crop. This might explain why total country values from FAOSTAT are much higher.
-- According to FAOSTAT there are no sweet potatoes in MWI, while according to @NSO2010 these form the largest share of potatoes. Probably the FAOSTAT sums both types and classifies them as potatoes.
+- According to FAOSTAT there are no sweet potatoes in MWI, while according to @NSO2010 these form the largest share of potatoes. Probably the FAOSTAT sums both types and classifies them as potatoes
+
+
+\blandscape
+
+# Analysis of agricultural statistics
+
+```{r area_rank}
+pander(tab_area_rank_FAOSTAT, caption = "Area and area share per crop using FAOSTAT")
+```
+
+\pagebreak
+```{r tab_area_rank_nat}
+pander(tab_area_rank_nat, caption = "Area and area share per crop using national agricultural statistics")
+```
+
+\pagebreak
+```{r fig_area_compare}
+fig_area_compare
+```
+
+\pagebreak
+```{r fig_prod_compare}
+fig_prod_compare
+```
+
+\pagebreak
+```{r fig_yld_compare}
+fig_yld_compare
+```
+
+\pagebreak
+```{r fig_heads_compare}
+fig_heads_compare
+```
+
+\pagebreak
+\footnotesize
+```{r tab_area_share_within_reg}
+pander(tab_area_share_within_reg, caption = "Area share per crop within adm using national agricultural statistics")
+```
+\normalsize
+
+\pagebreak
+```{r fig_area_share}
+fig_area_share
+```
+
+\pagebreak
+```{r fig_yld_outlier}
+fig_yld_outlier
+```
+
+\pagebreak
+```{r fig_yld_winsor}
+fig_yld_winsor
+```
+\elandscape
+
+
 
 # References
+
+

@@ -66,7 +66,7 @@ area_FAOSTAT <- FAOSTAT_prod %>%
 prod_FAOSTAT <- FAOSTAT_prod %>%
   filter(unit == "tonnes", year >1990, element == "Production") 
 
-yield_FAOSTAT <- FAOSTAT_prod %>%
+yld_FAOSTAT <- FAOSTAT_prod %>%
   filter(unit == "hg/ha", year >1990, element == "Yield") %>%
   mutate(value = value/10000) # convert to tons/ha
 
@@ -99,7 +99,7 @@ prod_nat <- ag_stat %>%
   group_by(ALLPRODUCT, year) %>%
   summarize(value = sum(value, na.rm=T))
 
-yield_nat <- ag_stat %>%
+yld_nat <- ag_stat %>%
   filter(unit %in% c("ha","tons")) %>%
   group_by(ALLPRODUCT, year, unit) %>%
   summarize(value = sum(value, na.rm=T)) %>%
@@ -193,9 +193,9 @@ fig_prod_compare <- ggplot() +
 
 # yield
 fig_yld_compare <- ggplot() + 
-  geom_line(data = yield_FAOSTAT, aes(x = year, y = value)) +
+  geom_line(data = yld_FAOSTAT, aes(x = year, y = value)) +
   facet_wrap(~ALLPRODUCT, scales = "free") +
-  geom_point(data = yield_nat, aes(x = year, y = value), colour = "red") +
+  geom_point(data = yld_nat, aes(x = year, y = value), colour = "red") +
   labs(title = "Yield comparison between national agricultural statistics and FAOSTAT",
        caption = "Source: FAOSTAT and Malawi National Census of Agriculture and Livestock 2006/07)",
        y = "tons/ha",
@@ -267,7 +267,7 @@ yld_adm_winsor <- yld_adm %>%
 fig_yld_winsor <- ggplot(data = yld_adm_winsor, aes(y = value, x = ALLPRODUCT)) +
   geom_boxplot(fill = "light grey") +
   stat_boxplot(geom ='errorbar') +
-  geom_point(data = filter(yield_FAOSTAT, year %in% c(2005:2008), ALLPRODUCT %in% yld_adm$ALLPRODUCT), 
+  geom_point(data = filter(yld_FAOSTAT, year %in% c(2005:2008), ALLPRODUCT %in% yld_adm$ALLPRODUCT), 
              aes(y = value, x = ALLPRODUCT, colour = factor(year)), size = 2.5) +
   labs(title = "Yield comparison between winsorised national agricultural statistics and FAOSTAT",
        caption = "Source: FAOSTAT and Malawi National Census of Agriculture and Livestock 2006/07)",
