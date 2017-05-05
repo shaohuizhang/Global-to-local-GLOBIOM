@@ -64,14 +64,27 @@ area_sh_simu_in_adm <- area_simu_adm %>%
   summarize(area = sum(area)) %>%
   ungroup() %>%
   group_by(SimUID) %>%
-  mutate(area_simu = sum(area)) %>%
-  mutate(share = area/area_simu) %>%
-  dplyr::select(SimUID, ADM2_NAME, share) %>%
-  spread(ADM2_NAME, share) %>%
-  replace(is.na(.), 0) %>% # Add zeros where there are no values
-  gather(ADM2_NAME, share, -SimUID) %>%
-  rename(adm2_GAUL = ADM2_NAME) %>% # set standard name for adm
-  mutate(adm2_GAUL = toupper(adm2_GAUL))
+  mutate(area_simu = sum(area),
+         share = area/area_simu,
+         adm2_GAUL = toupper(ADM2_NAME)) %>%
+  dplyr::select(SimUID, adm2_GAUL, share)
 
 # Save
 write_csv(area_sh_simu_in_adm, file.path(dataPath, "Data/MWI/Processed/Spatial_data/area_sh_simu_in_adm_MWI.csv"))
+
+### CALCULATE SHARE ADM in SIMU
+# For each ad, get area per simu
+area_sh_adm_in_simu <- area_simu_adm %>% 
+  as_tibble() %>% 
+  group_by(SimUID, ADM2_NAME) %>% 
+  summarize(area = sum(area)) %>%
+  ungroup() %>%
+  group_by(ADM2_NAME) %>%
+  mutate(area_adm = sum(area),
+         share = area/area_adm,
+         adm2_GAUL = toupper(ADM2_NAME)) %>%
+  ungroup() %>%
+  dplyr::select(SimUID, adm2_GAUL, share) 
+
+# Save
+write_csv(area_sh_adm_in_simu, file.path(dataPath, "Data/MWI/Processed/Spatial_data/area_sh_adm_in_simu_MWI.csv"))

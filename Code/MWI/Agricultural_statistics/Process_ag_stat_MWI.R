@@ -1,6 +1,6 @@
 #'========================================================================================================================================
 #' Project:  Global-to-local GLOBIOM
-#' Subject:  Script to compare survey data with FAOSTAT
+#' Subject:  Script to analyse and process National agricultural statistics data
 #' Author:   Michiel van Dijk
 #' Contact:  michiel.vandijk@wur.nl
 #'========================================================================================================================================
@@ -61,7 +61,8 @@ FAOSTAT_prod <- FAOSTAT_prod_raw %>%
   filter(!is.na(ALLPRODUCT))
 
 area_FAOSTAT <- FAOSTAT_prod %>%
-  filter(unit == "ha", year >1990) 
+  filter(unit == "ha", year >1990) %>%
+  na.omit() # remove rows with na values for value
   
 prod_FAOSTAT <- FAOSTAT_prod %>%
   filter(unit == "tonnes", year >1990, element == "Production") 
@@ -281,7 +282,7 @@ fig_yld_winsor <- ggplot(data = yld_adm_winsor, aes(y = value, x = ALLPRODUCT)) 
   coord_flip() 
   
 
-### PROJECT AGRICULTURAL STATISTICS TO 2000 USING FAOSTAT TRENDS
+### PROJECT YIELD FROM AGRICULTURAL STATISTICS TO 2000 USING FAOSTAT TRENDS
 # Calculate FAOSTAT growth in yields between 2000 and 2007 (base year nat ag stat)
 
 # Yld comparison shows data for Soya in 2000. We assume yield has been the same as last year available for historical period.
@@ -316,15 +317,15 @@ yld_FAOSTAT_gr <- yld_FAOSTAT %>%
   filter(year %in% c(2000, 2007)) %>%
   spread(year, value) %>%
   mutate(yld_gr = unique(`2007`/`2000`)) %>%
-  select(ALLPRODUCT, yld_gr)
+  dplyr::select(ALLPRODUCT, yld_gr)
 
 # Combine with nat ag stat and rebase
 yld_adm_winsor_2000 <- yld_adm_winsor %>%
-  select(-ha, -tons, -outlier) %>%
+  dplyr::select(-ha, -tons, -outlier) %>%
   left_join(., yld_FAOSTAT_gr) %>%
   mutate(value = value/yld_gr,
          year = 2000) %>%
-  select(-yld_gr)
+  dplyr::select(-yld_gr)
 
 # Boxplots
 fig_yld_winsor_2000 <- ggplot(data = yld_adm_winsor_2000, aes(y = value, x = ALLPRODUCT)) +
@@ -344,23 +345,60 @@ fig_yld_winsor_2000 <- ggplot(data = yld_adm_winsor_2000, aes(y = value, x = ALL
   coord_flip() 
 
 
-### ADD AVERAGE NATIONAL YIELD FOR CROPS THAT ARE MISSING IN NATIONAL STATISTICS
-
-
-
-### SET YIELD AT SIMU LEVEL
-# Load area_sh_simu_adm
-area_sh_simu_in_adm_MWI <- read_csv(file.path(dataPath, "Data\\MWI\\Processed\\Spatial_data\\area_sh_simu_in_adm_MWI.csv"))
-
-# Calculate yield at simu level. Use weighted average if simu is located in multiple adms.
-# If yield data is only available for one adm but simu is split, average yield will be artificially low. 
-# Shares are recalculated where yield data is available
-yld_simu_2000 <- yld_adm_winsor_2000 %>%
-  left_join(area_sh_simu_in_adm_MWI,.) %>%
-  ungroup() %>%
-  group_by(SimUID, ALLPRODUCT) %>%
-  mutate(share = share/sum(share, na.rm = T)) %>%
-  summarize(yld = sum(value*share)) 
-
 # Save file
-write_csv(yld_simu_2000, file.path(dataPath, "Data\\MWI\\Processed\\Spatial_data\\yld_simu_2000.csv"))
+write_csv(yld_adm_winsor_2000, file.path(dataPath, "Data\\MWI\\Processed\\agricultural_statistics\\yld_adm_2000.csv"))
+
+
+### PROJECT AREA FROM AGRICULTURAL STATISTICS TO 2000 USING FAOSTAT TRENDS
+# Calculate FAOSTAT growth in area between 2000 and 2007 (base year nat ag stat)
+
+# Area comparison shows data for Soya in 2000. We assume area has been the same as last year available for historical period.
+soya_2003 <- area_FAOSTAT %>%
+  filter(ALLPRODUCT == "Soya", year == 2003)
+
+soya_fix <- soya_2003[rep(1,6),]
+soya_fix$year <- c(1997:2002)
+
+
+# There is no data on SwPo, we substitute by yield for potatoes.
+swpo_fix <- area_FAOSTAT %>%
+  filter(ALLPRODUCT == "Pota") %>%
+  mutate(ALLPRODUCT = "SwPo")
+
+# Add fixes
+area_FAOSTAT <- bind_rows(area_FAOSTAT, soya_fix, swpo_fix)
+
+# Clean up
+rm(soya_fix, soya_2003, swpo_fix)
+
+# We first create a moving average over five years to smooth the data
+ma <- function(x,n=5){stats::filter(x,rep(1/n,n), sides=2)}
+area_FAOSTAT <- area_FAOSTAT %>%
+  ungroup() %>%
+  group_by(ALLPRODUCT) %>%
+  mutate(value = ma(value))
+
+area_FAOSTAT_gr <- area_FAOSTAT %>%
+  ungroup() %>%
+  group_by(ALLPRODUCT) %>%
+  filter(year %in% c(2000, 2007)) %>%
+  spread(year, value) %>%
+  mutate(area_gr = unique(`2007`/`2000`)) %>%
+  dplyr::select(ALLPRODUCT, area_gr)
+
+# Area dataset
+area_adm <- ag_stat %>%
+  filter(unit == "ha")
+
+# Combine with nat ag stat and rebase
+area_adm_2000 <- area_adm %>%
+  left_join(., area_FAOSTAT_gr) %>%
+  mutate(area_gr = ifelse(is.na(area_gr), 1, area_gr), 
+         area = value/area_gr,
+         year = 2000) %>%
+  dplyr::filter(area > 0) %>%
+  dplyr::select(-area_gr, -value)
+  
+
+# save file
+write_csv(area_adm_2000, file.path(dataPath, "Data\\MWI\\Processed\\agricultural_statistics\\area_adm_2000.csv"))

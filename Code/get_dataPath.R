@@ -13,7 +13,7 @@
 
 # Michiel IIASA
 if(Sys.info()["user"] == "vandijkm") {
-  dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM\\"}
+  dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM"}
 
 if(Sys.info()["user"] == "vandijkm") {
   FAOSTATPath <- "C:\\Users\\vandijkm\\DATA\\FAOSTAT_20170117"}

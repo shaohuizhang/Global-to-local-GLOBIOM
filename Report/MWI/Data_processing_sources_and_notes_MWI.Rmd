@@ -31,7 +31,9 @@ panderOptions('table.split.table', Inf)
 panderOptions('big.mark', ",")
 panderOptions('keep.trailing.zeros', TRUE)
 
+#source(file.path(root, "Code/MWI/Maps/Combine_maps_MWI.R"))
 source(file.path(root, "Code/MWI/Agricultural_statistics/Analyse_ag_stat_MWI.R"))
+#source(file.path(root, "Code/MWI/Agricultural_statistics/Analyse_land_MWI.R"))
 ```
 
 # Data sources
@@ -40,6 +42,21 @@ source(file.path(root, "Code/MWI/Agricultural_statistics/Analyse_ag_stat_MWI.R")
 @NationalStatisticalOffice2012 presents basic information about the hird Integrated Household Survey (IHS3). The data of the survey can be downloaded from the LSMS World Bank website: http://econ.worldbank.org/WBSITE/EXTERNAL/EXTDEC/EXTRESEARCH/EXTLSMS/0,,contentMDK:23635577~pagePK:64168445~piPK:64168309~theSitePK:3358997,00.html. 
 
 @RCMRD2012 describes the procedure to prepare the 2000 and 2010 land cover maps for Malawi.
+
+# Key maps
+
+```{r adms}
+# Adms
+```
+
+```{r land_cover}
+# ESA land cover
+```
+
+
+```{r household_survey}
+# EAs household survey
+```
 
 
 ## Agricultural statistics
@@ -112,9 +129,19 @@ fig_yld_winsor
 fig_yld_winsor_2000
 ```
 
-
-
 \elandscape
+
+
+# Analysis of land cover and land use
+
+```{r adm_land_cover}
+# land cover by adm
+```
+
+```{r lu_lc_comparison}
+# Comparison between land use from ag_stat and land cover
+```
+
 
 
 

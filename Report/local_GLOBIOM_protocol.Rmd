@@ -288,7 +288,16 @@ We conduct the following analysis and cleaning
 
 # STEP X: Downscale land use and production data to Simu
 ## Introduction
-Code in GAMS is provided to downscale and harmonise the land use and land cover data to the GLOBIOM simu levels. Downscaling is performed using priors that provide information on the suitability of certain crops or transportation costs. Downscaling is mostly down for crops as only limited information tends to be available on livestock. It is a separate optimization problem for each of the administrative units for which detailed production data is collected and can therefore be treated as a large
+Code in GAMS is provided to downscale and harmonise the land use and land cover data to the GLOBIOM simu levels. Downscaling is performed using priors that provide information on the suitability of certain crops or transportation costs. Downscaling is mostly down for crops as only limited information tends to be available on livestock. It is a separate optimization problem for each of the administrative units for which detailed production data is collected. 
+
+The optimization is made up of the following steps:
+
+1. 
+
+To allocate the cropland area from the national agricultural statistics a 
+
+
+
 
 
 # ANNEX
