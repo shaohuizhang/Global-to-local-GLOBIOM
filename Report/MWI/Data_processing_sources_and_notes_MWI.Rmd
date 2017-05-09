@@ -120,17 +120,17 @@ pander(tab_area_share_within_reg_as, caption = "Area share per crop within adm u
 
 \pagebreak
 ```{r fig_area_share}
-#fig_area_share
+fig_area_share
 ```
 
 \pagebreak
 ```{r fig_yld_outlier}
-#fig_yld_outlier
+fig_yld_outlier
 ```
 
 \pagebreak
 ```{r fig_yld_winsor}
-#fig_yld_winsor
+fig_yld_winsor
 ```
 
 \pagebreak
