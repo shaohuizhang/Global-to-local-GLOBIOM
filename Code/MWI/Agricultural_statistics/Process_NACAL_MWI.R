@@ -33,10 +33,6 @@ options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e
 options(digits=4)
 
 
-### LOAD DISTRICT MAPPING
-#adm_list_MWI <- read_csv(file.path(dataPath, "MWI/Processed/Mappings/adm_list_MWI.csv"))
-
-
 ### EXTRACT TABLES FROM NACAL REPORT
 # Select pdf
 doc <- file.path(dataPath, "Data\\MWI\\Raw\\Agricultural_statistics\\Nacal_Report.pdf")
@@ -133,30 +129,20 @@ MWI2ADM_2000 <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Ma
   dplyr::select(adm2_GAUL, adm1_as) %>%
   na.omit
 
-# Read crop mapping
-MWI_as2GLOBIOM_crop <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI_as2GLOBIOM_crop") %>%
-  dplyr::select(crop_as, ALLPRODUCT) %>%
+# Read crop and livestock mapping
+MWI_as2FCL <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI_as2FCL") %>%
+  dplyr::select(crop_as, FCL_title, FCL_item_code) %>%
   na.omit()
-
-# Read animal mapping
-MWI_as2GLOBIOM_anim <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI_as2GLOBIOM_anim") %>%
-  dplyr::select(crop_as = anim_as, ALLPRODUCT= ANIMALS) %>%
-  na.omit()
-
-# Combined crop and animal mapping
-MWI_as2GLOBIOM <- bind_rows(MWI_as2GLOBIOM_anim, MWI_as2GLOBIOM_crop)
-  
 
 # Aggregate production and regroup  
-# Donkeys and rabbits not matched 
 NACAL <- bind_rows(NACAL)
 NACAL <- NACAL %>%
   mutate(adm1_as = ifelse(adm1_as == "NKHOTAKOTA", "NKHOTA KOTA", adm1_as)) %>% # repair coding that occurs in two differnt forms in NACAL
   #dplyr::filter(unit == "tons") %>%
   left_join(MWI2ADM_2000) %>%
-  left_join(MWI_as2GLOBIOM) %>%
-  filter(!is.na(ALLPRODUCT)) %>% # Filter out non-mapped crops
-  group_by(ALLPRODUCT, adm2_GAUL, unit) %>%
+  left_join(MWI_as2FCL) %>%
+  filter(!is.na(FCL_item_code)) %>% # Filter out non-mapped crops
+  group_by(FCL_item_code, FCL_title, adm2_GAUL, unit) %>%
   summarize(value = sum(value, na.rm = T)) %>%
   mutate(year = 2007)
 

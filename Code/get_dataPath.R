@@ -18,6 +18,8 @@ if(Sys.info()["user"] == "vandijkm") {
 if(Sys.info()["user"] == "vandijkm") {
   FAOSTATPath <- "C:\\Users\\vandijkm\\DATA\\FAOSTAT_20170117"}
 
+if(Sys.info()["user"] == "vandijkm") {
+  ISWELPath <- "P:/is-wel"}
 
 # Anybody else:
 if(Sys.info()["user"] == "") {

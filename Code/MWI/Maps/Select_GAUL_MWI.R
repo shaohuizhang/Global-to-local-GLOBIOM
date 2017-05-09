@@ -65,16 +65,18 @@ area_remove <- c("Area under National Administration")
 # Gaul adm1
 plot(GAUL_MWI_adm1_2000)
 plot(GAUL_MWI_adm1_2000[GAUL_MWI_adm1_2000$ADM1_NAME == area_remove,], add = T, border = "red")
-GAUL_MWI_adm1_2000 <- GAUL_MWI_adm1_2000[GAUL_MWI_adm1_2000$ADM1_NAME != area_remove,]
-plot(GAUL_MWI_adm1_2000)
+GAUL_MWI_adm1_2000_adj <- GAUL_MWI_adm1_2000[GAUL_MWI_adm1_2000$ADM1_NAME != area_remove,]
+plot(GAUL_MWI_adm1_2000_adj)
 
 # Gaul adm2
 plot(GAUL_MWI_adm2_2000)
 plot(GAUL_MWI_adm2_2000[GAUL_MWI_adm2_2000$ADM1_NAME == area_remove,], add = T, border = "red")
-GAUL_MWI_adm2_2000 <- GAUL_MWI_adm2_2000[GAUL_MWI_adm2_2000$ADM2_NAME != area_remove,]
-plot(GAUL_MWI_adm2_2000)
+GAUL_MWI_adm2_2000_adj <- GAUL_MWI_adm2_2000[GAUL_MWI_adm2_2000$ADM2_NAME != area_remove,]
+plot(GAUL_MWI_adm2_2000_adj)
 
 ### SAVE MAPS
+saveRDS(GAUL_MWI_adm1_2000_adj, file.path(dataPath, "Data\\MWI\\Processed\\Maps\\GAUL_MWI_adm1_2000_adj.rds"))
+saveRDS(GAUL_MWI_adm2_2000_adj, file.path(dataPath, "Data\\MWI\\Processed\\Maps\\GAUL_MWI_adm2_2000_adj.rds"))
 saveRDS(GAUL_MWI_adm1_2000, file.path(dataPath, "Data\\MWI\\Processed\\Maps\\GAUL_MWI_adm1_2000.rds"))
 saveRDS(GAUL_MWI_adm2_2000, file.path(dataPath, "Data\\MWI\\Processed\\Maps\\GAUL_MWI_adm2_2000.rds"))
 

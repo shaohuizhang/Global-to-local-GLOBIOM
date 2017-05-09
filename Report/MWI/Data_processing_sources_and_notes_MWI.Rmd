@@ -31,7 +31,7 @@ panderOptions('table.split.table', Inf)
 panderOptions('big.mark', ",")
 panderOptions('keep.trailing.zeros', TRUE)
 
-#source(file.path(root, "Code/MWI/Maps/Combine_maps_MWI.R"))
+source(file.path(root, "Code/MWI/Maps/Key_maps_MWI.R"))
 source(file.path(root, "Code/MWI/Agricultural_statistics/Analyse_ag_stat_MWI.R"))
 #source(file.path(root, "Code/MWI/Agricultural_statistics/Analyse_land_MWI.R"))
 ```
@@ -45,17 +45,21 @@ source(file.path(root, "Code/MWI/Agricultural_statistics/Analyse_ag_stat_MWI.R")
 
 # Key maps
 
-```{r adms}
-# Adms
+\blandscape
+```{r adms, fig.show='hold',fig.align='center'}
+fig_adm2
+fig_land_cover
+fig_LSMS
 ```
+\elandscape
+
 
 ```{r land_cover}
-# ESA land cover
+#fig_land_cover
 ```
 
-
 ```{r household_survey}
-# EAs household survey
+#fig_LSMS
 ```
 
 
@@ -74,59 +78,64 @@ source(file.path(root, "Code/MWI/Agricultural_statistics/Analyse_ag_stat_MWI.R")
 
 \blandscape
 ```{r area_rank}
-pander(tab_area_rank_FAOSTAT, caption = "Area and area share per crop using FAOSTAT")
+pander(tab_area_rank_FAOSTAT, caption = "Area and area share per crop using FAOSTAT (2000)")
 ```
 
 \pagebreak
-```{r tab_area_rank_nat}
-pander(tab_area_rank_nat, caption = "Area and area share per crop using national agricultural statistics")
+```{r tab_area_rank_as}
+pander(tab_area_rank_as, caption = "Area and area share per crop using national agricultural statistics (2007)")
+```
+
+\pagebreak
+```{r tab_area_rank_ma}
+pander(tab_area_rank_as, caption = "Area and area share per crop using Agro-maps (2000)")
 ```
 
 \pagebreak
 ```{r fig_area_compare}
-fig_area_compare
+#fig_area_compare
 ```
 
 \pagebreak
 ```{r fig_prod_compare}
-fig_prod_compare
+#fig_prod_compare
 ```
 
 \pagebreak
 ```{r fig_yld_compare}
-fig_yld_compare
+#fig_yld_compare
 ```
 
 \pagebreak
 ```{r fig_heads_compare}
-fig_heads_compare
+#fig_heads_compare
 ```
 
 \pagebreak
 \footnotesize
-```{r tab_area_share_within_reg}
-pander(tab_area_share_within_reg, caption = "Area share per crop within adm using national agricultural statistics")
+```{r tab_area_share_within_reg_as}
+pander(tab_area_share_within_reg_as, caption = "Area share per crop within adm using national agricultural statistics")
 ```
 \normalsize
 
 \pagebreak
 ```{r fig_area_share}
-fig_area_share
+#fig_area_share
 ```
 
 \pagebreak
 ```{r fig_yld_outlier}
-fig_yld_outlier
+#fig_yld_outlier
 ```
 
 \pagebreak
 ```{r fig_yld_winsor}
-fig_yld_winsor
+#fig_yld_winsor
 ```
 
 \pagebreak
-```{r fig_yld_winsor}
-fig_yld_winsor_2000
+```{r fig_yld_winsor_2000}
+#fig_yld_winsor_2000
 ```
 
 \elandscape
@@ -142,6 +151,9 @@ fig_yld_winsor_2000
 # Comparison between land use from ag_stat and land cover
 ```
 
+```{r MWI_as2FLC}
+# mapping as 2 FAO
+```
 
 
 

@@ -20,10 +20,8 @@ p_load("countrycode", "plotKML")
 root <- find_root(is_rstudio_project)
 setwd(root)
 
-
 ### SET DATAPATH
-dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM"
-ISWELPath <- "P:\\is-wel"
+source(file.path(root, "Code/get_dataPath.r"))
 
 
 ### R SETTINGS
@@ -33,9 +31,8 @@ options(digits=4)
 
 
 ### LOAD SIMU MAPS
-SIMU_LU <- read_csv(file.path(dataPath, "Data/GLOBIOM/simu_lu/SimUIDLUID.csv"))
-ogrListLayers(file.path(dataPath, "Data/GLOBIOM/simu_poly/SimU_all.shp"))
-simu_5min_poly <- readOGR(file.path(dataPath, "Data/GLOBIOM/simu_poly/SimU_all.shp"), layer = "SimU_all")
+ogrListLayers(file.path(dataPath, "Data/GLOBIOM/Simu/Simu_poly/SimU_all.shp"))
+simu_5min_poly <- readOGR(file.path(dataPath, "Data/GLOBIOM/Simu/Simu_poly/SimU_all.shp"), layer = "SimU_all")
 simu_raster <- raster(file.path(dataPath, "Data/GLOBIOM/simu_raster/w001001.adf"))
 
 ### DOWNLOAD BASIN SHAPE FILES
@@ -43,6 +40,63 @@ zambezi <- readOGR(file.path(ISWELPath, "shared_data_sources\\processed_data\\Za
 indus <- readOGR(file.path(ISWELPath, "shared_data_sources\\processed_data\\Indus\\Indus_hybas_lev3.shp"))
 plotKML(zambezi)
 plotKML(indus)
+
+
+  
+
+
+
+### WORLD MAP IN MAPS PACKAGE
+# plot world map using map
+worldmap <- map("world", fill = TRUE, plot = FALSE)
+map(worldmap)
+
+# plot world map using ggplot
+# quick and dirty using borders as detail of border is limited
+# For more detail download GADM data
+worldborders <- borders("world", fill = "grey", colour = "blue")
+ggplot() + worldborders
+
+worldborders <- borders("world", c("India", "Pakistan"), fill = "grey", colour = "blue")
+ggplot() + worldborders
+
+# Other option using map_data which creates a dataframe
+worldmap2 <- map_data("world")
+ggplot() + geom_polygon(data = worldmap2,  aes(x=long, y = lat, group = group))
+
+# Convert maps data to polygon (one for each country) and project
+worldmap_poly <- map2SpatialPolygons(worldmap, 
+                                     IDs=sapply(strsplit(worldmap$names, ":"), "[", 1L), 
+                                     proj4string=CRS("+proj=longlat +datum=WGS84"))
+plot(worldmap_poly)
+names(worldmap_poly)
+
+names(world)
+
+
+### DOWNLOAD GAUL
+
+
+
+
+# GAUL adm1
+ogrListLayers(file.path(dataPath, "Data\\Global\\GAUL\\g2015_2000_1\\g2015_2000_1.shp"))
+GAUL_adm1_2000 <- readOGR(file.path(dataPath, "Data\\Global\\GAUL\\g2015_2000_1\\g2015_2000_1.shp"), layer = "g2015_2000_1")
+zambezi_c_adm1 <- GAUL_adm1_2000[GAUL_adm1_2000$ADM0_NAME %in% zambezi_c,]
+plot(zambezi_c_adm1)
+
+# GAUL adm2
+ogrListLayers(file.path(dataPath, "Data\\Global\\GAUL\\g2015_2000_2\\g2015_2000_2.shp"))
+GAUL_adm2_2000 <- readOGR(file.path(dataPath, "Data\\Global\\GAUL\\g2015_2000_2\\g2015_2000_2.shp"), layer = "g2015_2000_2")
+
+# Gaul adm1
+GAUL_MWI_adm1_2000 <- GAUL_adm1_2000[GAUL_adm1_2000$ADM0_NAME == "Malawi",]
+plot(GAUL_MWI_adm1_2000)
+
+# Gaul adm2
+GAUL_MWI_adm2_2000 <- GAUL_adm2_2000[GAUL_adm2_2000$ADM0_NAME == "Malawi",]
+plot(GAUL_MWI_adm2_2000)
+
 
 ### USE ZAMBEZI MAP TO CLIP SIMU MAP
 # Create polygon
@@ -82,3 +136,19 @@ indus_simu_df <- as.data.frame(rasterToPoints(indus_simu)) %>%
 check <- simu_5min_poly[simu_5min_poly$SimUID %in% indus_simu_df$SimUID,]
 plot(check, add = T)
 rm(check)
+
+
+### ZAMBEZI MAPS
+zambezi_c <- c("Malawi", "Botswana", "Zambia", "Zimbabwe", "Mozambique","Angola", "Tanzania", "Namibia", 
+               "Democratic Republic of the Congo", "South Africa")
+indus_c <- c("")
+
+zambezi_f <- fortify(zambezi)
+
+ggplot() + borders("world", zambezi_c, fill = "grey", colour = "blue") +
+  geom_path(data = zambezi_f, aes(x = long, y = lat, group = group), colour = "red")
+
+data(maps:wordMapEnv)
+map('usa')
+map('rivers')
+, add=TRUE)

@@ -57,7 +57,8 @@ Agricultural statistics of developing countries are often not easy to find and d
 - Websites of national statistical agencies.
 - Websites of the Ministry of agriculture, environment, fishery, etc.
 - Websites of national agricultural research institutes.
-- https://www.countrystat.org/, a website of the FAO with subnational agricultural statistics.
+- Agro-maps: http://kids.fao.org/agromaps/. An FAO initiative to collect subnational data on harvested area, production and yield. Contains lots of information although, quality and sources are not always clear. 
+- Country stat: https://www.countrystat.org/. Another website of the FAO with subnational agricultural statistics. Contains much less information than Agro-maps. Not clear if the data is the same or different.
 - Contacting CGIAR institutes that are active in the region.
 - Contacting any of the national organisations listed above, preferably by means of a personal visit.
 - Large companies that are active in the agricultural sector (mainly for statistics on cash crops such as palm oil, tea and coffee)
@@ -142,9 +143,11 @@ Preferably the following information should be updated in GLOBIOM:
 
 It highly depends on the region, which data is available and at which level. We recommend to take a pragmatic approach, using data from household surveys (e.g. LSMS-ISA, LSMS, etc), national statistics and specialised ministries and institutes. The following sections describe some rules of thumb that can be used to update the information.
 
-The abbreviations (as, hs and lc) are used in the names of the mappings and files to refer to the source.
+The abbreviations (as, am, hs and lc) are used in the names of the mappings and files to refer to the source.
 
 ## Agricultural statistics (as)
+
+## Agro-maps (am)
 
 ## Household surveys (hs)
 ## Spatial data (sd)
@@ -190,6 +193,7 @@ We use the following conventions to create the mappings:
 
 - The abbreviations for the three main sources are used in the mappings to indicate the source of the data: agricultural statistics (ag), household surveys (hs) and land cover maps (lc)
 - All names from the three sources are capitalised to remove the problem that sometimes parts of region and crop names are capitalised in one source, while they are not in others (e.g. Mzuzu city versus Mzuzu City).
+- 
 - Lists of GLOBIOM crops and inputs are the same as in GLOBIOM and therefore only partially capitalised.
 
 ### Land cover classes: MWI2GLOBIOM_lc
@@ -197,8 +201,8 @@ We use the following conventions to create the mappings:
 ### Administrative areas: iso3c2ADM_2000
 In order to link data from the land cover maps, agricultural statistics and household surveys, it is important to create a list with administrative areas that will be used throughout the analysis to link data. For mapping purposes it is most convenient to use the GAUL area names (and code) as a basis. As names are often spelled differently, it is essential to prepare a concordance table that links all versions of adm names that are used by the various data sources. The table is stored in a sheet called __iso3c2ADM_2000__ in the __Mappings_iso3c.xlsx__ file. 
 
-### Crops: 
-Map all crops that are produced in the country to one of the crop codes that are used in GLOBIOM. In some cases this is straigtforward, while in other cases it requires some thinking and creativity. Many tropical countries produce a large variety of beans (e.g. ordinary beans, ground beans, etc), which are all mapped to Beans, dry (BeaD). Similarly, cow peas and pigeon peas are typically mapped to chick peas [@check].
+### Crops: MWI_as2FCL
+Map all crops that are produced in the country to FAOSTAT crops. FAOSTAT provides a commodity list (FCL) that classifies crops, livestock and processed products (http://www.fao.org/economic/ess/ess-standards/commodity/en/),   which can be aggregated to GLOBIOM crop and livestock categories. Mapping country specific items to the FAO classification is sometimes not straigtforward and requires some thinking and creativity. Many tropical countries produce a large variety of beans (e.g. ordinary beans, ground beans, etc), which are all mapped to Beans, dry (BeaD). Similarly, cow peas and pigeon peas are typically mapped to chick peas [@check].
 
 ###
 
