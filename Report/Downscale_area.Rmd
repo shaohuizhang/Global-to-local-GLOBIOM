@@ -1,0 +1,61 @@
+---
+title: "Downscale procedure"
+author: "Michiel van Dijk"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  word_document:
+    reference_docx: ../Common/word_styles_01.docx
+    
+---
+
+```{r setup, include=FALSE}
+library(rprojroot)
+root <- find_root(is_rstudio_project)
+
+library(knitr)
+knitr::opts_chunk$set(
+  fig.width=12, fig.height=8,
+  dpi = 300,
+  echo=FALSE, warning=FALSE, message=FALSE,
+  fig.path = file.path(root,"FigTabMap/out-"),
+  dev = "CairoPNG",
+  dev.args = list(CairoPNG = list(bg = "transparent"))
+  )
+
+library(pander)
+panderOptions('table.alignment.default', function(df)
+    ifelse(sapply(df, is.numeric), 'right', 'left'))
+panderOptions('table.split.table', Inf)
+panderOptions('big.mark', ",")
+panderOptions('keep.trailing.zeros', TRUE)
+
+#source(file.path(root, "Code/Fig.R"))
+#source(file.path(root, "Code/Tab.R"))
+```
+
+# STEP X: Downscaling area information to SIMU
+before downscaling:
+- make sure that cropland >= crop area, if not take land from other agricultural land.
+- Find information on fallow land, if so have to create a fallow land coefficient that assumes a share of cropland is fallow
+- Find information on cropping intensity (double cropping) and adjust area
+
+On priors:
+- Note that a small prior results in the allocation of very small shares of crop land, which is not desirable.
+- better to cut of priors arguing that if yield or transport costs are < X they are set to zero.
+
+Solving model
+- Check if there are infeasability issues with solving - will be clear in LOG
+
+Dealing with different systems (intensification as in SPAM)
+- Either just allocate crops without making any assumptions on the system. This means that in fact the systems distribution that are in GLOBIOM are used in the end. This takes area from the downscaling, production from FAOSTAT and relative yields per system from EPIC. All yields are scaled so that production FAOSTAT/area downscaling = yield.
+- Already incorporate information on irrigated areas in the downscaling and use SPAM to distribute the three rainfed systems => this will replace the distribution of systems from SPAM.
+
+
+Postprocessing:
+- If crop area < cropcover, excess cropland needs to be distributed to other natural land as cropland needs to be equal to crop cover in GLOBIOM.
+- Other option is to assume that excess crop cover is allocated to a crop that is not in the system and is therefore fixed (not recommended)
+
+Livestock
+- Check livestock map by ILRI and compare with land cover. Probably no need to adjust.
+- 
+

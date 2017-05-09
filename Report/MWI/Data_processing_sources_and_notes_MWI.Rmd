@@ -93,22 +93,22 @@ pander(tab_area_rank_as, caption = "Area and area share per crop using Agro-maps
 
 \pagebreak
 ```{r fig_area_compare}
-#fig_area_compare
+fig_area_compare
 ```
 
 \pagebreak
 ```{r fig_prod_compare}
-#fig_prod_compare
+fig_prod_compare
 ```
 
 \pagebreak
 ```{r fig_yld_compare}
-#fig_yld_compare
+fig_yld_compare
 ```
 
 \pagebreak
 ```{r fig_heads_compare}
-#fig_heads_compare
+fig_heads_compare
 ```
 
 \pagebreak
