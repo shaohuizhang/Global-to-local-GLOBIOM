@@ -28,7 +28,7 @@ options(digits=4)
 
 ### LOAD SIMU MAP
 simu2country_poly <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/simu_MWI.rds"))
-plot(simu2country_poly)
+spplot(simu2country_poly, "SimUID", colorkey=FALSE)
 
 ### LOAD GAUL MAPS
 adm2_map <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm2_2000_adj.rds"))
@@ -59,7 +59,7 @@ districts <- as.data.frame(coordinates(adm2_map)) %>%
 
 # Draw map
 fig_adm2 <- ggplot() +
-  geom_polygon(data = adm2_for, aes(x = long, y = lat, fill = ADM2_NAME), colour = "black") +
+  geom_polygon(data = adm2_for, aes(x = long, y = lat, fill = ADM2_NAME, group = group), colour = "black") +
   geom_polygon(data =filter(adm2_for, id == 662), aes(x = long, y = lat), colour = "black", fill = "blue") +
   geom_point(data = capital, aes(x = long, y = lat), colour = "black") +
   geom_text(data = districts, aes(x = long, y = lat, label = name), size = 2) +

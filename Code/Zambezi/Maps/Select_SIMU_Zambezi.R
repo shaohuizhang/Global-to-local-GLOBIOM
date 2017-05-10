@@ -20,7 +20,7 @@ root <- find_root(is_rstudio_project)
 setwd(root)
 
 ### SET DATAPATH
-dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM"
+source(file.path(root, "Code/get_dataPath.r"))
 
 
 ### R SETTINGS
@@ -33,25 +33,14 @@ options(digits=4)
 ogrListLayers(file.path(dataPath, "Data/GLOBIOM/Simu/Simu_poly/SimU_all.shp"))
 simu_5min_poly <- readOGR(file.path(dataPath, "Data/GLOBIOM/Simu/Simu_poly/SimU_all.shp"), layer = "SimU_all")
 
+### LOAD BASIN SHAPE FILES
+zambezi_map <- readOGR(file.path(ISWELPath, "shared_data_sources\\processed_data\\Zambezi\\Zambezi_hybas_lev3.shp"))
 
-### SELECT COUNTRY SIMU MAP USING ISO3 NUMBERING
-# set country code
-# 454 = Malawi
-iso3n <- 454
-simu2country_poly <- simu_5min_poly[simu_5min_poly$COUNTRY == iso3n,]
-plot(simu2country_poly)
-
-# Load GAUL ADM map
-country_map <- readRDS(file.path(dataPath, "Data\\MWI\\Processed\\Maps/GAUL_MWI_adm2_2000.rds"))
-
-# Compare and inspect maps
-# Comparison with Google Earth shows that a number of simus are located in Lake Malawi and therefore should not be considered
-plot(country_map)
-plot(simu2country_poly, add = T, border = "red")
-plotKML(simu2country_poly)
-
-# Remove simu
+### CLIP SIMU MAP TO BASIN
+# Create polygon
+simu_zambezi <- gIntersection(zambezi_map, simu_5min_poly, byid = TRUE, drop_lower_td = TRUE)
+spplot(simu_zambezi, col = "lightblue")
 
 # Save map
-saveRDS(simu2country_poly, file.path(dataPath, "Data/MWI/Processed/Maps/simu_MWI.rds"))
+saveRDS(simu_zambezi, file.path(dataPath, "Data/Zambezi/Processed/Maps/simu_Zambezi.rds"))
 

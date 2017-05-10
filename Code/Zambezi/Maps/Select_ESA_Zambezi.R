@@ -28,17 +28,47 @@ options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e
 options(digits=4)
 
 
-### LOAD GAUL MAPS
-adm2_map <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm2_2000.rds"))
-plot(adm2_map)
+### LOAD BASIN SHAPE FILES
+zambezi_map <- readOGR(file.path(ISWELPath, "shared_data_sources\\processed_data\\Zambezi\\Zambezi_hybas_lev3.shp"))
 
-### LOAD LAND COVER MAP 
+### LOAD LAND COVER MAP
+# CHECK IF THEIR ARE TEMPORARY FILES (CREATED BY RASTER PACKAGE) AND REMOVE
+showTmpFiles()
+removeTmpFiles()
+
 # Load global ESA map
 land_cover_map_ESA <- raster(file.path(dataPath, "Data\\Global\\ESA\\Annual_maps\\ESACCI-LC-L4-LCCS-Map-300m-P1Y-2000-v2.0.7.tif"))
-land_cover_map <- crop(land_cover_map_ESA, adm2_map)
-land_cover_map <- mask(land_cover_map, adm2_map)
-plot(land_cover_map)
+
+# Load ESA legend
+ESA_legend <- read_csv(file.path(dataPath, "Data\\Global\\ESA\\ESACCI-LC-Legend.csv")) %>%
+  mutate(ID = land_cover_code)
+
+# Crop and mask land cover map
+land_cover_map <- crop(land_cover_map_ESA, indus_map)
+land_cover_map <- mask(land_cover_map, indus_map)
+
+# Add attributes
+# http://stackoverflow.com/questions/19586945/how-to-legend-a-raster-using-directly-the-raster-attribute-table-and-displaying
+land_cover_map <- ratify(land_cover_map)
+rat <- levels(land_cover_map)[[1]] #get the values of the unique cell frot the attribute table
+rat <- left_join(rat, ESA_legend)
+
+# Create colours for legend and sort in right order
+ESA_colour <- rat
+ESA_colour <- ESA_colour %>%
+  filter(ID %in% seq(0, 220, 10)) %>%
+  mutate(colour= rgb(R, G, B, max = 255)) %>%
+  unique()
+ESA_colour <- ESA_colour[order(ESA_colour$land_cover_short, decreasing = F),]
+
+# Links levels
+levels(land_cover_map) <- rat
+levels(land_cover_map)
+rm(rat)
+
+# Plot
+levelplot(land_cover_map, att = 'land_cover_short', col.regions = ESA_colour$colour, margin = F)
 
 # Save map
-saveRDS(land_cover_map, file.path(dataPath, "Data/MWI/Processed/Maps/ESA_MWI_2000.rds"))
+saveRDS(land_cover_map, file.path(dataPath, "Data/Zambezi/Processed/Maps/ESA_Zambezi_2000.rds"))
 
