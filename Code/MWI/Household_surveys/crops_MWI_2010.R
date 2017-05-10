@@ -18,7 +18,7 @@ p_load("tidyverse", "readxl", "stringr", "scales", "RColorBrewer", "rprojroot")
 ### SET WORKING DIRECTORY
 
 ### SET DATAPATH
-dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM\\Data\\Raw\\MWI\\Household_survey\\2010\\IHS3"
+dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM\\Data\\MWI\\Raw\\Household_survey\\2010\\IHS3"
 
 ### R SETTINGS
 options(scipen=999) # surpress scientific notation
