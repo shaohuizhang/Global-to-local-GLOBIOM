@@ -59,3 +59,8 @@ Livestock
 - Check livestock map by ILRI and compare with land cover. Probably no need to adjust.
 - 
 
+
+QUESTIONS LIANG
+- How to deal with missing data
+- How to deal with subnational cropstatistics that only cover core crops. Downscale other crops from national level downwards?
+

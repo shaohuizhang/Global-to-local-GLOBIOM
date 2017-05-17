@@ -43,6 +43,15 @@ source(file.path(root, "Code/MWI/Agricultural_statistics/Analyse_ag_stat_MWI.R")
 
 @RCMRD2012 describes the procedure to prepare the 2000 and 2010 land cover maps for Malawi.
 
+@AgroMaps2017 presents data for yield, area and production at adm1 and adm2 level.
+
+@CropSTATS2017 only presents total area for all crops together at adm2 level. This source is not used.
+
+
+# To check
+- Suitability maps as presented in IFPRI MWI report, 2016
+- Land use map 1991 with more detailed location of various crops. Also check FAO 1990 and 2010 land cover maps
+
 # Key maps
 
 \blandscape

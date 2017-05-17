@@ -1,0 +1,112 @@
+#'========================================================================================================================================
+#' Project:  Global-to-local GLOBIOM
+#' Subject:  Script to analyse and process agro-maps data
+#' Author:   Michiel van Dijk
+#' Contact:  michiel.vandijk@wur.nl
+#'========================================================================================================================================
+
+
+### PACKAGES
+if(!require(pacman)) install.packages("pacman")
+# Key packages
+p_load("tidyverse", "readxl", "stringr", "car", "scales", "RColorBrewer", "rprojroot")
+# Spatial packages
+#p_load("rgdal", "ggmap", "raster", "rasterVis", "rgeos", "sp", "mapproj", "maptools", "proj4", "gdalUtils")
+# Additional packages
+p_load("countrycode")
+
+
+
+### SET ROOT AND WORKING DIRECTORY
+root <- find_root(is_rstudio_project)
+setwd(root)
+
+
+### SET DATAPATH
+source(file.path(root, "Code/get_dataPath.r"))
+
+
+### R SETTINGS
+options(scipen=999) # surpress scientific notation
+options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e.g. csv) is not turned into factors
+options(digits=4)
+
+
+# OBTAIN ADM LIST
+# Load data
+am_raw <- read_csv(file.path(dataPath, "Data/MWI/Raw/Agricultural_statistics/Agro-maps/mwi_all_data.csv")) 
+
+# Save adm1 list
+am_MWI_adm1_list <- am_raw %>%
+  filter(ADMIN_LEVEL == 1) %>%
+  dplyr::transmute(adm1_am = toupper(AREA_NAME)) %>%
+  unique %>%
+  arrange(adm1_am)
+
+write_csv(am_MWI_adm1_list, file.path(dataPath, "Data/MWI/Processed/Mappings/am_MWI_adm1_list.csv"))
+
+# Save adm2 list
+am_MWI_adm2_list <- am_raw %>%
+  filter(ADMIN_LEVEL == 2) %>%
+  dplyr::transmute(adm2_am = toupper(AREA_NAME)) %>%
+  unique %>%
+  arrange(adm2_am)
+  
+write_csv(am_MWI_adm2_list, file.path(dataPath, "Data/MWI/Processed/Mappings/am_MWI_adm2_list.csv"))
+
+
+### PROCESS AGRO-MAPS
+# Read adm1 mappping
+MWI2adm1 <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI2adm") %>%
+  filter(year == 2000) %>%
+  dplyr::select(adm1_GAUL, adm1_am) %>%
+  na.omit %>%
+  unique()
+
+# Read adm2 mappping
+MWI2adm2 <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI2adm") %>%
+  filter(year == 2000) %>%
+  dplyr::select(adm2_GAUL, adm2_am) %>%
+  na.omit
+
+# Read crop and livestock mapping
+crop_lvst_map <- read_csv(file.path(dataPath, "Data\\Mappings\\crop_lvst_mapping.csv")) %>%
+  dplyr::select(short_name, FCL_item_code) %>%
+  na.omit()
+
+# Process data: change names, units and put in long format
+am <- am_raw %>%
+  dplyr::select(ADMIN_LEVEL, AREA_NAME, FCL_item_code = ITEM_CODE, year = YEAR, area = AEREA_HARVESTED, yield = YIELD, production = PRODUCTION) %>%
+  gather(variable, value, -AREA_NAME, -ADMIN_LEVEL, -FCL_item_code, -year) %>%
+  mutate(unit = dplyr::recode(variable, "area" = "ha", "yield" = "tons/ha", "production" = "tons"),
+         AREA_NAME = toupper(AREA_NAME)) %>%
+  filter(year != "Most recent") %>%
+  left_join(., crop_lvst_map) %>%
+  na.omit() 
+
+# Agregate to adm1 level and core crops and lvst
+am_adm1 <- am %>%
+  filter(ADMIN_LEVEL == 1) %>%
+  dplyr::select(-ADMIN_LEVEL) %>%
+  rename(adm1_am = AREA_NAME) %>%
+  left_join(MWI2adm1) %>%
+  group_by(year, adm1_GAUL, short_name, unit, variable) %>%
+  summarize(value = sum(value, na.rm = T)) %>%
+  mutate(adm_level = 1)
+
+# Agregate to adm1 level and core crops and lvst
+am_adm2 <- am %>%
+  filter(ADMIN_LEVEL == 2) %>%
+  dplyr::select(-ADMIN_LEVEL) %>%
+  rename(adm2_am = AREA_NAME) %>%
+  left_join(MWI2adm2) %>%
+  group_by(year, adm2_GAUL, short_name, unit, variable) %>%
+  summarize(value = sum(value, na.rm = T)) %>%
+  mutate(adm_level = 2)
+
+# Combine
+am <- bind_rows(am_adm2, am_adm2)
+
+# save file
+write_csv(am, file.path(dataPath, "Data\\MWI\\Processed\\agricultural_statistics\\am.csv"))
+

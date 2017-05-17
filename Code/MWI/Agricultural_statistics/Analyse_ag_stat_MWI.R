@@ -32,63 +32,30 @@ options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e
 options(digits=4)
 
 
-### DOWNLOAD FLc LIST
-# Load FLC
-FCL <- read_excel(file.path(dataPath, "Data\\Global\\FAOSTAT\\FCL\\FCL.xlsx"), sheet = "FCL_short")
-
-
-### DOWNLOAD AND PROCESS FAOSTAT DATA
-# Download
-FAOSTAT_prod_raw <- read_csv(file.path(FAOSTATPath, "Production_Crops_E_All_Data_(Normalized).csv"))
-FAOSTAT_lvst_raw <- read_csv(file.path(FAOSTATPath, "Production_Livestock_E_All_Data_(Normalized).csv"))
-
-# Process 
-FAOSTAT_prod <- FAOSTAT_prod_raw %>%
-  mutate(variable = dplyr::recode(Element, "Area harvested" = "area", "Yield" = "yield", "Production" = "production"),
-         iso3c = countrycode(`Area Code`, "fao", "iso3c")) %>%
-  dplyr::select(iso3c, FCL_item_code = `Item Code`, variable, year = Year, unit = Unit, value = Value) %>%
-  filter(iso3c == "MWI") %>%
-  left_join(., FCL) %>%
-  filter(!is.na(value), !(class == "total")) %>%
-  dplyr::select(-class)
-
-FAOSTAT_lvst <- FAOSTAT_lvst_raw %>%
-  mutate(variable = dplyr::recode(Element, "Area harvested" = "area", "Yield" = "yield", "Production" = "production"),
-         iso3c = countrycode(`Area Code`, "fao", "iso3c")) %>%
-  dplyr::select(iso3c, FCL_item_code = `Item Code`, variable, year = Year, unit = Unit, value = Value) %>%
-  filter(iso3c == "MWI") %>%
-  left_join(., FCL) %>%
-  mutate(value = ifelse(FCL_title %in% c("Poultry Birds", "Chickens"), value*1000, value),
-         unit = "Head") %>%
-  filter(!is.na(value), !(class == "total")) %>%
-  dplyr::select(-class)
-
-### DOWNLOAD REGIONAL MAPPING
+### LOAD MAPPINGS
+# Regional mapping
 MWI2ADM_2000 <- read_excel(file.path(dataPath, "Data/MWI/Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI2ADM_2000") %>%
   dplyr::select(adm1_hs, adm2_GAUL) %>%
   na.omit() %>%
   unique()
 
-# Create files for relevant variables
-area_FAOSTAT <- FAOSTAT_prod %>%
-  filter(unit == "ha", year >1990, variable == "area") %>%
-  na.omit() # remove rows with na values for value
-  
-prod_FAOSTAT <- FAOSTAT_prod %>%
-  filter(unit == "tonnes", year >1990, variable == "production")
-
-yld_FAOSTAT <- FAOSTAT_prod %>%
-  filter(unit == "hg/ha", year >1990, variable == "yield") %>%
-  mutate(value = value/10000) # convert to tons/ha
-
-number_FAOSTAT <- FAOSTAT_lvst %>%
-  filter(year >1990) 
 
 
-### PROCESS AGRO-MAPS DATA
-# Load data
+### LOAD DATA
+# FAOSTAT
+FAOSTAT <- read_csv(file.path(dataPath, "Data/MWI/processed/Agricultural_statistics/FAOSTAT_MWI.csv"))
+
+# Agro-Maps
 am_adm1 <- read_csv(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/Agro_maps_adm1.csv"))
 am_adm2 <- read_csv(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/Agro_maps_adm2.csv"))
+
+# CropSTAT
+
+
+# Agricultural statistics
+as <- read_csv(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/ag_stat_MWI.csv"))
+
+
 
 # Aggregate area and production to country level
 area_am_adm2 <- am_adm2 %>%
@@ -108,12 +75,6 @@ yld_am_adm2 <- am_adm2 %>%
   spread(variable, value) %>%
   mutate(value = production/area)
 
-
-
-### PROCESS AGRICULTURAL STATISTICS
-# Read data
-as <- read_csv(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/ag_stat_MWI.csv"))
-tot_pop_adm <- read_csv(file.path(dataPath, "Data/MWI/Processed/Spatial_data/tot_pop_adm_2000_MWI.csv"))
 
 # Aggregate area and production to country level
 area_as <- as %>%

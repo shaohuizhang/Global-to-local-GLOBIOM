@@ -143,13 +143,16 @@ Preferably the following information should be updated in GLOBIOM:
 
 It highly depends on the region, which data is available and at which level. We recommend to take a pragmatic approach, using data from household surveys (e.g. LSMS-ISA, LSMS, etc), national statistics and specialised ministries and institutes. The following sections describe some rules of thumb that can be used to update the information.
 
-The abbreviations (as, am, hs and lc) are used in the names of the mappings and files to refer to the source.
+The abbreviations (as, am, cs, hs and lc) are used in the names of the mappings and files to refer to the source.
 
 ## Agricultural statistics (as)
 
 ## Agro-maps (am)
 
+## CropSTATS (cs)
+
 ## Household surveys (hs)
+
 ## Spatial data (sd)
 
 
@@ -183,6 +186,8 @@ After the choice is made, the appropriate map(s) can be downloaded. There are tw
 ## Script
 __Location: Code/iso3c/Maps/__
 __Select_GAUL_iso3c.r__. This script extracts the country specific map from the GAUL. Different levels of administrative boundaries can be selected and the maps will be automatically saved in user-selected folder for later use.
+
+An adm list is saved for each of the data sources, if available: GAUL, as, hs, cs. These need to be compared,  harmonised and linked in a file. Frequently, the names are spelled differently, depending on the source. This file will be used to harmonise the adm names in all data sources. 
 
 
 # STEP 3: Create mappings to harmonise data
@@ -310,6 +315,8 @@ To allocate the cropland area from the national agricultural statistics a
 - List of key files (Mappings_iso3c.xlsx)
 - List of scripts and purpose
 
+## SPAM2005 Crop2FAOSTAT
+To categorize the crops we use the SPAM2005 crop categores (REF, Table 2-2) with two minor corrections. SPAM splits Millet (79) in two types: Pearl Millet and Small Millet. We keep one category: Millet with ID 5 (ID 6 is dropped). Similarly, Green Coffee is split into: Arabica Coffee and Robusta Coffee. Also here we stick to one category: Green Coffee with ID 32 (ID 33 is dropped)
 
 # Footnotes
 [^1] This can easily be done with R using the raster package. At the moment no code is provided for this. 

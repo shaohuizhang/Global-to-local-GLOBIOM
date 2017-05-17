@@ -62,7 +62,8 @@ SPAM_upd <-SPAM_upd %>%
   mutate(`Long Name` = dplyr::recode(`Long Name`, "Pearl Millet" = "Millet",
                                                   "Arabica Coffee" = "Coffee, Green"),
          `Short Name` = dplyr::recode(`Short Name`, "pmil" = "mill",
-                                                    "acof" = "coff"))
+                                                    "acof" = "coff")) %>%
+  setNames(c("ID", "SPAM_long_name", "SPAM_short_name", "name", "FCL_item_code", "group"))
 
 
 # Save file

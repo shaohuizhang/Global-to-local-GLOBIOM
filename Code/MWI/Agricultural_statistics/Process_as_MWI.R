@@ -1,6 +1,6 @@
 #'========================================================================================================================================
 #' Project:  Global-to-local GLOBIOM
-#' Subject:  Script to create maps
+#' Subject:  Script to process agricultural statistics
 #' Author:   Michiel van Dijk
 #' Contact:  michiel.vandijk@wur.nl
 #'========================================================================================================================================
@@ -27,6 +27,8 @@ setwd(root)
 
 ### SET DATAPATH
 source(file.path(root, "Code/get_dataPath.r"))
+
+
 ### R SETTINGS
 options(scipen=999) # surpress scientific notation
 options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e.g. csv) is not turned into factors
@@ -39,10 +41,6 @@ doc <- file.path(dataPath, "Data\\MWI\\Raw\\Agricultural_statistics\\Nacal_Repor
 
 # Extract tables
 pdf_raw <- extract_tables(doc, pages = c(102:110, 131, 132), method = "data.frame")
-
-districts <- c("Chitipa", "Karonga", "Rumphi", "Nkhata Bay", "Mzimba", "Mzuzu city", "Kasungu", "Ntchisi", "Dowa", "Nkhotakota", 
-"Salima", "Dedza", "Ntcheu", "Lilongwe rural", "Lilongwe City", "Mchinji", "Balaka", "Mangochi", "Machinga", "Zomba rural",
-"Zomba City", "Chiradzulu", "Blantyre rural", "Blantyre City", "Thyolo", "Mulanje", "Phalombe", "Mwanza", "Chikwawa", "Nsanje")
 
 # Function to clean raw table from pdf
 clean_tab_f <- function(df, name_df, unit){
@@ -58,11 +56,11 @@ clean_tab_f <- function(df, name_df, unit){
   }
   sel <- sel %>% 
     mutate(unit = unit,
-           adm1_as = trimws(District)) %>%
+           adm2_as = trimws(District)) %>%
     dplyr::select(-District) %>%
-    gather(crop_as, value, -unit, -adm1_as) %>%
-    mutate(adm1_as = toupper(adm1_as),
-           crop_as = toupper(crop_as))
+    gather(crop_lvst_as, value, -unit, -adm2_as) %>%
+    mutate(adm2_as = toupper(adm2_as),
+           crop_lvst_as = toupper(crop_lvst_as))
   return(sel)
 }
 
@@ -123,27 +121,42 @@ Table5_3_name <- c("Donkeys", "Rabbits", "Guinea_pigs", "Ducks", "Guinea_fowls",
 NACAL[["Table5_3"]] <- clean_tab_f(pdf_raw[[11]], Table5_3_name, "number")
 rm(Table5_3_name)
 
-### COMBINE DATA
+# Combine
+NACAL <- bind_rows(NACAL) 
+
+# Save adm2 list
+# Need to correct NKHOTAKOTA into NKHOTA KOTA
+as_MWI_adm2_list <- NACAL %>%
+  dplyr::select(adm2_as) %>%
+  mutate(adm2_as = ifelse(adm2_as == "NKHOTAKOTA", "NKHOTA KOTA", adm2_as)) %>%
+  unique
+
+write_csv(as_MWI_adm2_list, file.path(dataPath, "Data/MWI/Processed/Mappings/as_MWI_adm2_list.csv"))
+
+### PROCESS NACAL
 # Read adm mappping
-MWI2ADM_2000 <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI2ADM_2000") %>%
-  dplyr::select(adm2_GAUL, adm1_as) %>%
+MWI2adm <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI2adm") %>%
+  filter(year == 2000) %>%
+  dplyr::select(adm2_GAUL, adm2_as) %>%
   na.omit
 
 # Read crop and livestock mapping
-MWI_as2FCL <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI_as2FCL") %>%
-  dplyr::select(crop_as, FCL_title, FCL_item_code) %>%
+MWI_as2crop_lvst <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI_as2crop_lvst") %>%
+  dplyr::select(crop_lvst_as, short_name) %>%
   na.omit()
 
 # Aggregate production and regroup  
-NACAL <- bind_rows(NACAL)
-NACAL <- NACAL %>%
-  mutate(adm1_as = ifelse(adm1_as == "NKHOTAKOTA", "NKHOTA KOTA", adm1_as)) %>% # repair coding that occurs in two differnt forms in NACAL
-  #dplyr::filter(unit == "tons") %>%
-  left_join(MWI2ADM_2000) %>%
-  left_join(MWI_as2FCL) %>%
-  filter(!is.na(FCL_item_code)) %>% # Filter out non-mapped crops
-  group_by(FCL_item_code, FCL_title, adm2_GAUL, unit) %>%
+as <- NACAL %>%
+  mutate(adm2_as = ifelse(adm2_as == "NKHOTAKOTA", "NKHOTA KOTA", adm2_as)) %>% # repair coding that occurs in two differnt forms in NACAL
+  left_join(MWI2adm) %>%
+  left_join(MWI_as2crop_lvst) %>%
+  filter(!is.na(short_name)) %>% # Filter out non-mapped crops
+  group_by(short_name, adm2_GAUL, unit) %>%
   summarize(value = sum(value, na.rm = T)) %>%
-  mutate(year = 2007)
+  mutate(year = 2007, 
+         adm_level = 2,
+         variable = dplyr::recode(unit, "tons" = "production", "ha" = "area"))
 
-write_csv(NACAL, file.path(dataPath , "Data/MWI/Processed/Agricultural_statistics/ag_stat_MWI.csv"))
+# Write file
+write_csv(as, file.path(dataPath , "Data/MWI/Processed/Agricultural_statistics/as_MWI.csv"))
+

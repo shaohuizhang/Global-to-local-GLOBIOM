@@ -53,7 +53,7 @@ GAUL_MWI_adm2_2000 <- GAUL_adm2_2000[GAUL_adm2_2000$ADM0_NAME == "Malawi",]
 plot(GAUL_MWI_adm2_2000)
 
 
-### ANALYSE MAPS, COMPARE WITH SECONDARY ADM INFORMATION AND CORRECT WHERE NECESSARY 
+### ANALYSE MAPS, SAVE ADM INFO, COMPARE WITH SECONDARY ADM INFORMATION AND CORRECT WHERE NECESSARY 
 # In some cases the map contains areas that are not relevant and may results in distortions when they are combined with simu maps
 # For example in case of Malawi, simus are located in so-called 'Area under National Administration', which is Lake Malawi. These need to be removed.
 
@@ -61,6 +61,13 @@ plot(GAUL_MWI_adm2_2000)
 GAUL_MWI_adm1_2000_df <- GAUL_MWI_adm1_2000@data
 GAUL_MWI_adm2_2000_df <- GAUL_MWI_adm2_2000@data
 area_remove <- c("Area under National Administration")
+
+# Save adm info
+GAUL_MWI_adm_2000_list <- GAUL_MWI_adm2_2000_df %>%
+  transmute(adm2_GAUL = toupper(ADM2_NAME), adm1_GAUL = toupper(ADM1_NAME)) %>%
+  arrange(adm2_GAUL)
+write_csv(GAUL_MWI_adm_2000_list, file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm_2000_list.csv"))
+
 
 # Gaul adm1
 plot(GAUL_MWI_adm1_2000)
