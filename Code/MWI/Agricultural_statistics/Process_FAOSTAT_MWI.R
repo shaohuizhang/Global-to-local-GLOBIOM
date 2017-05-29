@@ -66,13 +66,13 @@ FAOSTAT_crop <- FAOSTAT_prod_raw %>%
 ### CREATE FAOSTAT DATABASE
 # Create files for relevant variables
 area_FAOSTAT <- FAOSTAT_crop %>%
-  filter(unit == "ha", year >1990, variable == "area") %>%
+  filter(unit == "ha", year >=1990, variable == "area") %>%
   na.omit() %>%# remove rows with na values for value
   group_by(short_name, unit, year, variable) %>%
   summarize(value = sum(value, na.rm = T))
 
 prod_FAOSTAT <- FAOSTAT_crop %>%
-  filter(unit == "tonnes", year >1990, variable == "production") %>%
+  filter(unit == "tonnes", year >=1990, variable == "production") %>%
   mutate(unit = replace(unit, unit=="tonnes", "tons")) %>%
   na.omit() %>%# remove rows with na values for value
   group_by(short_name, unit, year, variable) %>%
@@ -94,7 +94,11 @@ yld_FAOSTAT <- bind_rows(area_FAOSTAT, prod_FAOSTAT) %>%
 
 # Bind area, production and yield
 FAOSTAT_comb <- bind_rows(area_FAOSTAT, prod_FAOSTAT, yld_FAOSTAT) %>%
-  ungroup()
+  ungroup() %>%
+  mutate(source = "FAOSTAT",
+         adm_level = 0,
+         adm = "MWI") %>%
+  na.omit()
 
 # save files
 write_csv(FAOSTAT_comb, file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/FAOSTAT_MWI.csv"))

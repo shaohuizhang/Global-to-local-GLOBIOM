@@ -37,7 +37,7 @@ options(digits=4)
 
 ### EXTRACT TABLES FROM NACAL REPORT
 # Select pdf
-doc <- file.path(dataPath, "Data\\MWI\\Raw\\Agricultural_statistics\\Nacal_Report.pdf")
+doc <- file.path(dataPath, "Data\\MWI\\Raw\\Agricultural_statistics\\Other\\Nacal_Report.pdf")
 
 # Extract tables
 pdf_raw <- extract_tables(doc, pages = c(102:110, 131, 132), method = "data.frame")
@@ -124,7 +124,8 @@ rm(Table5_3_name)
 # Combine
 NACAL <- bind_rows(NACAL) 
 
-# Save adm2 list
+# OBTAIN ADM AND CROP_LVST LIST
+# Save adm list
 # Need to correct NKHOTAKOTA into NKHOTA KOTA
 as_MWI_adm2_list <- NACAL %>%
   dplyr::select(adm2_as) %>%
@@ -132,6 +133,14 @@ as_MWI_adm2_list <- NACAL %>%
   unique
 
 write_csv(as_MWI_adm2_list, file.path(dataPath, "Data/MWI/Processed/Mappings/as_MWI_adm2_list.csv"))
+
+# Save crop_lvst list
+as_MWI_crop_lvst_list <- NACAL %>%
+  dplyr::transmute(crop_lvst_as) %>%
+  unique %>%
+  arrange(crop_lvst_as)
+
+write_csv(as_MWI_crop_lvst_list, file.path(dataPath, "Data/MWI/Processed/Mappings/as_MWI_crop_lvst_list.csv"))
 
 ### PROCESS NACAL
 # Read adm mappping
@@ -155,7 +164,9 @@ as <- NACAL %>%
   summarize(value = sum(value, na.rm = T)) %>%
   mutate(year = 2007, 
          adm_level = 2,
-         variable = dplyr::recode(unit, "tons" = "production", "ha" = "area"))
+         variable = dplyr::recode(unit, "tons" = "production", "ha" = "area"),
+         source = "as") %>%
+  rename(adm = adm2_GAUL)
 
 # Write file
 write_csv(as, file.path(dataPath , "Data/MWI/Processed/Agricultural_statistics/as_MWI.csv"))

@@ -1,6 +1,6 @@
 #'========================================================================================================================================
 #' Project:  Global-to-local GLOBIOM
-#' Subject:  Script to analyse and national agricultural statistics data
+#' Subject:  Script to analyse and combine agricultural statistics data from different sources
 #' Author:   Michiel van Dijk
 #' Contact:  michiel.vandijk@wur.nl
 #'========================================================================================================================================
@@ -34,94 +34,109 @@ options(digits=4)
 
 ### LOAD MAPPINGS
 # Regional mapping
-MWI2ADM_2000 <- read_excel(file.path(dataPath, "Data/MWI/Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI2ADM_2000") %>%
-  dplyr::select(adm1_hs, adm2_GAUL) %>%
-  na.omit() %>%
-  unique()
-
-
+MWI2adm <- read_excel(file.path(dataPath, "Data/MWI/Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI2adm") %>%
+  filter(year == 2000)
 
 ### LOAD DATA
 # FAOSTAT
 FAOSTAT <- read_csv(file.path(dataPath, "Data/MWI/processed/Agricultural_statistics/FAOSTAT_MWI.csv"))
 
 # Agro-Maps
-am_adm1 <- read_csv(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/Agro_maps_adm1.csv"))
-am_adm2 <- read_csv(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/Agro_maps_adm2.csv"))
+am <- read_csv(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/am_MWI.csv"))
 
 # CropSTAT
-
+cs <- read_csv(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/cs_MWI.csv"))
 
 # Agricultural statistics
-as <- read_csv(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/ag_stat_MWI.csv"))
+as <- read_csv(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/as_MWI.csv"))
 
 
-
-# Aggregate area and production to country level
-area_am_adm2 <- am_adm2 %>%
-  mutate(variable == "area") %>%
-  group_by(FCL_title, FCL_item_code, year) %>%
-  summarize(value = sum(value, na.rm=T))
-
-prod_am_adm2 <- am_adm2 %>%
-  mutate(variable == "production") %>%
-  group_by(FCL_title, FCL_item_code, year) %>%
-  summarize(value = sum(value, na.rm=T))
-
-yld_am_adm2 <- am_adm2 %>%
-  filter(variable %in% c("area", "production")) %>%
-  group_by(FCL_title, FCL_item_code, variable, year) %>%
-  summarize(value = sum(value, na.rm=T)) %>%
-  spread(variable, value) %>%
-  mutate(value = production/area)
-
-
-# Aggregate area and production to country level
-area_as <- as %>%
-  filter(unit == "ha") %>%
-  group_by(FCL_title, FCL_item_code, year) %>%
-  summarize(value = sum(value, na.rm=T))
-
-prod_as <- as %>%
-  filter(unit == "tons") %>%
-  group_by(FCL_title, FCL_item_code, year) %>%
-  summarize(value = sum(value, na.rm=T))
-
-yld_as <- as %>%
-  filter(unit %in% c("ha","tons")) %>%
-  group_by(FCL_title, FCL_item_code, unit, year) %>%
-  summarize(value = sum(value, na.rm=T)) %>%
-  spread(unit, value) %>%
-  mutate(value = tons/ha)
-
-number_as <- as %>%
-  filter(unit == "number") %>%
-  group_by(FCL_title, FCL_item_code, year) %>%
-  summarize(value = sum(value, na.rm=T))
+### COMBINE ADM DATA AND ADD ID
+# Filter out adm that are not relevant
+ag_stat <- bind_rows(am, as, cs, FAOSTAT) %>%
+  mutate(id = paste(adm_level, source, sep = "_")) %>%
+  filter(!adm %in% "AREA UNDER NATIONAL ADMINISTRATION")
 
 
 ### ANALYSE WHICH ARE THE MOST IMPORTANT CROPS AT THE NATIONAL LEVEL
+# aggregate adm1 tot adm0
+ag_stat_area_adm0 <- ag_stat %>%
+  filter(variable %in% c("area"), year >= 1990) %>%
+  group_by(year, adm_level, unit, variable, source) %>%
+  summarize( value = sum(value, na.rm = T)) %>%
+  mutate(id = paste(adm_level, source, sep = "_"))
+
+tab_area_rank <- ag_stat_crop_adm0 %>%
+  filter(variable == "area") %>%
+  group_by(year, id) %>%
+  mutate(share = round(value/sum(value, na.rm=T)*100, 2)) %>%
+  arrange(desc(share)) %>%
+  dplyr::select(short_name, id, share, year) %>%
+  filter(year %in% c(2000)) %>%
+  spread(id, share) %>%
+  arrange(desc(`0_FAOSTAT`))
+
+
 # Rank area of crops using FAOSTAT in base year
-tab_area_rank_FAOSTAT <- area_FAOSTAT %>%
-  filter(year == 2000) %>%
+tab_area_rank_FAOSTAT <- FAOSTAT %>%
+  filter(year %in% c(2000, 2010), variable == "area") %>%
+  group_by(year) %>%
   mutate(share = round(value/sum(value, na.rm=T)*100, 2)) %>%
   arrange(desc(share)) %>%
-  dplyr::select(FCL_title, FCL_item_code, `area (ha)` = value, share)
+  dplyr::select(short_name, share, year) %>%
+  spread(year, share) %>%
+  arrange(desc(`2010`))
 
-# Rank area of crops using ag stat
-tab_area_rank_as <- area_as %>%
-  ungroup() %>%
-  mutate(share = round(value/sum(value, na.rm=T)*100, 2)) %>%
-  arrange(desc(share)) %>%
-  rename(`area (ha)` = value)
 
-# Rank area of crops using ag stat
-tab_area_rank_am <- area_am_adm2 %>%
-  ungroup() %>%
-  filter(year == 2000) %>%
-  mutate(share = round(value/sum(value, na.rm=T)*100, 2)) %>%
-  arrange(desc(share)) %>%
-  rename(`area (ha)` = value)
+### COMPARE AREA AT COUNTRY LEVEL
+# Figure
+fig_area_adm0 <- ggplot(data = ag_stat_area_adm0, aes(x = year, y = value, colour = id)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Area comparison between FAOSTAT, am, as and cs",
+       y = "ha",
+       x ="") +
+  scale_y_continuous(labels=comma) +
+  theme_bw() +
+  theme(text = element_text(size=10))
+
+fig_area_adm0
+
+
+### COMPARE AREA AND PRODUCTION AT CROP AND COUNTRY LEVEL
+# aggregate adm1 tot adm0
+ag_stat_crop_adm0 <- ag_stat %>%
+  filter(variable %in% c("area", "production"), year >= 1990) %>%
+  group_by(id, year, adm_level, short_name, unit, variable, source) %>%
+  summarize( value = sum(value, na.rm = T))
+
+# Area comparison
+fig_area_crop_adm0 <- ggplot(data = filter(ag_stat_crop_adm0, variable == "area"), aes(x = year, y = value, colour = id)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~short_name, scales = "free") +
+  labs(title = "Area comparison between FAOSTAT, am, as and cs",
+       y = "ha",
+       x ="") +
+  scale_y_continuous(labels=comma) +
+  theme_bw() +
+  theme(text = element_text(size=10))
+
+fig_area_crop_adm0
+
+# Production comparison
+fig_prod_crop_adm0 <- ggplot(data = filter(ag_stat_crop_adm0, variable == "production"), aes(x = year, y = value, colour = id)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~short_name, scales = "free") +
+  labs(title = "Production comparison between FAOSTAT, am, as and cs",
+       y = "tons",
+       x ="") +
+  scale_y_continuous(labels=comma) +
+  theme_bw() +
+  theme(text = element_text(size=10))
+
+fig_prod_crop_adm0
 
 
 ### ANALYSE WHICH ARE THE MOST IMPORTANT CROPS PER ADM
@@ -136,16 +151,35 @@ tab_area_share_within_reg_as <- as %>%
   spread(FCL_title, share)
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ### ANALYSE WHICH ARE THE MOST IMPORTANT CROPS AT THE NATIONAL LEVEL, COMPARING ADMs
 # Area share of crops within country by crop
 area_share_within_country_as <- as %>%
   filter(unit == "ha") %>%
   ungroup() %>%
-  group_by(year, FCL_title) %>%
+  group_by(year, short_name) %>%
   mutate(share = round(value/sum(value, na.rm=T)*100, 2)) %>%
-  dplyr::select(adm2_GAUL, year, share, FCL_title) %>%
+  dplyr::select(adm2_GAUL, year, share, short_name) %>%
   arrange(desc(share)) %>%
-  spread(FCL_title, share)
+  spread(short_name, share)
 
 # Maps of total area per region
 MWI_adm2 <- readRDS(file.path(dataPath, "Data\\MWI\\Processed\\maps\\GAUL_MWI_adm2_2000_adj.rds"))

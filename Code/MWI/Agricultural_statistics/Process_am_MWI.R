@@ -32,7 +32,7 @@ options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e
 options(digits=4)
 
 
-# OBTAIN ADM LIST
+# OBTAIN ADM AND CROP_LVST LIST
 # Load data
 am_raw <- read_csv(file.path(dataPath, "Data/MWI/Raw/Agricultural_statistics/Agro-maps/mwi_all_data.csv")) 
 
@@ -53,6 +53,14 @@ am_MWI_adm2_list <- am_raw %>%
   arrange(adm2_am)
   
 write_csv(am_MWI_adm2_list, file.path(dataPath, "Data/MWI/Processed/Mappings/am_MWI_adm2_list.csv"))
+
+# Save crop_lvst list
+am_MWI_crop_lvst_list <- am_raw %>%
+  dplyr::transmute(crop_lvst_am = ITEM_NAME, FCL_item_code = ITEM_CODE) %>%
+  unique %>%
+  arrange(crop_lvst_am)
+
+write_csv(am_MWI_crop_lvst_list, file.path(dataPath, "Data/MWI/Processed/Mappings/am_MWI_crop_lvst_list.csv"))
 
 
 ### PROCESS AGRO-MAPS
@@ -92,7 +100,9 @@ am_adm1 <- am %>%
   left_join(MWI2adm1) %>%
   group_by(year, adm1_GAUL, short_name, unit, variable) %>%
   summarize(value = sum(value, na.rm = T)) %>%
-  mutate(adm_level = 1)
+  mutate(adm_level = 1,
+         source = "am") %>%
+  rename(adm = adm1_GAUL)
 
 # Agregate to adm1 level and core crops and lvst
 am_adm2 <- am %>%
@@ -102,11 +112,13 @@ am_adm2 <- am %>%
   left_join(MWI2adm2) %>%
   group_by(year, adm2_GAUL, short_name, unit, variable) %>%
   summarize(value = sum(value, na.rm = T)) %>%
-  mutate(adm_level = 2)
+  mutate(adm_level = 2,
+         source = "am") %>%
+  rename(adm = adm2_GAUL)
 
 # Combine
-am <- bind_rows(am_adm2, am_adm2)
+am <- bind_rows(am_adm1, am_adm2)
 
 # save file
-write_csv(am, file.path(dataPath, "Data\\MWI\\Processed\\agricultural_statistics\\am.csv"))
+write_csv(am, file.path(dataPath, "Data\\MWI\\Processed\\agricultural_statistics\\am_MWI.csv"))
 

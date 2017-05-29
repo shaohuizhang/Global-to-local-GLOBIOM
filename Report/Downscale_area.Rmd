@@ -5,7 +5,7 @@ date: "`r format(Sys.time(), '%B %d, %Y')`"
 output: 
   word_document:
     reference_docx: ../Common/word_styles_01.docx
-    
+
 ---
 
 ```{r setup, include=FALSE}
@@ -61,6 +61,27 @@ Livestock
 
 
 QUESTIONS LIANG
-- How to deal with missing data
-- How to deal with subnational cropstatistics that only cover core crops. Downscale other crops from national level downwards?
+Aim is to be able to create land use maps using SPAM but with flexibility to add data from stakeholders and for multiple years. 
+- Multiple years
+- Try to validate maps with LSMS-ISA data => case study data
+- Try to allocate livestock to grassland.
 
+
+Questions:
+- How to deal with missing data. Understand that if one only has adm1 data, eq 12 holds only for adm1 for that crop. 
+- But what about if there is no data at all for a crop at adm1 level? For instance data for MWI at adm1 (from CountryStat) only covers a few crops. Not banana. Banana is mapped in SPAM in MWI, probably from FAOSTAT. How?
+- How to deal with subnational cropstatistics that only cover core crops. Downscale other crops from national level downwards?
+- How to deal with border issues => center rule?
+
+Next steps
+- co-author on paper, perhaps using new techniques with case study for one country?
+
+
+Questions on downscaling
+- What is scalelp? Something is scaled with exogenous variable. Why?
+- Difference main crops and crops with technology identifier?
+- Why is suitability turned into a bound (not an equation)?
+- produ(j) is crop land cover per j and l, right?
+- what is deptot (ratio per main crop)? From eq 12 (subcrop), it should be total area of crop j in admk but description says 'ratio' 
+- Why the name production of crops? This is in fact total physical area for crop j, right. 
+- When subnational data is available, slack is minimized not entropy....

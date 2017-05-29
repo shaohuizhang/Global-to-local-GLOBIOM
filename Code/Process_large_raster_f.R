@@ -29,7 +29,7 @@ keep_value_r_f <- function(x, a, filename) {
   #pb <- pbCreate(bs$n, ...)
   for (i in 1:bs$n) {
     v <- getValues(x, row=bs$row[i], nrows=bs$nrows[i] )
-    v[v!=a] <- NA
+    v[!(v %in% a)] <- NA
     out <- writeValues(out, v, bs$row[i])
     #pbStep(pb, i)
   }
