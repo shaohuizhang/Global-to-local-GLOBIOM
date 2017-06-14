@@ -1,6 +1,6 @@
 #'========================================================================================================================================
 #' Project:  Global-to-local GLOBIOM
-#' Subject:  Script to compare agricultural statistics data and land cover data
+#' Subject:  Script conduct simple imputation using values from other years
 #' Author:   Michiel van Dijk
 #' Contact:  michiel.vandijk@wur.nl
 #'========================================================================================================================================
@@ -29,5 +29,12 @@ source(file.path(root, "Code/get_dataPath.r"))
 options(scipen=999) # surpress scientific notation
 options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e.g. csv) is not turned into factors
 options(digits=4)
-options(max.print=1000000) # more is printed on screen
 
+### ADD IMPUTED VALUABLE TO X YEARS BY SIMPLY COPYING
+copy_val_f <- function(df, y){
+  copy_x <- length(y)
+  df2 <- df[rep(1, copy_x),]
+  df2$year <- y
+  return(df2)
+}
+  

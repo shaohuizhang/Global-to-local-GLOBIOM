@@ -33,8 +33,8 @@ options(digits=4)
 
 
 ### DOWNLOAD AND PROCESS FAOSTAT DATA
-# Load CROP_LVST_MAP
-crop_lvst_map <- read_csv(file.path(dataPath, "Data\\Mappings\\crop_lvst_mapping.csv")) %>%
+# Load crop_lvst2FCL
+crop_lvst2FCL <- read_excel(file.path(dataPath, "Data\\Mappings\\Mappings.xlsx"), sheet = "crop_lvst2FCL") %>%
   dplyr::select(short_name, FCL_item_code) %>%
   na.omit()
 
@@ -48,7 +48,7 @@ FAOSTAT_crop <- FAOSTAT_prod_raw %>%
          iso3c = countrycode(`Area Code`, "fao", "iso3c")) %>%
   dplyr::select(iso3c, FCL_item_code = `Item Code`, variable, year = Year, unit = Unit, value = Value) %>%
   filter(iso3c == "MWI") %>%
-  left_join(., crop_lvst_map) %>%
+  left_join(., crop_lvst2FCL) %>%
   filter(!is.na(value))
 
 # FAOSTAT_lvst <- FAOSTAT_lvst_raw %>%

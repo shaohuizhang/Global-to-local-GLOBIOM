@@ -1,57 +1,74 @@
 #'========================================================================================================================================
-#' Project:  Global-to-local-GLOBIOM
-#' Subject:  Code to select ESA land cover map per country
+#' Project:  Global-to-local GLOBIOM
+#' Subject:  Script to grid FAO land cover data
 #' Author:   Michiel van Dijk
 #' Contact:  michiel.vandijk@wur.nl
 #'========================================================================================================================================
 
+
 ### PACKAGES
 if(!require(pacman)) install.packages("pacman")
 # Key packages
-p_load("tidyverse", "readxl", "stringr", "scales", "RColorBrewer", "rprojroot")
+p_load("tidyverse", "readxl", "stringr", "car", "scales", "RColorBrewer", "rprojroot")
 # Spatial packages
 p_load("rgdal", "ggmap", "raster", "rasterVis", "rgeos", "sp", "mapproj", "maptools", "proj4", "gdalUtils")
 # Additional packages
-p_load("WDI", "countrycode", "plotKML", "sf")
+p_load("countrycode")
 
 
 ### SET ROOT AND WORKING DIRECTORY
 root <- find_root(is_rstudio_project)
 setwd(root)
 
+
 ### SET DATAPATH
 source(file.path(root, "Code/get_dataPath.r"))
+
 
 ### R SETTINGS
 options(scipen=999) # surpress scientific notation
 options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e.g. csv) is not turned into factors
 options(digits=4)
+options(max.print=1000000) # more is printed on screen
 
 
-### LOAD BASIN SHAPE FILES
-indus_map <- readOGR(file.path(ISWELPath, "shared_data_sources\\processed_data\\indus\\indus_hybas_lev3.shp"))
-
-### LOAD LAND COVER MAP 
-# CHECK IF THEIR ARE TEMPORARY FILES (CREATED BY RASTER PACKAGE) AND REMOVE
+### CHECK IF THEIR ARE TEMPORARY FILES (CREATED BY RASTER PACKAGE) AND REMOVE
 showTmpFiles()
 removeTmpFiles()
-rasterOptions(tmpdir = "H:\\TEMP") # set location for temp files as C is not large enough (can be >65 GB!)
 
-# Load global ESA map
-land_cover_map_ESA <- raster(file.path(dataPath, "Data\\Global\\ESA\\Annual_maps\\ESACCI-LC-L4-LCCS-Map-300m-P1Y-2000-v2.0.7.tif"))
 
-# Load ESA legend
-ESA_legend <- read_csv(file.path(dataPath, "Data\\Global\\ESA\\ESACCI-LC-Legend.csv")) %>%
-  mutate(ID = land_cover_code)
+### LOAD FAO MAP
+ogrListLayers(file.path(dataPath, "Data\\MWI\\Raw\\Spatial_data\\FAO_Land_Cover_Data\\DATA\\NATIONAL_LC/Malawi_lc.shp"))
+land_cover_map_FAO_raw <- readOGR(file.path(dataPath, "Data\\MWI\\Raw\\Spatial_data\\FAO_Land_Cover_Data\\DATA\\NATIONAL_LC/Malawi_lc.shp"))
 
-# Crop and mask land cover map
-land_cover_map <- crop(land_cover_map_ESA, indus_map)
-land_cover_map <- mask(land_cover_map, indus_map)
+land_cover_map_FAO <- land_cover_map_FAO_raw
+land_cover_map_df <- land_cover_map_FAO@data %>% 
+  mutate(LCCSUSLB = factor(LCCSUSLB),
+         E2000USLB = factor(E2000USLB),
+         E1990USLB = factor(E1990USLB))
+land_cover_map_FAO@data <- land_cover_map_df 
 
-# Add attributes
+
+### RASTERIZE FAO MAP
+# Create raster frame
+r_ext <- raster(extent(land_cover_map_FAO), resolution = 30)
+crs_fao <- crs(land_cover_map_FAO)
+projection(r_ext) <- crs_fao
+
+# Rasterize
+land_cover_map <- rasterize(land_cover_map_FAO, r_ext, field = land_cover_map_FAO@data[,"LCCSUSLB"])
+writeRaster(land_cover_map, file.path(dataPath, "Data/MWI/Raw/Spatial_data/FAO_Land_Cover_Data/DATA/NATIONAL_LC/land_cover_map_FAO.grd"))
+land_cover_map <- raster(file.path(dataPath, "Data/MWI/Raw/Spatial_data/FAO_Land_Cover_Data/DATA/NATIONAL_LC/land_cover_map_FAO.grd"))
+
+
+### ADD ATTRIBUTES
+# prepare map
 # http://stackoverflow.com/questions/19586945/how-to-legend-a-raster-using-directly-the-raster-attribute-table-and-displaying
 land_cover_map <- ratify(land_cover_map)
 rat <- levels(land_cover_map)[[1]] #get the values of the unique cell frot the attribute table
+
+# Create attribute table
+# NEED TO RECODE COMBINATIONS OF CLASSES TO USEFULE ONES AND THEN ADD TABLE
 rat <- left_join(rat, ESA_legend)
 
 # Create colours for legend and sort in right order
@@ -67,9 +84,4 @@ levels(land_cover_map) <- rat
 levels(land_cover_map)
 rm(rat)
 
-# Plot
-levelplot(land_cover_map, att = 'land_cover_short', col.regions = ESA_colour$colour, margin = F)
-
-# Save map
-saveRDS(land_cover_map, file.path(dataPath, "Data/indus/Processed/Maps/ESA_indus_2000.rds"))
-
+# Visualise

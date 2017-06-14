@@ -29,13 +29,13 @@ options(digits=4)
 
 
 ### LOAD SIMU MAP
-simu2country_poly <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/simu_MWI.rds"))
-plot(simu2country_poly)
+grid <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/grid_MWI.rds"))
+plot(grid)
 
 
 ### LOAD GAUL MAPS
-country_map <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm2_2000.rds"))
-plot(country_map)
+adm2_map <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm2_2000.rds"))
+plot(adm2_map)
 
 
 ### COUNTRY SPECIFIC POPULATION MAP
@@ -43,12 +43,15 @@ plot(country_map)
 tot_pop_af_2000 <- raster(file.path(dataPath, "Data/Global/WorldPop/Africa-POP-1KM_AFR_PPP_2000_adj_v2/AFR_PPP_2000_adj_v2.tif"))
 
 # Crop country map
-tot_pop_country_2000 <- crop(tot_pop_af_2000, country_map)
-tot_pop_country_2000 <- mask(tot_pop_country_2000, country_map)
+tot_pop_country_2000 <- crop(tot_pop_af_2000, adm2_map)
+tot_pop_country_2000 <- mask(tot_pop_country_2000, adm2_map)
 
-levelplot(tot_pop_country_2000, par.settings = RdBuTheme, margin = F) +
-  layer(sp.polygons(country_map, col = "black"))
+levelplot(tot_pop_country_2000, par.settings = BTCTheme, margin = F) +
+  layer(sp.polygons(adm2_map, col = "black"))
 plotKML(tot_pop_country_2000)
+
+click(tot_pop_country_2000)
+zoom(tot_pop_country_2000)
 
 # Compare total pop with UN
 # UN POP 2000 = 11,193
@@ -57,36 +60,38 @@ pop_check <- as.data.frame(rasterToPoints(tot_pop_country_2000))
 sum(pop_check$AFR_PPP_2000_adj_v2)
 rm(pop_check)
 
+
 ### CALCULATE TOTAL POPULATION PER ADM
 # Get adm names
-country_map_df <- country_map@data %>%
+adm2_map_df <- adm2_map@data %>%
   transmute(ID = seq(1:length(.$ADM2_NAME)), adm2_GAUL = toupper(ADM2_NAME))
   
 # Calculate totals
-tot_pop_adm_2000 <- raster::extract(tot_pop_country_2000, country_map, df=T) %>%
+tot_pop_adm_2000 <- raster::extract(tot_pop_country_2000, adm2_map, df=T) %>%
   setNames(c("ID", "value")) %>%
   dplyr::group_by(ID) %>%
   dplyr::summarize(value = sum(value, na.rm=T)) %>%
-  left_join(., country_map_df) %>%
+  left_join(., adm2_map_df) %>%
   dplyr::select(-ID) %>%
   mutate(year = 2000)
 
 # Save data
 write_csv(tot_pop_adm_2000, file.path(dataPath, "Data/MWI/Processed/Spatial_data/tot_pop_adm_2000_MWI.csv"))
 
-### CALCULATE TOTAL POPULATION PER SIMU
-# Get simu names
-simu2country_poly_df <- simu2country_poly@data %>%
-  transmute(ID = seq(1:length(.$SimUID)), SimUID)
+
+### CALCULATE TOTAL POPULATION PER GRID CELL
+# Get grid names
+grid_df <- grid@data %>%
+  transmute(ID = seq(1:length(.$gridID)), gridID)
 
 # Calculate totals
-tot_pop_simu_2000 <- raster::extract(tot_pop_country_2000, simu2country_poly, df=T) %>%
+tot_pop_grid_2000 <- raster::extract(tot_pop_country_2000, grid, df=T) %>%
   setNames(c("ID", "value")) %>%
   dplyr::group_by(ID) %>%
   dplyr::summarize(value = sum(value, na.rm=T)) %>%
-  left_join(., simu2country_poly_df) %>%
+  left_join(., grid_df) %>%
   dplyr::select(-ID) %>%
   mutate(year = 2000)
 
 # Save data
-write_csv(tot_pop_simu_2000, file.path(dataPath, "Data/MWI/Processed/Spatial_data/tot_pop_simu_2000_MWI.csv"))
+write_csv(tot_pop_grid_2000, file.path(dataPath, "Data/MWI/Processed/Spatial_data/tot_pop_grid_2000_MWI.csv"))

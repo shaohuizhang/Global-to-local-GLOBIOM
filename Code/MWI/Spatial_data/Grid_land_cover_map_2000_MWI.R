@@ -58,7 +58,7 @@ land_cover_map_raw
 
 # Save land class
 land_class <- levels(land_cover_map_raw)[[1]]
-write_csv(land_class, file.path(dataPath, "Data/MWI/processed/Spatial_data/land_class_MWI.csv"))
+#write_csv(land_class, file.path(dataPath, "Data/MWI/processed/Spatial_data/land_class_MWI.csv"))
 
 # check projection, should be same as r
 # REPROJECT, IF NEEDED
@@ -70,13 +70,6 @@ crs <- crs(land_cover_map_raw)
 
 # Reproject grid
 grid <- spTransform(grid, crs)
-
-# For each grid cell get area
-grid_sf <- st_as_sf(grid) 
-grid_area <- grid_sf %>% 
-  mutate(grid_size = as.numeric(st_area(.))/10000) %>%
-  as.data.frame() %>%
-  dplyr::select(gridID, grid_size)
 
 # Reproject adm2
 adm2 <-  spTransform(adm2, crs)
@@ -119,17 +112,34 @@ extract_grid_f <- function(polyID, cover){
 }
 
 # Run function and combine
-# Select rainfed and irrigated cropland and aggregate (later we will try to split)
-crop_cover <- bind_rows(lapply(grid_list, extract_grid_f)) 
-saveRDS(crop_cover, file.path(dataPath, "Data/MWI/Processed\\Spatial_data/crop_cover_2000_MWI.rds"))
-crop_cover <- readRDS(file.path(dataPath, "Data/MWI/Processed\\Spatial_data/crop_cover_2000_MWI.rds"))
+#land_cover_shares_raw <- bind_rows(lapply(grid_list, extract_grid_f)) 
+#saveRDS(land_cover_shares_raw, file.path(dataPath, "Data/MWI/Processed\\Spatial_data/land_cover_shares_raw_2000_MWI.rds"))
+land_cover_shares_raw <- readRDS(file.path(dataPath, "Data/MWI/Processed\\Spatial_data/land_cover_shares_raw_2000_MWI.rds"))
+
+# Select annual cropland and perrenial cropland and aggregate (later we will try to split)
+# Check total of shares
+check_total <- land_cover_shares_raw %>%
+  gather(variable, value, -gridID) %>%
+  group_by(gridID) %>%
+  summarize(total = sum(value, na.rm=T))
+
+crop_cover <- land_cover_shares_raw %>%
+  gather(variable, value, -gridID) %>%
+  filter(variable %in% c(9, 10)) %>%
+  group_by(gridID) %>%
+  summarize(value = sum(value, na.rm = T)) %>%
+  filter(value >0) 
 
 ### COMBINE WITH ADM DATA
 # Load gridded adm data
-adm_grid <- read_csv(file.path(dataPath, "Data/MWI/processed/Spatial_data/adm_grid_2000_MWI.csv"))
+adm_grid <- read_csv(file.path(dataPath, "Data/MWI/processed/Spatial_data/adm_grid_2000_MWI.csv")) 
 
 # Combine data and express area in ha
 crop_cover <- crop_cover %>%
   left_join(., adm_grid) %>%
-  mutate(area = area * 100,
-         grid_size = grid_size * 100)
+  mutate(grid_size = grid_size * 100,
+         area = value*grid_size) %>%
+  dplyr::select(-value)
+
+# Save
+saveRDS(crop_cover, file.path(dataPath, "Data/MWI/processed/Spatial_data/crop_cover_2000_MWI.rds"))

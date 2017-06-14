@@ -85,3 +85,4 @@ Questions on downscaling
 - what is deptot (ratio per main crop)? From eq 12 (subcrop), it should be total area of crop j in admk but description says 'ratio' 
 - Why the name production of crops? This is in fact total physical area for crop j, right. 
 - When subnational data is available, slack is minimized not entropy....
+- How to deal when harvested area is larger than land cover in some ADMs.
