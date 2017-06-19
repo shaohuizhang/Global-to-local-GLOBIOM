@@ -558,6 +558,14 @@ FAOSTAT_2000_sel <- FAOSTAT_2000 %>%
 ag_stat_2000 <- bind_rows(FAOSTAT_2000_sel, adm_2000)
 
 
+### ADD ZERO FOR CROPS THAT ARE NOT PRODUCED IN AN ADM2. 
+# check coverage
+xtabs(~ adm + short_name, data = filter(ag_stat_2000, adm_level == 2))
+
+# Fill in zero
+ag_stat_2000_adm2 <- ag_stat_2000
+
+
 ### COMPARE AGRICULTURAL STATISTICS WITH CROP COVER
 # LOAD DATA
 # Crop cover data
