@@ -131,15 +131,12 @@ crop_cover <- land_cover_shares_raw %>%
   filter(value >0) 
 
 ### COMBINE WITH ADM DATA
-# Load gridded adm data
-adm_grid <- read_csv(file.path(dataPath, "Data/MWI/processed/Spatial_data/adm_grid_2000_MWI.csv")) 
-
 # Combine data and express area in ha
 crop_cover <- crop_cover %>%
   left_join(., adm_grid) %>%
   mutate(grid_size = grid_size * 100,
          area = value*grid_size) %>%
-  dplyr::select(-value)
+  dplyr::select(-value) 
 
 # Save
 saveRDS(crop_cover, file.path(dataPath, "Data/MWI/processed/Spatial_data/crop_cover_2000_MWI.rds"))

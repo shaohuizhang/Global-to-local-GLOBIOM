@@ -146,7 +146,7 @@ write_csv(as_MWI_crop_lvst_list, file.path(dataPath, "Data/MWI/Processed/Mapping
 # Read adm mappping
 MWI2adm <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI2adm") %>%
   filter(year == 2000) %>%
-  dplyr::select(adm2_GAUL, adm2_as) %>%
+  dplyr::select(adm2, adm2_as) %>%
   na.omit
 
 # Read crop and livestock mapping
@@ -160,13 +160,13 @@ as <- NACAL %>%
   left_join(MWI2adm) %>%
   left_join(MWI_as2crop_lvst) %>%
   filter(!is.na(short_name)) %>% # Filter out non-mapped crops
-  group_by(short_name, adm2_GAUL, unit) %>%
+  group_by(short_name, adm2, unit) %>%
   summarize(value = sum(value, na.rm = T)) %>%
   mutate(year = 2007, 
          adm_level = 2,
          variable = dplyr::recode(unit, "tons" = "production", "ha" = "area"),
          source = "as") %>%
-  rename(adm = adm2_GAUL)
+  rename(adm = adm2)
 
 # Write file
 write_csv(as, file.path(dataPath , "Data/MWI/Processed/Agricultural_statistics/as_MWI.csv"))

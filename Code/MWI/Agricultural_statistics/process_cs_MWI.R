@@ -67,8 +67,14 @@ cs_MWI_crop_lvst_list <- cs_raw %>%
 write_csv(cs_MWI_crop_lvst_list, file.path(dataPath, "Data/MWI/Processed/Mappings/cs_MWI_crop_lvst_list.csv"))
 
 # ### PROCESS COUNTRYSTAT
-# # Read crop_lvs mapping
+# Read crop_lvs mapping
 crop_lvst_map <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI_cs2crop_lvst")
+
+# Read adm mapping
+MWI2adm <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI2adm") %>%
+  filter(year == 2000) %>%
+  dplyr::select(adm1, adm1_GAUL) %>%
+  na.omit
 
 cs <- cs_raw %>%
   left_join(.,crop_lvst_map) %>%
@@ -77,7 +83,10 @@ cs <- cs_raw %>%
   mutate(adm_level = 1,
          source = "cs",
          unit = dplyr::recode(variable, "production" = "tons", "area" = "ha")) %>%
-  rename(adm = adm1_GAUL)
+  left_join(MWI2adm) %>%
+  ungroup() %>%
+  rename(adm = adm1) %>%
+  dplyr::select(-adm1_GAUL)
 
 # Write file
 write_csv(cs, file.path(dataPath , "Data/MWI/Processed/Agricultural_statistics/cs_MWI.csv"))

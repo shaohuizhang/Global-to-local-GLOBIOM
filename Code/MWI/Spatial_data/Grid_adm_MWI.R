@@ -72,6 +72,19 @@ names(area) <- "grid_size"
 grid <- stack(grid, area)
 
 ### OVERLAY ADM MAPS TO ALLOCATE CELLS TO ADM REGIONS
+# Read adm mappping
+MWI2adm1 <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI2adm") %>%
+  filter(year == 2000) %>%
+  dplyr::select(adm1, adm1_GAUL) %>%
+  na.omit %>%
+  unique()
+
+MWI2adm2 <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI2adm") %>%
+  filter(year == 2000) %>%
+  dplyr::select(adm2, adm2_GAUL) %>%
+  na.omit %>%
+  unique()
+
 # Get adm info
 adm2_df <- adm2@data %>%
   transmute(adm2_GAUL = toupper(ADM2_NAME), ID = 1:length(adm2_GAUL))
@@ -83,16 +96,18 @@ adm1_df <- adm1@data %>%
 
 # Identify cells
 adm1_grid <- raster::extract(grid, adm1, df = T) %>%
-  left_join(adm1_df) %>%
-  dplyr::select(-ID)
+  left_join(.,adm1_df) %>%
+  left_join(.,MWI2adm1) %>%
+  dplyr::select(-ID, -adm1_GAUL)
 
 adm2_grid <- raster::extract(grid, adm2, df = T) %>%
-  left_join(adm2_df) %>%
-  dplyr::select(-ID)
+  left_join(.,adm2_df) %>%
+  left_join(.,MWI2adm2) %>%
+  dplyr::select(-ID, -adm2_GAUL)
 
 # Create adm1 and adm2 file
 adm_grid <- left_join(adm1_grid, adm2_grid) %>%
-  mutate(adm0_GAUL = "MWI")
+  mutate(adm0 = "MWI")
 
 # Save files
 write_csv(adm_grid, file.path(dataPath, "Data/MWI/processed/Spatial_data/adm_grid_2000_MWI.csv"))

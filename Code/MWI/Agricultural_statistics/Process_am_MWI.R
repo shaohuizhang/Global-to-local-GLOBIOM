@@ -67,20 +67,21 @@ write_csv(am_MWI_crop_lvst_list, file.path(dataPath, "Data/MWI/Processed/Mapping
 # Read adm1 mappping
 MWI2adm1 <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI2adm") %>%
   filter(year == 2000) %>%
-  dplyr::select(adm1_GAUL, adm1_am) %>%
+  dplyr::select(adm1, adm1_am) %>%
   na.omit %>%
   unique()
 
 # Read adm2 mappping
 MWI2adm2 <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI2adm") %>%
   filter(year == 2000) %>%
-  dplyr::select(adm2_GAUL, adm2_am) %>%
+  dplyr::select(adm2, adm2_am) %>%
   na.omit
 
 # Read crop and livestock mapping
-crop_lvst_map <- read_csv(file.path(dataPath, "Data\\Mappings\\crop_lvst_mapping.csv")) %>%
-  dplyr::select(short_name, FCL_item_code) %>%
+crop_lvst_map <- read_excel(file.path(dataPath, "Data\\Global\\SPAM\\SPAM_mappings.xlsx"), sheet = "SPAM2FAOSTAT_crop") %>%
+  dplyr::select(short_name = SPAM_short_name, FCL_item_code) %>%
   na.omit()
+
 
 # Process data: change names, units and put in long format
 am <- am_raw %>%
@@ -98,11 +99,11 @@ am_adm1 <- am %>%
   dplyr::select(-ADMIN_LEVEL) %>%
   rename(adm1_am = AREA_NAME) %>%
   left_join(MWI2adm1) %>%
-  group_by(year, adm1_GAUL, short_name, unit, variable) %>%
+  group_by(year, adm1, short_name, unit, variable) %>%
   summarize(value = sum(value, na.rm = T)) %>%
   mutate(adm_level = 1,
          source = "am") %>%
-  rename(adm = adm1_GAUL)
+  rename(adm = adm1)
 
 # Agregate to adm1 level and core crops and lvst
 am_adm2 <- am %>%
@@ -110,11 +111,11 @@ am_adm2 <- am %>%
   dplyr::select(-ADMIN_LEVEL) %>%
   rename(adm2_am = AREA_NAME) %>%
   left_join(MWI2adm2) %>%
-  group_by(year, adm2_GAUL, short_name, unit, variable) %>%
+  group_by(year, adm2, short_name, unit, variable) %>%
   summarize(value = sum(value, na.rm = T)) %>%
   mutate(adm_level = 2,
          source = "am") %>%
-  rename(adm = adm2_GAUL)
+  rename(adm = adm2)
 
 # Combine
 am <- bind_rows(am_adm1, am_adm2)

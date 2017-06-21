@@ -48,6 +48,7 @@ adm2 <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm2_2000_
 plot(adm1)
 plot(adm2)
 
+
 ### CREATE COUNTRY GRID
 # crop and mask
 # Mask and crop raster
@@ -55,6 +56,10 @@ grid <- mask(r, adm1)
 grid <- crop(grid, adm1)
 plot(grid)
 names(grid) <- "gridID"
+
+# Write raster
+saveRDS(grid, file.path(dataPath, "Data/MWI/Processed/Maps/grid_r_MWI.rds"))
+
 
 # Create polygon
 grid_py <- rasterToPolygons(grid)

@@ -25,6 +25,10 @@ setwd(root)
 source(file.path(root, "Code/get_dataPath.r"))
 
 
+### SOURCE FUNCTIONS
+source(file.path(root, "Code/Support/functions.r"))
+
+
 ### R SETTINGS
 options(scipen=999) # surpress scientific notation
 options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e.g. csv) is not turned into factors
@@ -66,7 +70,7 @@ as <- read_csv(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/a
 # Select only values for 1999 and later as older info is not necessary
 ag_stat <- bind_rows(am, as, cs, FAOSTAT) %>%
   mutate(id = paste(source, adm_level, sep = "_")) %>%
-  filter(!adm %in% "AREA UNDER NATIONAL ADMINISTRATION", year >= 1999) 
+  filter(!adm %in% "AREA_UNDER_NATIONAL_ADMINISTRATION", year >= 1999) 
 
 
 ### COMPARE AREA AT COUNTRY LEVEL
@@ -214,6 +218,7 @@ ggplot(data = filter(ag_stat_upd, variable == "production", id == "FAOSTAT_0"), 
   geom_vline(xintercept = c(1999, 2001), linetype = "dashed")
 
 xtabs(~variable + year + short_name, data = filter(ag_stat_upd, id == "FAOSTAT_0"))
+
 
 # (1) soyb area, production and yield missing for 1999-2003
 # (2) orts area and yield missing but production available
@@ -407,14 +412,14 @@ nkata_share <- bind_rows(
     summarize(value = sum(value, na.rm = T)) %>%
     mutate(short_name = "opul"),
   filter(ag_stat_upd, id == "as_2", !(short_name %in% pulses)) %>%
-    select(value, adm, variable, short_name))
+    dplyr::select(value, adm, variable, short_name))
 
 # Calculate shares
 nkata_share <- nkata_share %>%
   ungroup() %>%
   group_by(short_name, variable) %>%
   mutate(share = value/sum(value, na.rm = T)) %>%
-  filter(adm == "NKHATA BAY", short_name %in% am_2_crops) %>%
+  filter(adm == "NKHATA_BAY", short_name %in% am_2_crops) %>%
   dplyr::select(short_name, variable, share)
 
 nkata_fix <- filter(ag_stat_upd, id == "am_2", variable != "yield") %>%
@@ -423,7 +428,7 @@ nkata_fix <- filter(ag_stat_upd, id == "am_2", variable != "yield") %>%
   summarize(value = sum(value, na.rm = T)) %>%
   left_join(nkata_share) %>%
   mutate(value = share*value,
-         adm = "NKHATA BAY",
+         adm = "NKHATA_BAY",
          adm_level = 2,
          source = "modified",
          id = "am_2",
@@ -528,7 +533,7 @@ fig_area_crop_adm0_upd
 # Remove source info as this might give problems if either producion or area is updated and sources differ
 # Only focus on area for now
 
-# Create FAO adm0 data: Calculate averages for 1999-2000
+# Create FAO adm0 data: Calculate averages for 1999-2001
 FAOSTAT_2000 <- ag_stat_upd %>%
   filter(id %in% c("FAOSTAT_0"), variable %in% c("area"), year %in% c(1999:2001)) %>%
   group_by(short_name, id, variable, adm_level, adm) %>%
@@ -549,13 +554,8 @@ adm_2000 <-  ag_stat_upd %>%
   ungroup()
 
 
-# Remove crops that are covered in adm2 data in FAOSTAT
-adm_2_crops <- unique(adm_2000$short_name)
-FAOSTAT_2000_sel <- FAOSTAT_2000 %>%
-  filter(!short_name %in% adm_2_crops)
-
 # Combine and plot
-ag_stat_2000 <- bind_rows(FAOSTAT_2000_sel, adm_2000)
+ag_stat_2000 <- bind_rows(FAOSTAT_2000, adm_2000)
 
 
 ### ADD ZERO FOR CROPS THAT ARE NOT PRODUCED IN AN ADM2. 
@@ -563,7 +563,13 @@ ag_stat_2000 <- bind_rows(FAOSTAT_2000_sel, adm_2000)
 xtabs(~ adm + short_name, data = filter(ag_stat_2000, adm_level == 2))
 
 # Fill in zero
-ag_stat_2000_adm2 <- ag_stat_2000
+ag_stat_2000_adm2 <- filter(ag_stat_2000, adm_level == 2) %>%
+  spread(short_name, value, fill = 0) %>%
+  gather(short_name, value, -adm, -adm_level, -variable)
+
+# Replace
+ag_stat_2000 <- filter(ag_stat_2000, !(adm_level == 2)) %>%
+  bind_rows(ag_stat_2000_adm2)
 
 
 ### COMPARE AGRICULTURAL STATISTICS WITH CROP COVER
@@ -578,9 +584,9 @@ crop_cover <- readRDS(file.path(dataPath, "Data/MWI/Processed\\Spatial_data/crop
 # COMPARE ADM2
 # Aggregate crop cover at adm 2 level
 cc_adm2 <- crop_cover %>%
-  group_by(adm2_GAUL, type) %>%
+  group_by(adm2, type) %>%
   summarize(value = sum(area, na.rm = T)) %>%
-  rename(adm = adm2_GAUL)
+  rename(adm = adm2)
 
 # land use at adm 2 level
 lu_adm2 <- ag_stat_2000 %>%
@@ -592,7 +598,7 @@ lu_adm2 <- ag_stat_2000 %>%
 # Combine and plot
 adm2 <- bind_rows(lu_adm2, cc_adm2)
 
-fig_adm2 <- ggplot(data = adm2, aes(x = adm, y = value, fill = type)) +
+ggplot(data = adm2, aes(x = adm, y = value, fill = type)) +
   geom_bar(stat="identity", position = "dodge") +
   labs(title = "Crop cover and land use comparison",
        y = "ha",
@@ -601,19 +607,17 @@ fig_adm2 <- ggplot(data = adm2, aes(x = adm, y = value, fill = type)) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
-fig_adm2
-
 
 # COMPARE ADM0
 # Aggregate crop cover at adm 0 level
 cc_adm0 <- crop_cover %>%
-  group_by(adm0_GAUL, type) %>%
+  group_by(adm0, type) %>%
   summarize(value = sum(area, na.rm = T))
 
 # land use at adm 0 level
 lu_adm0 <- ag_stat_2000 %>%
-  filter(variable == "area") %>%
-  rename(adm0_GAUL = adm) %>%
+  filter(variable == "area" & adm_level == 0) %>%
+  rename(adm0 = adm) %>%
   mutate(type = "land_use") %>%
   group_by(type) %>%
   summarize(value = sum(value, na.rm = T)) 
@@ -621,7 +625,7 @@ lu_adm0 <- ag_stat_2000 %>%
 # Combine and plot
 adm0 <- bind_rows(lu_adm0, cc_adm0)
 
-fig_adm0 <- ggplot(data = adm0, aes(x = adm0_GAUL, y = value, fill = type)) +
+ggplot(data = adm0, aes(x = adm0, y = value, fill = type)) +
   geom_bar(stat="identity", position = "dodge") +
   labs(title = "Crop cover and land use comparison",
        y = "ha",
@@ -630,7 +634,6 @@ fig_adm0 <- ggplot(data = adm0, aes(x = adm0_GAUL, y = value, fill = type)) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
-fig_adm0
 
 ### CORRECT DISCREPANCY LAND COVER AND LAND USE
 # For some adm2 crop area is larger than land cover area from maps. 
@@ -642,15 +645,14 @@ adm2_corr <- adm2 %>%
   spread(type, value) %>%
   mutate(factor = land_use/land_cover) %>%
   filter(factor > 1) %>%
-  select(adm, factor) %>%
-  rename()
+  dplyr::select(adm, factor)
 
 # Correct area
 adm2_maiz_corr <- ag_stat_2000 %>%
   filter(adm %in% adm2_corr$adm) %>%
   left_join(adm2_corr) %>%
   mutate(value = value/factor) %>%
-  select(-factor)
+  dplyr::select(-factor)
 
 # replace values
 ag_stat_2000[ag_stat_2000$adm %in% adm2_corr$adm, ] <- adm2_maiz_corr
