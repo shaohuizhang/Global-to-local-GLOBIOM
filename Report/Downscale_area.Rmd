@@ -59,6 +59,13 @@ Livestock
 - Check livestock map by ILRI and compare with land cover. Probably no need to adjust.
 - 
 
+# To DO
+- Use rural population instead of total population for priors => use rural mask from SPAM
+- Assess what determines location of production: only population or also distance, profitability etc.
+
+
+
+
 
 QUESTIONS LIANG
 Aim is to be able to create land use maps using SPAM but with flexibility to add data from stakeholders and for multiple years. 
@@ -86,3 +93,5 @@ Questions on downscaling
 - Why the name production of crops? This is in fact total physical area for crop j, right. 
 - When subnational data is available, slack is minimized not entropy....
 - How to deal when harvested area is larger than land cover in some ADMs.
+- How to deal with countries where not all adm2 are covered?
+- CHECK: is outcome of SPAM physical area or harvested area? In first case, how is it linked with FAOSTAT harvested area?
