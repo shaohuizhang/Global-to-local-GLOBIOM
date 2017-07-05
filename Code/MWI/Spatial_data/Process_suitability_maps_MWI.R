@@ -32,29 +32,8 @@ adm2_map <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm2_2
 plot(adm2_map)
 
 
-### URBAN MASK
+### SUITABILITY MAPS
 # Load global mask
-urban_mask_raw <- readOGR(file.path(dataPath, "Data/Global/GRUMPv1/global_urban_extent_polygons_v1.01.shp"))
-
-# Select country information
-iso3c_sel <- "MWI"
-urban_mask <- urban_mask_raw[urban_mask_raw$ISO3 == iso3c_sel,]                 
-
-# City information
-data(world.cities)
-cities <- world.cities %>%
-  mutate(iso3c = countrycode(country.etc, "country.name", "iso3c")) %>%
-  filter(iso3c == iso3c_sel)
-
-# Plot
-adm2_map_sf <- st_as_sf(adm2_map)
-urban_mask_sf <- st_as_sf(urban_mask)
-
-ggplot() + 
-  geom_sf(data = adm2_map_sf) +
-  geom_sf(data = urban_mask_sf, fill = "red") +
-  geom_point(data = cities, aes(x = long, y = lat), colour = "green") 
-
-
-# Save data
-saveRDS(urban_mask, file.path(dataPath, "Data/MWI/Processed/Spatial_data/urban_mask_MWI.rds"))
+suitability_raw <- readOGR(file.path(dataPath, "Data/MWI/raw/Spatial_data/suitability_maps/land_units/land_units_1st_code_fnl_ADD_specific.shp"))
+plot(suitability_raw)
+suitability_df <- suitability_raw@data

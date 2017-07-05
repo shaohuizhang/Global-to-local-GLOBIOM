@@ -31,6 +31,10 @@ options(digits=4)
 
 
 ### LOAD GAUL
+# GAUL adm0
+ogrListLayers(file.path(dataPath, "Data\\Global\\GAUL\\g2015_2000_0\\g2015_2000_0.shp"))
+GAUL_adm0_2000 <- readOGR(file.path(dataPath, "Data\\Global\\GAUL\\g2015_2000_0\\g2015_2000_0.shp"), layer = "g2015_2000_0")
+
 # GAUL adm1
 ogrListLayers(file.path(dataPath, "Data\\Global\\GAUL\\g2015_2000_1\\g2015_2000_1.shp"))
 GAUL_adm1_2000 <- readOGR(file.path(dataPath, "Data\\Global\\GAUL\\g2015_2000_1\\g2015_2000_1.shp"), layer = "g2015_2000_1")
@@ -43,6 +47,10 @@ GAUL_adm2_2000 <- readOGR(file.path(dataPath, "Data\\Global\\GAUL\\g2015_2000_2\
 ### SELECT TARGET COUNTRIES
 #http://www.fao.org/countryprofiles/iso3list/en/
 GAUL_adm2_2000_df <- GAUL_adm2_2000@data
+
+# Gaul adm0
+GAUL_MWI_adm0_2000 <- GAUL_adm0_2000[GAUL_adm0_2000$ADM0_NAME == "Malawi",]
+plot(GAUL_MWI_adm0_2000)
 
 # Gaul adm1
 GAUL_MWI_adm1_2000 <- GAUL_adm1_2000[GAUL_adm1_2000$ADM0_NAME == "Malawi",]
@@ -58,6 +66,7 @@ plot(GAUL_MWI_adm2_2000)
 # For example in case of Malawi, simus are located in so-called 'Area under National Administration', which is Lake Malawi. These need to be removed.
 
 # Analyse areas that potentially need to be removed
+GAUL_MWI_adm0_2000_df <- GAUL_MWI_adm0_2000@data
 GAUL_MWI_adm1_2000_df <- GAUL_MWI_adm1_2000@data
 GAUL_MWI_adm2_2000_df <- GAUL_MWI_adm2_2000@data
 area_remove <- c("Area under National Administration")
@@ -68,6 +77,8 @@ GAUL_MWI_adm_2000_list <- GAUL_MWI_adm2_2000_df %>%
   arrange(adm2_GAUL)
 write_csv(GAUL_MWI_adm_2000_list, file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm_2000_list.csv"))
 
+# Gaul adm0
+plot(GAUL_MWI_adm0_2000)
 
 # Gaul adm1
 plot(GAUL_MWI_adm1_2000)
@@ -84,6 +95,7 @@ plot(GAUL_MWI_adm2_2000_adj)
 ### SAVE MAPS
 saveRDS(GAUL_MWI_adm1_2000_adj, file.path(dataPath, "Data\\MWI\\Processed\\Maps\\GAUL_MWI_adm1_2000_adj.rds"))
 saveRDS(GAUL_MWI_adm2_2000_adj, file.path(dataPath, "Data\\MWI\\Processed\\Maps\\GAUL_MWI_adm2_2000_adj.rds"))
+saveRDS(GAUL_MWI_adm0_2000, file.path(dataPath, "Data\\MWI\\Processed\\Maps\\GAUL_MWI_adm0_2000.rds"))
 saveRDS(GAUL_MWI_adm1_2000, file.path(dataPath, "Data\\MWI\\Processed\\Maps\\GAUL_MWI_adm1_2000.rds"))
 saveRDS(GAUL_MWI_adm2_2000, file.path(dataPath, "Data\\MWI\\Processed\\Maps\\GAUL_MWI_adm2_2000.rds"))
 

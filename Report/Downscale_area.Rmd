@@ -85,7 +85,7 @@ Next steps
 
 
 Questions on downscaling
-- What is scalelp? Something is scaled with exogenous variable. Why?
+- What is scalelp? Something is scaled with exogenous variable. Why? Related to alloc.up(i,j) = min(scalelp,scalelp*pixel*avail(i)/produ(j))$produ(j);
 - Difference main crops and crops with technology identifier?
 - Why is suitability turned into a bound (not an equation)?
 - produ(j) is crop land cover per j and l, right?
@@ -95,3 +95,4 @@ Questions on downscaling
 - How to deal when harvested area is larger than land cover in some ADMs.
 - How to deal with countries where not all adm2 are covered?
 - CHECK: is outcome of SPAM physical area or harvested area? In first case, how is it linked with FAOSTAT harvested area?
+- How to determine irrigated area per crop (one of the four systems)? Is there data on irrigated area per crop?

@@ -42,6 +42,19 @@ panderOptions('keep.trailing.zeros', TRUE)
 
 # Data
 
+## Land cover
+
+## Irrigation
+
+
+
+## Suitability
+
+
+_Table X: Data sources_
+
+
+
 # Results
 
 # Validation

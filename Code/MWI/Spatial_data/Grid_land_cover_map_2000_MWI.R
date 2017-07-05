@@ -60,8 +60,7 @@ land_cover_map_raw
 land_class <- levels(land_cover_map_raw)[[1]]
 #write_csv(land_class, file.path(dataPath, "Data/MWI/processed/Spatial_data/land_class_MWI.csv"))
 
-# check projection, should be same as r
-# REPROJECT, IF NEEDED
+### CHECK PROJECTION, REPROJECT, IF NEEDED
 crs(grid)
 crs(land_cover_map_raw)
 
@@ -91,8 +90,7 @@ levelplot(land_cover_map_raw, att='Land_Cover', col.regions = map_colour$colour,
   layer(sp.polygons(grid, col = "black", lwd = 2))
 
 ### GRID CROP LAND DATA
-# Create SimuID list
-# Add unique as several SimuS consist of multiple polygons!
+# Create grid list
 grid_list <- unique(grid@data$gridID)
 
 # Overlay land cover map and grid polygon

@@ -37,7 +37,7 @@ options(digits=4)
 
 ### EXTRACT TABLES FROM NACAL REPORT
 # Select pdf
-doc <- file.path(dataPath, "Data\\MWI\\Raw\\Agricultural_statistics\\Other\\Nacal_Report.pdf")
+doc <- file.path(dataPath, "Data\\MWI\\Raw\\Agricultural_statistics\\Other\\National_statistics\\Nacal_Report.pdf")
 
 # Extract tables
 pdf_raw <- extract_tables(doc, pages = c(102:110, 131, 132), method = "data.frame")

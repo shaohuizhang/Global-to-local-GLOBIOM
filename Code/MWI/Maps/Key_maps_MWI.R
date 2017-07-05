@@ -8,7 +8,7 @@
 ### PACKAGES
 if(!require(pacman)) install.packages("pacman")
 # Key packages
-p_load("tidyverse", "readxl", "stringr", "car", "scales", "RColorBrewer", "rprojroot")
+p_load("tidyverse", "readxl", "stringr", "car", "scales", "RColorBrewer", "rprojroot", "ggthemes")
 # Spatial packages
 p_load("rgdal", "ggmap", "raster", "rasterVis", "rgeos", "sp", "mapproj", "maptools", "proj4", "gdalUtils", "maps")
 # Additional packages
@@ -26,18 +26,57 @@ options(scipen=999) # surpress scientific notation
 options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e.g. csv) is not turned into factors
 options(digits=4)
 
-### LOAD SIMU MAP
+### LOAD DATA
+# Simu
 simu2country_poly <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/simu_MWI.rds"))
 spplot(simu2country_poly, "SimUID", colorkey=FALSE)
 
-### LOAD GAUL MAPS
+# GAUL
 adm2_map <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm2_2000_adj.rds"))
 adm2_df <- adm2_map@data %>%
   mutate(id = row.names(.))
 plot(adm2_map)
 
-### LOAD LAND COVER MAP 
+# land cover
 land_cover_map <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/ESA_MWI_2000.rds"))
+
+# Irrigation
+ir_2000_raw <- read_excel(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/Irrigation_MWI_combined.xlsx"), sheet = "ir_2000")
+ir_2010_raw <- read_excel(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/Irrigation_MWI_combined.xlsx"), sheet = "ir_2010")
+ir_2000_map <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/irrigation_map_MWI_2000.rds"))
+ir_2010_map <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/irrigation_map_MWI_2010.rds"))
+
+
+### IRRIGATION MAP
+# Prepare ir data
+ir_2000 <- ir_2000_raw %>%
+  gather(crop, value, -site:-type) %>%
+  na.omit() %>%
+  mutate(year = 2000)
+
+ir_2010 <- ir_2010_raw %>%
+  gather(crop, value, -site:-type) %>%
+  na.omit() %>%
+  mutate(year = 2010)
+
+ir <- bind_rows(ir_2000, ir_2010)
+
+# Prepare adm
+adm2_for <- fortify(adm2_map)
+
+# Map
+map_ir <- ggplot() +
+  geom_polygon(data = adm2_for, aes(x = long, y = lat, group = group), colour = "black", fill = NA) +
+  geom_point(data = ir, aes(x = lon, y = lat, size = value, colour = crop), alpha = 0.5) +
+  coord_equal() +
+  labs(x="", y="",
+       colour = "Crop", size = "Irrigated \n area (ha)") +
+  theme_map() +
+  facet_wrap(~ year) +
+  theme(legend.position = c(1,.2),
+    strip.background = element_rect(colour = NA, fill = NA),
+    strip.text.x = element_text(size = 10, face="bold"))
+
 
 ### ADM MAP
 # Capital
