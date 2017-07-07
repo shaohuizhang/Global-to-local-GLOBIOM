@@ -107,7 +107,8 @@ adm2_grid <- raster::extract(grid, adm2, df = T) %>%
 
 # Create adm1 and adm2 file
 adm_grid <- left_join(adm1_grid, adm2_grid) %>%
-  mutate(adm0 = "MWI")
+  mutate(adm0 = "MWI",
+         grid_size = grid_size * 100)
 
 # Save files
 write_csv(adm_grid, file.path(dataPath, "Data/MWI/processed/Spatial_data/adm_grid_2000_MWI.csv"))

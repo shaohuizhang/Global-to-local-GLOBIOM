@@ -125,7 +125,7 @@ tab_area_rank_adm0 <- ag_stat_crop_adm0 %>%
 
 
 ### COMPARE AREA AND PRODUCTION AT CROP AND COUNTRY LEVEL
-# Area comparison
+# Area comparison over time
 fig_area_crop_adm0 <- ggplot(data = filter(ag_stat_crop_adm0, variable == "area"), aes(x = year, y = value, colour = id)) +
   geom_line() +
   geom_point() +
@@ -138,6 +138,21 @@ fig_area_crop_adm0 <- ggplot(data = filter(ag_stat_crop_adm0, variable == "area"
   theme(text = element_text(size=10))
 
 fig_area_crop_adm0
+
+# Area comparison between crops in key years
+fig_area_crop_adm0_2 <- ggplot(data = filter(ag_stat_crop_adm0, id == "FAOSTAT_0", variable == "area", 
+                                             year %in% c(2000, 2010)), aes(x = factor(year), y = value, fill = short_name)) +
+  geom_col() +
+  facet_wrap(~ short_name, scales = "free") +
+  labs(title = "Area comparison between crops FAOSTAT",
+       y = "ha",
+       x ="") +
+  scale_y_continuous(labels=comma) +
+  theme_bw() +
+  theme(text = element_text(size=10))
+
+fig_area_crop_adm0_2
+
 
 # Production comparison
 fig_prod_crop_adm0 <- ggplot(data = filter(ag_stat_crop_adm0, variable == "production"), aes(x = year, y = value, colour = id)) +
@@ -570,93 +585,6 @@ ag_stat_2000_adm2 <- filter(ag_stat_2000, adm_level == 2) %>%
 # Replace
 ag_stat_2000 <- filter(ag_stat_2000, !(adm_level == 2)) %>%
   bind_rows(ag_stat_2000_adm2)
-
-
-### COMPARE AGRICULTURAL STATISTICS WITH CROP COVER
-# LOAD DATA
-# Crop cover data
-crop_cover <- readRDS(file.path(dataPath, "Data/MWI/Processed\\Spatial_data/crop_cover_2000_MWI.rds")) %>%
-  mutate(type = "land_cover")
-
-# COMPARE ADM0
-
-
-# COMPARE ADM2
-# Aggregate crop cover at adm 2 level
-cc_adm2 <- crop_cover %>%
-  group_by(adm2, type) %>%
-  summarize(value = sum(area, na.rm = T)) %>%
-  rename(adm = adm2)
-
-# land use at adm 2 level
-lu_adm2 <- ag_stat_2000 %>%
-  filter(variable == "area", adm_level == 2) %>%
-  mutate(type = "land_use") %>%
-  group_by(adm, type) %>%
-  summarize(value = sum(value, na.rm = T)) 
-
-# Combine and plot
-adm2 <- bind_rows(lu_adm2, cc_adm2)
-
-ggplot(data = adm2, aes(x = adm, y = value, fill = type)) +
-  geom_bar(stat="identity", position = "dodge") +
-  labs(title = "Crop cover and land use comparison",
-       y = "ha",
-       x ="") +
-  scale_y_continuous(labels=comma, expand = c(0, 0)) +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-
-
-# COMPARE ADM0
-# Aggregate crop cover at adm 0 level
-cc_adm0 <- crop_cover %>%
-  group_by(adm0, type) %>%
-  summarize(value = sum(area, na.rm = T))
-
-# land use at adm 0 level
-lu_adm0 <- ag_stat_2000 %>%
-  filter(variable == "area" & adm_level == 0) %>%
-  rename(adm0 = adm) %>%
-  mutate(type = "land_use") %>%
-  group_by(type) %>%
-  summarize(value = sum(value, na.rm = T)) 
-
-# Combine and plot
-adm0 <- bind_rows(lu_adm0, cc_adm0)
-
-ggplot(data = adm0, aes(x = adm0, y = value, fill = type)) +
-  geom_bar(stat="identity", position = "dodge") +
-  labs(title = "Crop cover and land use comparison",
-       y = "ha",
-       x ="") +
-  scale_y_continuous(labels=comma, expand = c(0, 0)) +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
-
-
-### CORRECT DISCREPANCY LAND COVER AND LAND USE
-# For some adm2 crop area is larger than land cover area from maps. 
-# This is impossible unless, there is double cropping, fallowed land or data errors.
-# As irrigated areas are not part of the model yet, we create a test dataset that simply shrinks the land use with a certain factor
-
-# Calculate correction factor
-adm2_corr <- adm2 %>%
-  spread(type, value) %>%
-  mutate(factor = land_use/land_cover) %>%
-  filter(factor > 1) %>%
-  dplyr::select(adm, factor)
-
-# Correct area
-adm2_maiz_corr <- ag_stat_2000 %>%
-  filter(adm %in% adm2_corr$adm) %>%
-  left_join(adm2_corr) %>%
-  mutate(value = value/factor) %>%
-  dplyr::select(-factor)
-
-# replace values
-ag_stat_2000[ag_stat_2000$adm %in% adm2_corr$adm, ] <- adm2_maiz_corr
-
 
 # Save
 write_csv(ag_stat_2000, file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/ag_stat_2000_MWI.csv"))

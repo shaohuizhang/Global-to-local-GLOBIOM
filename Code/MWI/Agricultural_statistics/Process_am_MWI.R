@@ -75,7 +75,8 @@ MWI2adm1 <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Mappin
 MWI2adm2 <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI2adm") %>%
   filter(year == 2000) %>%
   dplyr::select(adm2, adm2_am) %>%
-  na.omit
+  na.omit %>%
+  unique()
 
 # Read crop and livestock mapping
 crop_lvst_map <- read_excel(file.path(dataPath, "Data\\Global\\SPAM\\SPAM_mappings.xlsx"), sheet = "SPAM2FAOSTAT_crop") %>%

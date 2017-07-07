@@ -36,7 +36,13 @@ panderOptions('keep.trailing.zeros', TRUE)
 ```
 
 # Introduction
-
+- SPAM, MIRCA, etc exists [@ref comparison paper].
+- Good for global modelling but for country case studies [@Rutten2014] detailed land use maps are often needed. Stakeholders might provide additional information on location of certain crops or irrigated areas that need to be incorporated in the final map.
+- Case stuyd on national land use map construction. Follows SPAM but adds additional data.
+- Make use of national and very detaitled land cover maps at high resolution. ALready present location of three crops. Still have to spatially allocate others. 
+- Collect detailed information on irrigated areas and construct new irrigation map that are crop specific. Improvement over GMIA that only shows irrigated areas. 
+- Crop statistics at adm2 
+- Validation using households survey
 
 # The Spatial allocation model
 
@@ -63,7 +69,14 @@ _Table X: Data sources_
 
 # Conclusions
 
+# ANNEX
+
+## Irrigation
+In order to allocated irrigated areas, detailed information on irrigated crop areas was taken from country reports, complemented by an internet search and validation. @WorldBank2010 presents information on irrigated projects, including name, crop, actual irrigated area and area equaiped for irrigation for Malawi, that draws on a survey down in 2001, which was updated for the period XX. The survey mainly covers commercial estate produciton. @Irrigation presents similar information but also includes a very large number of informal smallholder irrigation projects and, most importantly, includes the spartial coordinates of the project. The data is representative for the period XX. We assume that the data from @WorldBank2014 and @irrigation are representative for the years 2000 and 2010, respectively.
+
+To create irrigation maps for the two period (Figure X), we used the following procedure. First, data from two sources was combined and names and location of irrigation projects harmonised to create one consistent database, including the spatial coordinates of the project. Second, we decided to only include commercial estates and large-scale farm projects, while excluding smallholder areas. This is in line with SPAM, where the irrigated farming system is defined as [@add]. This definition excludes smallholders that mostly likely operate low input irrigated systems. Moreover, data on smallholder projects is only available for the period 2010 from @irrigation and it is doubtful whether the information is complete. Including the smallholder information increases the total irrigated area to XX, which is also much higher than is used by GMIA and FAOSTAT, which also seem to include only large commercial production. Third, we validated the database by comparing the location of irrigation projects with (1) Open Street Map, which presents information of many sugar, tea and other crop estates, and (2) land cover maps from @FAO, which presents detailed information on tea, sugar, rice and other crop cover. There was considerable overlap between the sources but in a few cases, small errors (e.g the coordinates of the irrigation project) were corrected. Figure X shows the resulting maps of irrigation project in Malawi for 2000 and 2010. Fourth, the irrgation project map was rasterized on a 5x5 min grid that corresponds with the spatial allocation procedure. In order to do this we first added a buffer to point locations that is equal to the size of the irrigated area of the respective irrigation project and then allocated the irrigated area to the grid. Again the data was validated by comparing the result with Open Street Map and the actual crop cover from @FAO. For some large estates the buffered and rasterized area was inconsistent with the actual shape and location of the (irrigated) area. In all cases the problem could be fixed by manually relo
 
 
 
-# 
+
+As also pointed out in the two aforementioned sources, it is important to note that the database of irrigated projects and resulting irrigation maps probably do not cover all (commercial) irrigated projects in Malawi and total irrigated area is probably underreported. Nonetheless, with X ha in 2000 and X in 2010 total area is similar to that presented in GMIA with XX ha. An overlay also illustrates that the maps are similar. 

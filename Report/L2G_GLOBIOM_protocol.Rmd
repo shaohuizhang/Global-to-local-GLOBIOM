@@ -155,6 +155,8 @@ The abbreviations (as, am, cs, hs and lc) are used in the names of the mappings 
 
 ## Spatial data (sd)
 
+## Land cover (lc)
+
 
 
 National statistics and household surveys provide the best information for detailed information on agricultural production. In most cases it should be possible to collect information on total production, crop area and/or harvested area at the second administrative level (e.g. province). Sometimes it will be necessary to add additional crops that are not part of the standard GLOBIOM crop classification (e.g. teff in Ethiopia) 

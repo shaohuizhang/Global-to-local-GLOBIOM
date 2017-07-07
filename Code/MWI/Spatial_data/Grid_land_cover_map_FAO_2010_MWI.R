@@ -48,6 +48,10 @@ grid <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/grid_MWI.rds"))
 plot(grid)
 
 
+### LOAD ADM GRID INFO
+adm_grid <- read_csv(file.path(dataPath, "Data/MWI/Processed/Spatial_data/adm_grid_2000_MWI.csv"))
+
+
 ### LOAD FAO MAP
 ogrListLayers(file.path(dataPath, "Data\\MWI\\Raw\\Spatial_data\\FAO_Land_Cover_Data\\DATA\\NATIONAL_LC/Malawi_lc.shp"))
 lcm_FAO_raw <- readOGR(file.path(dataPath, "Data\\MWI\\Raw\\Spatial_data\\FAO_Land_Cover_Data\\DATA\\NATIONAL_LC/Malawi_lc.shp"))
@@ -139,7 +143,7 @@ lc <- lc_sh_raw %>%
 # Combine data and express area in ha
 lc <- lc %>%
   left_join(., adm_grid) %>%
-  mutate(grid_size = grid_size * 100,
+  mutate(grid_size = grid_size,
          area = share*grid_size) %>%
   ungroup()
 
@@ -166,6 +170,6 @@ check_total_ir <- lc %>%
   summarize(area = sum(area))
 
 # Save
-saveRDS(lc, file.path(dataPath, "Data/MWI/processed/Spatial_data/land_cover_FAO_2000_MWI.rds"))
+saveRDS(lc, file.path(dataPath, "Data/MWI/processed/Spatial_data/land_cover_FAO_2010_MWI.rds"))
 
 

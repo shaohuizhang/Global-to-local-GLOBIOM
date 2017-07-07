@@ -35,14 +35,20 @@ options(digits=4)
 options(max.print=1000000) # more is printed on screen
 
 ### LOAD DATA
+
+# CHECK NEED TO BE CHANGED TO FAO
 # Crop cover data
 crop_cover <- readRDS(file.path(dataPath, "Data/MWI/Processed\\Spatial_data/crop_cover_2000_MWI.rds"))
 
 # Agricultural statistics
 ag_stat_2000 <- read_csv(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/ag_stat_2000_MWI.csv"))
 
+# Irrigaton statistics
+ir_stat <- readRDS(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/irrigation_stat_MWI_2000.rds")) 
+
 # Gridded adm
 adm_grid_2000 <- read_csv(file.path(dataPath, "Data/MWI/processed/Spatial_data/adm_grid_2000_MWI.csv"))
+
 
 ### CREATE GAMS SETS
 
@@ -66,7 +72,7 @@ i_set <- crop_cover %>%
   rename(i = gridID)
 write_set_f(modelPath, i_set)
 
-# j: Crops with technology identified (equals main crops for now)
+# j: Crops with technology identifier
 j_set <- ag_stat_2000 %>%
   dplyr::select(short_name) %>%
   unique()

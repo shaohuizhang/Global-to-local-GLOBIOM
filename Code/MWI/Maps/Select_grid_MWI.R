@@ -52,10 +52,28 @@ plot(adm2)
 ### CREATE COUNTRY GRID
 # crop and mask
 # Mask and crop raster
-grid <- mask(r, adm1)
-grid <- crop(grid, adm1)
+grid <- crop(r, adm1)
+grid <- mask(grid, adm1)
 plot(grid)
 names(grid) <- "gridID"
+
+### APPROACH TO ADD BORDER CELLS
+# Note that:
+# 1. We need another version of adm0 that excludes lake MWI => union adm1
+# 2. Any next steps that include the (total crop) area of the grid cell requires special treatment of the 
+# border cells => potential approach is to polygize the raster, crop to adm0 and calculate area of border cells
+# However all this might be a lot of extra work for very limited returns.
+
+# https://stackoverflow.com/questions/44023272/r-crop-raster-using-polygon-keeping-cells-along-the-border
+adm0 <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm0_2000.rds"))
+cls <- cellFromPolygon(r, adm0, weights = TRUE)[[1]][, "cell"]
+
+r2 <- r
+r2[][-cls] <- NA
+r2 <- trim(r2) 
+plot(r2)
+plot(adm1, add = TRUE)
+x <- rasterToPoints(r2)
 
 # Write raster
 saveRDS(grid, file.path(dataPath, "Data/MWI/Processed/Maps/grid_r_MWI.rds"))
@@ -64,6 +82,7 @@ saveRDS(grid, file.path(dataPath, "Data/MWI/Processed/Maps/grid_r_MWI.rds"))
 # Create polygon
 grid_py <- rasterToPolygons(grid)
 plot(grid_py)
+plot(adm1, add = T, border = "red")
 
 # Write polygon
 saveRDS(grid_py, file.path(dataPath, "Data/MWI/Processed/Maps/grid_MWI.rds"))

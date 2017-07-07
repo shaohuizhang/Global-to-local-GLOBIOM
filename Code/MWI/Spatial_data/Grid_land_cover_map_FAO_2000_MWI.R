@@ -143,7 +143,7 @@ lc <- lc_sh_raw %>%
 # Combine data and express area in ha
 lc <- lc %>%
   left_join(., adm_grid) %>%
-  mutate(grid_size = grid_size * 100,
+  mutate(grid_size = grid_size,
          area = share*grid_size) %>%
   ungroup()
 
@@ -170,6 +170,6 @@ check_total_ir <- lc %>%
   summarize(area = sum(area))
 
 # Save
-saveRDS(lc, file.path(dataPath, "Data/MWI/processed/Spatial_data/land_cover_FAO_2010_MWI.rds"))
+saveRDS(lc, file.path(dataPath, "Data/MWI/processed/Spatial_data/land_cover_FAO_2000_MWI.rds"))
 
 
