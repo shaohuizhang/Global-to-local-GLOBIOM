@@ -251,4 +251,4 @@ leaflet(adm2) %>%
   addMarkers(data = ir_add, lat = ~ lat, lng = ~ lon) 
 
 # save
-write_csv(ir_df, file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/Irrigation_MWI.csv"), na = "")
+write_csv(ir_df, file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/irrigation_MWI.csv"), na = "")

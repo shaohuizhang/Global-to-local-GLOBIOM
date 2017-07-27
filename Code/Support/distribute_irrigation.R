@@ -36,6 +36,9 @@ distribute_f <- function(df, crop, i=1){
   n_ir <- nrow(crop_ir_geo@data)
   ia <- ip@data$value
   
+  # short_name
+  sn <- ip@data$short_name
+  
   # Calculate nearest grid cells
   dist <- gDistance(ip, crop_grid, byid = T)
   dist <- data.frame(ID = row.names(dist), distance = as.vector(dist)) %>%
@@ -54,14 +57,17 @@ distribute_f <- function(df, crop, i=1){
       df$ir_area[df$ID == j] <- df$ir_area[df$ID == j] + alloc
       df$area[df$ID == j] <- df$area[df$ID == j] - alloc
       ia = ia - alloc
+      df$short_name[df$ID == j] <- sn  
       break
     } else {
       alloc <- df$area[df$ID == j]
       df$ir_area[df$ID == j] <- df$ir_area[df$ID == j] + alloc
       df$area[df$ID == j] <- df$area[df$ID == j] - alloc
+      df$short_name[df$ID == j] <- sn  
       ia = ia - alloc
     }
   }
+  
   i=1+i
   print(paste("counter", i, sep = " "))
   print(paste("cum ir_area", sum(df$ir_area)), sep = " ")

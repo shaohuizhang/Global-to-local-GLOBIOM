@@ -5,6 +5,9 @@
 #' Contact:  michiel.vandijk@wur.nl
 #'========================================================================================================================================
 
+# CHECK
+# Code contains a minor bug. Loop should not be over crops but separately over maize and vege (irrigated crops)
+# Now last allocation of maiz is allocated to vege. Only relatively very small bias but can be corrected.
 
 ### PACKAGES
 if(!require(pacman)) install.packages("pacman")
@@ -45,6 +48,9 @@ ir_raw <- read_excel(file.path(dataPath, "Data/MWI/Processed/Agricultural_statis
 # land_cover
 lc_raw <- readRDS(file.path(dataPath, "Data/MWI/processed/Spatial_data/land_cover_FAO_2000_MWI.rds"))
 
+# Load adm grid info
+adm_grid <- read_csv(file.path(dataPath, "Data/MWI/Processed/Spatial_data/adm_grid_2000_MWI.csv"))
+
 
 ### TRANSFORM MAPS
 crs <- "+init=EPSG:4326" # WSG84
@@ -56,8 +62,8 @@ grid <- spTransform(grid, CRS(crs_ir))
 ir <- ir_raw %>%
   gather(short_name, value, -site:-type) %>%
   na.omit() %>%
-  mutate(lc = ifelse(short_name %in% c("vege", "maize"), "crops", short_name),
-         lc = ifelse(lc %in% c("coff"), "teas", lc),
+  mutate(short_name = ifelse(short_name %in% c("coff", "teas"), "teas_coff", short_name),
+         lc = ifelse(short_name %in% c("vege", "maiz"), "crops", short_name),
          ID = c(1:nrow(.)))
 
 ir_geo <- ir
@@ -70,25 +76,26 @@ ir_geo <- spTransform(ir_geo, CRS(crs_ir))
 # Irrigated area of these points wil be located at closest grid cell. 
 # Potentially, the available crop land can be too small for the allocation process to work.
 # The chance for this is very small.
-ir_in_MWI <- as.data.frame(ir_geo[grid, ])
-ir_out_MWI <- filter(ir, !(ID %in% ir_in_MWI$ID))
+#ir_in_MWI <- as.data.frame(ir_geo[grid, ])
+#ir_out_MWI <- filter(ir, !(ID %in% ir_in_MWI$ID))
 
 # Plot
-mapview(grid, col.regions = NA) + mapview(ir_geo[ir_geo$ID %in% ir_out_MWI$ID,]) 
+#mapview(grid, col.regions = NA) + mapview(ir_geo[ir_geo$ID %in% ir_out_MWI$ID,]) 
 
 
 ### ALLOCATE IRRIGATED AREA TO GRID CELLS
 # Determine how much crop specific cover is available in/near the location of the irrigated areas
 # Prepare lc
 lc <- lc_raw %>%
+  filter(suitability_level == 1) %>% # We only include pure agric land cover classes
   group_by(gridID, lc) %>%
   summarize(area = sum(area, na.rm = T))
 
 # Tea and coff grid
-tea_grid <- prep_f(c("teas", "coff"))
+teas_coff_grid <- prep_f(c("teas_coff"))
 
 # Distribute
-teas_ir_area <- distribute_f(tea_grid, c("teas", "coff"))
+teas_coff_ir_area <- distribute_f(teas_coff_grid, c("teas_coff"))
 
 # Sugc grid
 # Prepare input data for distribution
@@ -106,79 +113,24 @@ rice_grid <- prep_f(c("rice"))
 rice_ir_area <- distribute_f(rice_grid, c("rice"))
 
 
-# Crops grid
+# crops grid
 crops_grid <- prep_f(c("crops"))
 
 # Distribute
 crops_ir_area <- distribute_f(crops_grid, c("crops"))
 
-# Combine
-ir_grid <- bind_rows(teas_ir_area, sugc_ir_area, rice_ir_area, crops_ir_area) %>%
-  filter(ir_area >0)
+# Combine, add adm info and remove checking variables
+ir_grid <- bind_rows(teas_coff_ir_area, sugc_ir_area, rice_ir_area, crops_ir_area) %>%
+  filter(ir_area >0) %>%
+  mutate(system = "I") %>%
+  left_join(., adm_grid) %>%
+  dplyr::select(-area, -total_area, -grid_size, -lc, -ID)
+
+# Clean up
+rm(adm_grid, crops_grid, crops_ir_area, rice_grid, rice_ir_area, sugc_grid, sugc_ir_area, teas_coff_grid, 
+   teas_coff_ir_area, lc, lc_raw, crs, crs_ir, ir, ir_raw, ir_geo, grid)
 
 # Save
 saveRDS(ir_grid, file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/ir_grid_MWI_2000.rds"))
-
-
-
-
-
-# Irrigated
-teas_gridID <- lc$gridID[lc$lc == "teas" & lc$area >0]
-teas_grid <- grid[grid$gridID %in% teas_gridID,]
-
-
-
-
-
-
-
-
-
-# Check location
-grid_r_p <- rasterToPoints(grid_r) %>%
-  as.data.frame()
-
-teas_map <- grid_r_p %>%
-  left_join(.,teas_ir_area) %>%
-  filter(ir_area >0) %>%
-  ungroup() %>%
-  dplyr::select(x, y, ir_area) %>%
-  as.data.frame() %>%
-  rasterFromXYZ(.)
-crs(teas_map) <- crs
-
-mapview(teas_map, legend = T, alpha.regions = 0.6) +
-  mapview(ir_geo[ir_geo$short_name %in% c("teas","coff"),], cex = "value", alpha.region = 0.2) +
-  mapview(teas_grid, col.regions = NA)
-
-
-
-# Irrigated
-sugc_gridID <- lc$gridID[lc$lc == "sugc" & lc$area >0]
-sugc_grid <- grid[grid$gridID %in% sugc_gridID,]
-
-# Check location
-grid_r_p <- rasterToPoints(grid_r) %>%
-  as.data.frame()
-
-sugc_map <- grid_r_p %>%
-  left_join(.,sugc_ir_area) %>%
-  filter(ir_area >0) %>%
-  ungroup() %>%
-  dplyr::select(x, y, ir_area) %>%
-  as.data.frame() %>%
-  rasterFromXYZ(.)
-crs(sugc_map) <- crs
-
-mapview(sugc_map, legend = T, alpha.regions = 0.6) +
-  mapview(ir_geo[ir_geo$short_name %in% c("sugc"),], cex = "value", alpha.region = 0.2) +
-  mapview(sugc_grid, col.regions = NA)
-
-
-
-
-
-
 
 

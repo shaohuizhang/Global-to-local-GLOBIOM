@@ -43,7 +43,6 @@ ag_stat <- read_csv(file.path(dataPath, "Data/MWI/Processed/Agricultural_statist
 lc2crop_lvst <- read_excel(file.path(dataPath, "Data/MWI/Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI_lc2crop_lvst")
 
 # Irrigation
-ir_stat <- readRDS(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/ir_stat_MWI_2000.rds")) 
 ir_grid <- readRDS(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/ir_grid_MWI_2000.rds")) 
 
 # Grid
@@ -52,44 +51,6 @@ grid_r <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/grid_r_MWI.rds"))
 
 # Adm
 adm2 <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm2_2000_adj.rds"))
-
-# COMPARE ADM2
-# Aggregate crop cover at adm 2 level
-lc_adm2 <- lc_raw %>%
-  filter(suitability_level %in% c(1)) %>%
-  group_by(adm2, lc, type) %>%
-  summarize(value = sum(area, na.rm = T)) %>%
-  rename(adm = adm2)
-
-# Land use at adm 2 level
-lu_adm2 <- ag_stat %>%
-  left_join(lc2crop_lvst) %>%
-  filter(variable == "area", adm_level == 2) %>%
-  mutate(type = "land_use") %>%
-  group_by(adm, lc, type) %>%
-  summarize(value = sum(value, na.rm = T)) 
-
-# Irrigation at adm level
-ir_adm2 <- ir_stat %>%
-  left_join(lc2crop_lvst) %>%
-  mutate(type = "irrigated") %>%
-  group_by(adm2, lc, type) %>%
-  summarize(value = sum(value, na.rm = T)) %>%
-  rename(adm = adm2)
-
-# Combine and plot
-adm2 <- bind_rows(lu_adm2, lc_adm2, ir_adm2) %>%
-  filter(lc %in% c("crops", "rice"))
-
-ggplot(data = adm2, aes(x = adm, y = value, fill = type)) +
-  geom_bar(stat="identity", position = "dodge") +
-  facet_wrap(~lc, scales = "free") +
-  labs(title = "Crop cover and land use comparison",
-       y = "ha",
-       x ="") +
-  scale_y_continuous(labels=comma, expand = c(0, 0)) +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) 
 
 
 # COMPARE ADM0
@@ -109,12 +70,11 @@ lu_adm0 <- ag_stat %>%
   summarize(value = sum(value, na.rm = T)) 
 
 # Irrigation at adm level
-ir_adm0 <- ir_stat %>%
-  left_join(lc2crop_lvst) %>%
-  mutate(type = "irrigated") %>%
-  group_by(lc, type) %>%
-  summarize(value = sum(value, na.rm = T)) %>%
-  mutate(adm0 = "MWI")
+ir_adm0 <- ir_grid %>%
+  group_by(lc) %>%
+  summarize(value = sum(ir_area, na.rm = T)) %>%
+  mutate(type = "irrigated",
+         adm0 = "MWI")
 
 # Combine and plot
 adm0 <- bind_rows(lu_adm0, lc_adm0, ir_adm0)
@@ -130,102 +90,107 @@ ggplot(data = adm0, aes(x = adm0, y = value, fill = type)) +
   facet_wrap(~lc, scales = "free")
 
 
-### COMPARE IRRIGATED AREAS AND CROPCOVER AT GRID LEVEL
-# lc at grid
-lc_grid <- lc_raw %>%
+# COMPARE ADM2
+# Aggregate crop cover at adm 2 level
+lc_adm2 <- lc_raw %>%
   filter(suitability_level %in% c(1)) %>%
-  group_by(gridID, lc, type) %>%
-  summarize(value = sum(area, na.rm = T))
+  group_by(adm2, lc, type) %>%
+  summarize(value = sum(area, na.rm = T)) %>%
+  rename(adm = adm2)
 
-ir_grid <- ir_grid %>%
+# Land use at adm 2 level
+lu_adm2 <- ag_stat %>%
   left_join(lc2crop_lvst) %>%
-  mutate(type = "irrigated") %>%
-  group_by(gridID, lc, type) %>%
+  filter(variable == "area", adm_level == 2) %>%
+  mutate(type = "land_use") %>%
+  group_by(adm, lc, type) %>%
+  summarize(value = sum(value, na.rm = T)) 
+
+# Irrigation at adm level
+ir_adm2 <- ir_grid %>%
+  group_by(adm2, lc) %>%
   summarize(value = sum(ir_area, na.rm = T)) %>%
-  na.omit()
+  rename(adm = adm2) %>%
+  mutate(type = "irrigated")
 
 # Combine and plot
-grid_check <- bind_rows(lc_grid, ir_grid) %>%
-  filter(gridID %in% ir_grid$gridID) %>%
+adm2 <- bind_rows(lu_adm2, lc_adm2, ir_adm2) %>%
+  filter(lc %in% c("crops", "rice"))
+
+ggplot(data = adm2, aes(x = adm, y = value, fill = type)) +
+  geom_bar(stat="identity", position = "dodge") +
+  facet_wrap(~lc, scales = "free") +
+  labs(title = "Crop cover and land use comparison",
+       y = "ha",
+       x ="") +
+  scale_y_continuous(labels=comma, expand = c(0, 0)) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) 
+
+# Identify adms with not enough crop cover
+check_adm2 <- adm2 %>%
   spread(type, value) %>%
-  na.omit() %>%
-  mutate(check = land_cover > irrigated)
-
-# Have a closes look at problematic grid cells
-grid_problem <- filter(grid_check, !check)
-
-mapview(adm2) +
-  mapview(grid[grid$gridID %in% grid_problem$gridID,])
-
-mapview(adm2) +
-  mapview(grid[grid$gridID %in% c(5393945),])
-
-# Prepare maps with irrigated crops
-grid_r_p <- rasterToPoints(grid_r) %>%
-  as.data.frame()
-
-# sugc
-lc_sugc_map <- grid_r_p %>%
-  left_join(lc_grid,.) %>%
-  filter(lc == "teas", value >0) %>%
-  ungroup() %>%
-  dplyr::select(x, y, value) %>%
-  as.data.frame()
-
-coordinates(lc_sugc_map) <- ~ x + y
-gridded(lc_sugc_map) <- TRUE
-lc_sugc_map <- raster(lc_sugc_map)
-crs <- CRS("+init=EPSG:4326") # WSG84
-crs(lc_sugc_map) <- crs
-
-grid_problem_sugc <- filter(grid_problem, lc == "sugc")
-
-mapview(lc_sugc_map) +
-  mapview(grid[grid$gridID %in% grid_problem_sugc$gridID,])
-
-# teas
-lc_teas_map <- grid_r_p %>%
-  left_join(lc_grid,.) %>%
-  filter(lc == "teas", value >0) %>%
-  ungroup() %>%
-  dplyr::select(x, y, value) %>%
-  as.data.frame()
-
-coordinates(lc_teas_map) <- ~ x + y
-gridded(lc_teas_map) <- TRUE
-lc_teas_map <- raster(lc_teas_map)
-crs <- CRS("+init=EPSG:4326") # WSG84
-crs(lc_teas_map) <- crs
-
-grid_problem_teas <- filter(grid_problem, lc == "teas")
-
-mapview(lc_teas_map) +
-  mapview(grid[grid$gridID %in% grid_problem_teas$gridID,])
-
+  mutate(check_lu = land_cover - land_use) %>%
+  filter(lc == "crops", check_lu <0)
 
 
 ### CORRECT DISCREPANCY LAND COVER AND LAND USE
-# For some adm2 crop area is larger than land cover area from maps. 
-# This is impossible unless, there is double cropping, fallowed land or data errors.
-# As irrigated areas are not part of the model yet, we create a test dataset that simply shrinks the land use with a certain factor
+# For some adm2 crop and rice area is larger than land cover area from maps.
+# Problems for rice are caused by problematic statistics, mainly Nhkata Bay, which we imputed.
+# We discard adm statistics and allocate national statistics to rice land cover. 
+# Small remainder is allocated to crop cover.
 
-# Calculate correction factor
-adm2_corr <- adm2 %>%
+# We used the following corrections:
+
+# (1) We set land use to 0 for Likoma
+ag_stat_upd <- ag_stat %>%
+  mutate(value = ifelse(adm == "LIKOMA", 0, value))
+
+# (2) We remove adm level rice statistics
+ag_stat_upd <- ag_stat_upd %>%
+  filter(!(adm != "MWI" & short_name == "rice"))
+
+# (3) We add all non pure agri grid cells to adms where lc < lu
+lc_upd <- bind_rows(
+  filter(lc_raw, suitability_level == 1),
+  filter(lc_raw, suitability_level == 2, adm2 %in% check_adm2$adm))
+
+lc_adm2 <- lc_upd %>%
+  group_by(adm2, lc, type) %>%
+  summarize(value = sum(area, na.rm = T)) %>%
+  rename(adm = adm2)
+
+# Land use at adm 2 level
+lu_adm2 <- ag_stat_upd %>%
+  left_join(lc2crop_lvst) %>%
+  filter(variable == "area", adm_level == 2) %>%
+  mutate(type = "land_use") %>%
+  group_by(adm, lc, type) %>%
+  summarize(value = sum(value, na.rm = T)) 
+
+# Combine and plot
+adm2 <- bind_rows(lu_adm2, lc_adm2, ir_adm2) %>%
+  filter(lc %in% c("crops", "rice"))
+
+ggplot(data = adm2, aes(x = adm, y = value, fill = type)) +
+  geom_bar(stat="identity", position = "dodge") +
+  facet_wrap(~lc, scales = "free") +
+  labs(title = "Crop cover and land use comparison",
+       y = "ha",
+       x ="") +
+  scale_y_continuous(labels=comma, expand = c(0, 0)) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) 
+
+# Identify adms with not enough crop cover
+check_adm2 <- adm2 %>%
   spread(type, value) %>%
-  mutate(factor = land_use/land_cover) %>%
-  filter(factor > 1) %>%
-  dplyr::select(adm, factor)
+  mutate(check_lu = land_cover - land_use) %>%
+  filter(lc == "crops", check_lu <0)
 
-# Correct area
-adm2_maiz_corr <- ag_stat %>%
-  filter(adm %in% adm2_corr$adm) %>%
-  left_join(adm2_corr) %>%
-  mutate(value = value/factor) %>%
-  dplyr::select(-factor)
+### SAVE
+# ag_stat_upd
+saveRDS(ag_stat_upd, file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/ag_stat_2000_upd_MWI.rds"))
 
-# replace values
-ag_stat[ag_stat$adm %in% adm2_corr$adm, ] <- adm2_maiz_corr
-
-
-# Save
-write_csv(ag_stat_2000, file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/ag_stat_2000_MWI.csv"))
+# lc_upd
+saveRDS(lc_upd, file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/lc_2000_upd_MWI.rds"))

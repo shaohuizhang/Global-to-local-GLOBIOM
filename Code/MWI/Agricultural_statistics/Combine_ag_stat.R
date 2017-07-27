@@ -586,5 +586,14 @@ ag_stat_2000_adm2 <- filter(ag_stat_2000, adm_level == 2) %>%
 ag_stat_2000 <- filter(ag_stat_2000, !(adm_level == 2)) %>%
   bind_rows(ag_stat_2000_adm2)
 
-# Save
+
+### RECODE TEAS AND COFF TO TEAS_COFF BECAUSE THEY ARE COMBINED IN THE LC MAP
+ag_stat_2000 <- ag_stat_2000 %>%
+  mutate(short_name = dplyr::recode(short_name, "teas" = "teas_coff", "coff" = "teas_coff")) %>%
+  ungroup() %>%
+  group_by(short_name, adm, adm_level, variable) %>%
+  summarize(value = sum(value, na.rm = T))
+
+
+### SAVE
 write_csv(ag_stat_2000, file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/ag_stat_2000_MWI.csv"))

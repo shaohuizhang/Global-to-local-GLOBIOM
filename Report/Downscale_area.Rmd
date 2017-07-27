@@ -78,7 +78,7 @@ Questions:
 - How to deal with missing data. Understand that if one only has adm1 data, eq 12 holds only for adm1 for that crop. 
 - But what about if there is no data at all for a crop at adm1 level? For instance data for MWI at adm1 (from CountryStat) only covers a few crops. Not banana. Banana is mapped in SPAM in MWI, probably from FAOSTAT. How?
 - How to deal with subnational cropstatistics that only cover core crops. Downscale other crops from national level downwards?
-- How to deal with border issues => center rule?
+- How to deal with border issues => center rule? Some cells are partly outside the country!
 
 Next steps
 - co-author on paper, perhaps using new techniques with case study for one country?

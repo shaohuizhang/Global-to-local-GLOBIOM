@@ -133,7 +133,6 @@ lc_class <- read_csv(file.path(dataPath, "Data/MWI/raw/Spatial_data/FAO_Land_Cov
 
 lc <- lc_sh_raw %>%
   gather(ID, share, -gridID) %>%
-  #filter(variable %in% c(9, 10)) %>%
   group_by(gridID, ID) %>%
   summarize(share = sum(share, na.rm = T)) %>%
   left_join(., lc_class)
@@ -168,6 +167,24 @@ check_total_agg2 <- lc %>%
 check_total_ir <- lc %>%
   group_by(irrigation, agg2) %>%
   summarize(area = sum(area))
+
+### ASSESS NON-PURE AGRI GRID CELLS (with suitability level 2)
+lc_check <- lc %>%
+  filter(suitability_level %in% c(2)) %>%
+  group_by(class_short, adm2) %>%
+  summarize(area = sum(area, na.rm = T))
+
+ggplot(data = lc_check, aes(x = factor(class_short), y = area, fill = factor(class_short))) +
+  geom_bar(stat="identity", position = "dodge") +
+  labs(title = "suitability comparison",
+       y = "ha",
+       x ="") +
+  scale_y_continuous(labels=comma, expand = c(0, 0)) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+  facet_wrap(~adm2, scales = "free") +
+  theme(axis.text.x=element_blank())
+
 
 # Save
 saveRDS(lc, file.path(dataPath, "Data/MWI/processed/Spatial_data/land_cover_FAO_2000_MWI.rds"))

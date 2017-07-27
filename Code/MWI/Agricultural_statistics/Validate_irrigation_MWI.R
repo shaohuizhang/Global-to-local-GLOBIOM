@@ -74,17 +74,20 @@ proj4string(ir_2010_geo) <- crs
 
 # Prepare lc
 lc <- lc_raw %>%
-  group_by(gridID, agg2) %>%
+  group_by(gridID, lc) %>%
   summarize(area = sum(area, na.rm = T))
   
 # Prepare maps with irrigated crops
 grid_r_p <- rasterToPoints(grid_r) %>%
   as.data.frame()
 
-# Tea and coff
+### TEA AND COFF
+# land cover teas map
+# Tea and coff are combined because large coffee estate is considered as tea land cover
+# Kavuzi tea estate, which geocodes were not exact (river instead of estate) is located too far North.
 lc_teas_map <- grid_r_p %>%
   left_join(lc,.) %>%
-  filter(agg2 == "teas", area >0) %>%
+  filter(lc == "teas", area >0) %>%
   ungroup() %>%
   dplyr::select(x, y, area) %>%
   as.data.frame()
@@ -94,15 +97,30 @@ gridded(lc_teas_map) <- TRUE
 lc_teas_map <- raster(lc_teas_map)
 crs(lc_teas_map) <- crs
 
-mapview(lc_teas_map) +
-mapview(ir_2010_geo[ir_2010_geo$crop %in% c("teas","coff"),], color = "blue") +
-mapview(ir_2000_geo[ir_2000_geo$crop%in% c("teas","coff"),], color = "red", fill = "red")
+# Irrigation map
+ir_teas_map <- ir_grid %>%
+  filter(lc %in% "teas") %>%
+  left_join(grid_r_p,.) %>%
+  dplyr::select(x, y, ir_area)
+
+ir_teas_map <- rasterFromXYZ(ir_teas_map)
+crs(ir_teas_map) <- crs
+
+mapview(ir_teas_map, legend = T) +
+  mapview(ir_geo, col.regions = "red", alpha.region = 0.2)
++ 
+slideview(ir_teas_map, lc_teas_map)
+mapview(grid, col.regions = NA, alpha.region = 0.2) +
+mapview(lc_teas_map, alpha.regions = 0.4)
++
+mapview(ir_2010_geo[ir_2010_geo$crop %in% c("teas","coff"),], color = "red", col.regions = "red", cex = "value", alpha.region = 0.2) +
+mapview(ir_2000_geo[ir_2000_geo$crop%in% c("teas","coff"),], cex = "value", alpha.region = 0.2) 
 
 
 # Sugar
 lc_sugc_map <- grid_r_p %>%
   left_join(lc,.) %>%
-  filter(agg2 == "sugc", area >0) %>%
+  filter(lc == "sugc", area >0) %>%
   ungroup() %>%
   dplyr::select(x, y, area) %>%
   as.data.frame()
@@ -113,14 +131,13 @@ lc_sugc_map <- raster(lc_sugc_map)
 crs(lc_sugc_map) <- crs
 
 mapview(lc_sugc_map, alpha.regions = 0.4) +
-  mapview(ir_2010_geo[ir_2010_geo$crop %in% c("sugc"),], color = "blue") +
-  mapview(ir_2000_geo[ir_2000_geo$crop%in% c("sugc"),], color = "red", fill = "red")
-
+  mapview(ir_2010_geo[ir_2010_geo$crop %in% c("sugc"),], color = "red", col.regions = "red", cex = "value", alpha.region = 0.2) +
+  mapview(ir_2000_geo[ir_2000_geo$crop%in% c("sugc"),], cex = "value", alpha.region = 0.2)
 
 # rice
 lc_rice_map <- grid_r_p %>%
   left_join(lc,.) %>%
-  filter(agg2 == "rice", area >0) %>%
+  filter(lc == "rice", area >0) %>%
   ungroup() %>%
   dplyr::select(x, y, area) %>%
   as.data.frame()
@@ -131,5 +148,40 @@ lc_rice_map <- raster(lc_rice_map)
 crs(lc_rice_map) <- crs
 
 mapview(lc_rice_map, alpha.regions = 0.4) +
-  mapview(ir_2010_geo[ir_2010_geo$crop %in% c("rice"),], color = "blue") +
-  mapview(ir_2000_geo[ir_2000_geo$crop%in% c("rice"),], color = "red", fill = "red")
+  mapview(ir_2010_geo[ir_2010_geo$crop %in% c("rice"),], color = "red", col.regions = "red", cex = "value", alpha.region = 0.2) +
+  mapview(ir_2000_geo[ir_2000_geo$crop%in% c("rice"),], cex = "value", alpha.region = 0.2)
+
+
+### COMPARE IRRIGATED AREAS AND CROPCOVER AT GRID LEVEL TO SEE IF THERE IS SUFFICIENT CROP COVER
+# lc at grid
+lc_grid <- lc_raw %>%
+  filter(suitability_level %in% c(1)) %>%
+  group_by(gridID, lc, type) %>%
+  summarize(value = sum(area, na.rm = T))
+
+ir_grid <- ir_grid %>%
+  left_join(lc2crop_lvst) %>%
+  mutate(type = "irrigated") %>%
+  group_by(gridID, lc, type) %>%
+  summarize(value = sum(ir_area, na.rm = T)) %>%
+  na.omit()
+
+# Combine and plot
+grid_check <- bind_rows(lc_grid, ir_grid) %>%
+  filter(gridID %in% ir_grid$gridID) %>%
+  spread(type, value) %>%
+  na.omit() %>%
+  mutate(check = land_cover > irrigated)
+
+# Have a closes look at problematic grid cells
+grid_problem <- filter(grid_check, !check)
+
+mapview(adm2) +
+  mapview(grid[grid$gridID %in% grid_problem$gridID,])
+
+mapview(adm2) +
+  mapview(grid[grid$gridID %in% c(5393945),])
+
+# Prepare maps with irrigated crops
+grid_r_p <- rasterToPoints(grid_r) %>%
+  as.data.frame()

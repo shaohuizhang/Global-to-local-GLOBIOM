@@ -74,7 +74,8 @@ crop_lvst_map <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/M
 MWI2adm <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI2adm") %>%
   filter(year == 2000) %>%
   dplyr::select(adm1, adm1_GAUL) %>%
-  na.omit
+  na.omit %>%
+  unique()
 
 cs <- cs_raw %>%
   left_join(.,crop_lvst_map) %>%
