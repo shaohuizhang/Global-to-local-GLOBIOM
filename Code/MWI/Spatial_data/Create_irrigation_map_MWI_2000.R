@@ -124,7 +124,7 @@ ir_grid <- bind_rows(teas_coff_ir_area, sugc_ir_area, rice_ir_area, crops_ir_are
   filter(ir_area >0) %>%
   mutate(system = "I") %>%
   left_join(., adm_grid) %>%
-  dplyr::select(-area, -total_area, -grid_size, -lc, -ID)
+  dplyr::select(-area, -total_area, -grid_size, -ID)
 
 # Clean up
 rm(adm_grid, crops_grid, crops_ir_area, rice_grid, rice_ir_area, sugc_grid, sugc_ir_area, teas_coff_grid, 
