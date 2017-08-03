@@ -1,6 +1,6 @@
 #'========================================================================================================================================
 #' Project:  Global-to-local GLOBIOM
-#' Subject:  Script to create GAMS sets
+#' Subject:  Script to create GAMS data fils
 #' Author:   Michiel van Dijk
 #' Contact:  michiel.vandijk@wur.nl
 #'========================================================================================================================================
@@ -34,20 +34,39 @@ options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e
 options(digits=4)
 options(max.print=1000000) # more is printed on screen
 
+
 ### LOAD DATA
+model_data <- readRDS(file.path(dataPath, "Data/MWI/processed/GAMS/model_data.rds"))
+lu_system <- model_data[["lu_system"]]
+lu_adm <- model_data[["lu_adm"]]
+lc_ir <- model_data[["lc_ir"]]
+lc_av <- model_data[["lc_av"]]
 
-# CHECK NEED TO BE CHANGED TO FAO
-# Crop cover data
-crop_cover <- readRDS(file.path(dataPath, "Data/MWI/Processed\\Spatial_data/crop_cover_2000_MWI.rds"))
 
-# Agricultural statistics
-ag_stat_2000 <- read_csv(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/ag_stat_2000_MWI.csv"))
+### CREATE GAMS INPUT DATA FILES
+# CHECK: WILL BE REPLACED BY SCRIPT THAT WRITES GDX
 
-# Irrigaton statistics
-ir_stat <- readRDS(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/irrigation_stat_MWI_2000.rds")) 
+# deptots(k,s)
+deptots <- lu_adm %>%
+  filter(adm_level == 2) %>%
+  dplyr::select(adm, short_name, value)
 
-# Gridded adm
-adm_grid_2000 <- read_csv(file.path(dataPath, "Data/MWI/processed/Spatial_data/adm_grid_2000_MWI.csv"))
+write_csv(deptots, file.path(dataPath, "Model/Data/deptots.csv"), col_names = F)
+
+# avail(i,c)
+avail <- lc_av %>%
+  dplyr::select(gridID, lc, value)
+
+write_csv(avail, file.path(dataPath, "Model/Data/avail.csv"), col_names = F)
+
+# produ(j)
+produ <- lu_system 
+
+# icrops(i,j)
+icrops <- lc_ir %>%
+  dplyr::select(gridID, short_name, value)
+
+write_csv(produ, file.path(dataPath, "Model/Data/iprodu.csv"), col_names = F)
 
 
 ### CREATE GAMS SETS
@@ -64,56 +83,65 @@ adm_grid_2000 <- read_csv(file.path(dataPath, "Data/MWI/processed/Spatial_data/a
 #               row.names = FALSE, col.names = FALSE, quote = FALSE)
 # }
 
-modelPath <- file.path(dataPath, "Model/Sets")
-
 # i: grid cells
-i_set <- crop_cover %>%
+i_set <- lc_av %>%
   dplyr::select(gridID) %>%
+  unique() %>%
   rename(i = gridID)
-write_set_f(modelPath, i_set)
+write_set_f(file.path(dataPath, "Model/Data"), i_set)
 
 # j: Crops with technology identifier
-j_set <- ag_stat_2000 %>%
-  dplyr::select(short_name) %>%
+j_set <- lu_system %>%
+  dplyr::select(system) %>%
   unique()
-write_set_f(modelPath, j_set)
+write_set_f(file.path(dataPath, "Model/Data"), j_set)
 
 # s: Main crops
-s_set <- ag_stat_2000 %>%
+s_set <- lu_adm %>%
   dplyr::select(short_name) %>%
   unique()
-write_set_f(modelPath, s_set)
+write_set_f(file.path(dataPath, "Model/Data"), s_set)
 
-# k: SubNat names wich have statistics 
-k_set <- ag_stat_2000 %>%
+# k: Subnat names wich have statistics 
+k_set <- lu_adm %>%
   filter(adm_level == 2) %>%
   dplyr::select(adm) %>%
   unique()
-write_set_f(modelPath, k_set)
+write_set_f(file.path(dataPath, "Model/Data"), k_set)
 
-# n(s,j)  Main Crops with corresponding sub-crops 
-n_set <- bind_cols(s_set, j_set) %>%
+# n(s,j)  Main crops with corresponding sub-crops 
+n_set <- lu_system %>%
+  dplyr::select(short_name, system) %>%
+  unique() %>%
   setNames(c("s", "j")) %>%
   mutate(n = paste(s, j, sep = "    .    ")) %>%
   dplyr::select(n)
 n_set <- paste(n_set$n, collapse = ", ")
-write_set_f(modelPath, n_set)
+write_set_f(file.path(dataPath, "Model/Data"), n_set)
 
-# l(k,i)  Pixels in SubNat with statistics   
-l_set <- crop_cover %>%
+# l(k,i)  Pixels in subnat with statistics   
+l_set <- lc_av %>%
   dplyr::select(adm2, gridID) %>%
   setNames(c("k", "i")) %>%
   mutate(l = paste(k, i, sep = "    .    ")) %>%
   dplyr::select(l)
-write_set_f(modelPath, l_set)
+write_set_f(file.path(dataPath, "Model/Data"), l_set)
 
-# m(k, s) Main Crop Names in SubNat with stat
-m_set <- ag_stat_2000 %>%
+# m(k, s) Main crop names in subnat with stat
+m_set <- lu_adm %>%
   filter(adm_level == 2) %>%
   dplyr::select(adm, short_name) %>%
   unique() %>%
   setNames(c("k", "s")) %>%
   mutate(m = paste(k, s, sep = "    .    ")) %>%
   dplyr::select(m)
-write_set_f(modelPath, m_set)
+write_set_f(file.path(dataPath, "Model/Data"), m_set)
 
+# cg(c, s) Main crops in crop groups 
+cg_set <- lu_adm %>%
+  dplyr::select(lc, short_name) %>%
+  unique() %>%
+  setNames(c("c", "s")) %>%
+  mutate(cg = paste(c, s, sep = "    .    ")) %>%
+  dplyr::select(cg)
+write_set_f(file.path(dataPath, "Model/Data"), cg_set)

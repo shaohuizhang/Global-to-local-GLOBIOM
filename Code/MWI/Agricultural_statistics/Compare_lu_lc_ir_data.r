@@ -5,6 +5,7 @@
 #' Contact:  michiel.vandijk@wur.nl
 #'========================================================================================================================================
 
+#CHECK: Change area into value for lc raw
 
 ### PACKAGES
 if(!require(pacman)) install.packages("pacman")
@@ -34,7 +35,8 @@ options(max.print=1000000) # more is printed on screen
 # LOAD DATA
 # Crop cover data
 lc_raw <- readRDS(file.path(dataPath, "Data/MWI/Processed\\Spatial_data/land_cover_FAO_2000_MWI.rds")) %>%
-  mutate(type = "land_cover")
+  mutate(type = "land_cover") %>%
+  rename(value = area)
 
 # Agricultural statistics
 ag_stat <- read_csv(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/ag_stat_2000_MWI.csv")) 
@@ -58,7 +60,7 @@ adm2 <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm2_2000_
 lc_adm0 <- lc_raw %>%
   filter(suitability_level %in% c(1)) %>%
   group_by(adm0, lc) %>%
-  summarize(value = sum(area, na.rm = T)) %>%
+  summarize(value = sum(value, na.rm = T)) %>%
   mutate(type = "land_cover")
 
 # land use at adm 0 level
@@ -97,7 +99,7 @@ rm(lu_adm0, lc_adm0, ir_adm0, adm0)
 lc_adm2 <- lc_raw %>%
   filter(suitability_level %in% c(1)) %>%
   group_by(adm2, lc, type) %>%
-  summarize(value = sum(area, na.rm = T)) %>%
+  summarize(value = sum(value, na.rm = T)) %>%
   rename(adm = adm2)
 
 # Land use at adm 2 level
@@ -148,7 +150,7 @@ rm(lu_adm2, lc_adm2, ir_adm2, adm2)
 # We applied the following corrections:
 
 # (1) We discard adm rice statistics and allocate national statistics to rice land cover.
-ag_stat_upd <- ag_stat %>%
+lu_adm <- ag_stat %>%
   filter(!(adm != "MWI" & short_name == "rice"))
 
 # (2) We add all non pure agri grid cells to adms where lc < lu, add and select relevant variables
@@ -157,33 +159,33 @@ lc_av <- bind_rows(
   filter(lc_raw, suitability_level == 1),
   filter(lc_raw, suitability_level == 2, adm2 %in% check_adm2$adm)) %>%
   group_by(gridID, lc, adm2, adm0) %>%
-  summarize(area = sum(area, na.rm = T)) %>%
-  filter(area >0)
+  summarize(value = sum(value, na.rm = T)) %>%
+  filter(value > 0)
 rm(check_adm2)
 
 # (3) We remove irrigated area to get area available for other systems 
 lc_non_ir <- lc_av %>%
   left_join(., ir_grid) %>%
-  mutate(area = ifelse(!is.na(ir_area), area-ir_area, area)) %>%
-  dplyr::select(gridID, lc, area, adm0, adm2) %>%
+  mutate(value = ifelse(!is.na(ir_area), value-ir_area, value)) %>%
+  dplyr::select(gridID, lc, value, adm0, adm2) %>%
   ungroup()
 
 # (4) We allocate 5% of crop cover cells to rice cover if they occur in the same grid cell
 shift = 0.05
 lc_non_ir <- lc_non_ir %>%
-  spread(lc, area) %>%
+  spread(lc, value) %>%
   mutate(crop_switch = ifelse(!is.na(rice) & !is.na(crops), shift*crops, 0),
          crops = crops - crop_switch,
          rice = rice + crop_switch) %>%
   dplyr::select(-crop_switch) %>%
-  gather(lc, area, -gridID, -adm0, -adm2) %>%
+  gather(lc, value, -gridID, -adm0, -adm2) %>%
   na.omit()
 
 # (5) We add irrigated area back in to get total available area for each crop class.
 lc_av <- lc_non_ir %>%
   left_join(., ir_grid) %>%
-  mutate(area = ifelse(!is.na(ir_area), area+ir_area, area)) %>%
-  dplyr::select(gridID, lc, area, adm0, adm2) %>%
+  mutate(value = ifelse(!is.na(ir_area), value + ir_area, value)) %>%
+  dplyr::select(gridID, lc, value, adm0, adm2) %>%
   ungroup()
 rm(lc_non_ir)
 
@@ -197,11 +199,11 @@ lc_ir <- ir_grid %>%
 # Aggregate crop cover at adm 0 level
 lc_adm0 <- lc_av %>%
   group_by(adm0, lc) %>%
-  summarize(value = sum(area, na.rm = T)) %>%
+  summarize(value = sum(value, na.rm = T)) %>%
   mutate(type = "land_cover")
 
 # land use at adm 0 level
-lu_adm0 <- ag_stat_upd %>%
+lu_adm0 <- lu_adm %>%
   filter(variable == "area" & adm_level == 0) %>%
   left_join(lc2crop_lvst) %>%
   rename(adm0 = adm) %>%
@@ -235,12 +237,12 @@ rm(lu_adm0, lc_adm0, ir_adm0, adm0)
 # COMPARE ADM2
 lc_adm2 <- lc_av %>%
   group_by(adm2, lc) %>%
-  summarize(value = sum(area, na.rm = T)) %>%
+  summarize(value = sum(value, na.rm = T)) %>%
   rename(adm = adm2) %>%
   mutate(type = "land_cover")
 
 # Land use at adm 2 level
-lu_adm2 <- ag_stat_upd %>%
+lu_adm2 <- lu_adm %>%
   left_join(lc2crop_lvst) %>%
   filter(variable == "area", adm_level == 2) %>%
   mutate(type = "land_use") %>%
@@ -279,7 +281,7 @@ I <- lc_ir %>%
   mutate(system = "I")
   
 # (2) All non-irrigated sugc, teas_coff, predominantly produced in estates/plantations are rainfed-high input (H)
-H <- ag_stat_upd %>%
+H <- lu_adm %>%
   filter(short_name %in% c("sugc", "teas_coff"), adm == "MWI") %>%
   left_join(.,dplyr::rename(I, I = value)) %>%
   mutate(value= value - I,
@@ -287,7 +289,7 @@ H <- ag_stat_upd %>%
   dplyr::select(value, short_name, system)
 
 # (3) All non-irrigated other crops are subsistence (S)
-S <- ag_stat_upd %>%
+S <- lu_adm %>%
   filter(!short_name %in% c("sugc", "teas_coff"), adm == "MWI") %>%
   left_join(.,dplyr::rename(I, I = value)) %>%
   mutate(value = ifelse(!is.na(I), value - I, value),
@@ -295,17 +297,29 @@ S <- ag_stat_upd %>%
   dplyr::select(value, short_name, system)
 
 # Combine
-prod <- bind_rows(I, H, S)
-rm(I, H, S)
+lu_system <- bind_rows(I, H, S) %>%
+  mutate(system = paste(short_name, system, sep = "_"))
 
 # Compare with ag_stat_upd total => should be the same
-sum(prod$value)
-sum(ag_stat_upd$value[ag_stat_upd$adm == "MWI"])
+sum(lu_system$value)
+sum(lu_adm$value[lu_adm$adm == "MWI"])
 
 
-### SAVE
-# ag_stat_upd
-saveRDS(ag_stat_upd, file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/ag_stat_2000_upd_MWI.rds"))
+### COMBINE MODEL INPUT DATA FILES
+model_data <- list()
 
-# lc_upd
-saveRDS(lc_upd, file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/lc_2000_upd_MWI.rds"))
+# Land use per agricultural system
+model_data[["lu_system"]] <- lu_system
+
+# Land use per adm
+model_data[["lu_adm"]] <- lu_adm
+
+# Irrigated land cover per grid cell
+model_data[["lc_ir"]] <- lc_ir
+
+# Available land cover per crop group
+model_data[["lc_av"]] <- lc_av
+
+# save
+saveRDS(model_data, file.path(dataPath, "Data/MWI/Processed/GAMS/model_data.rds"))
+

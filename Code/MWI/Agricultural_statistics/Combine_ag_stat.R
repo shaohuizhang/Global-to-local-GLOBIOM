@@ -35,9 +35,8 @@ options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e
 options(digits=4)
 options(max.print=1000000) # more is printed on screen
 
-# TO DO
+# CHECK/TO DO
 # Add maps - copy from other script
-# Add full list of crops and adm2 in final data file.
 # remove yield and recalc in the end. 
 
 
@@ -49,6 +48,8 @@ MWI2adm <- read_excel(file.path(dataPath, "Data/MWI/Processed/Mappings/Mappings_
 crop_lvst <- read_excel(file.path(dataPath, "Data\\Mappings\\Mappings.xlsx"), sheet = "crop_lvst") %>%
   dplyr::select(short_name) %>%
   na.omit()
+
+lc2crop_lvst <- read_excel(file.path(dataPath, "Data/MWI/Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI_lc2crop_lvst")
 
 
 ### LOAD DATA
@@ -587,13 +588,17 @@ ag_stat_2000 <- filter(ag_stat_2000, !(adm_level == 2)) %>%
   bind_rows(ag_stat_2000_adm2)
 
 
-### RECODE TEAS AND COFF TO TEAS_COFF BECAUSE THEY ARE COMBINED IN THE LC MAP
+### RECODE CROPS AND ADD LC CLASS
+# Recode teas and coff to teas_coff because they are combined in lc mapping
 ag_stat_2000 <- ag_stat_2000 %>%
   mutate(short_name = dplyr::recode(short_name, "teas" = "teas_coff", "coff" = "teas_coff")) %>%
   ungroup() %>%
   group_by(short_name, adm, adm_level, variable) %>%
   summarize(value = sum(value, na.rm = T))
 
+# Add lc classes
+ag_stat_2000 <- ag_stat_2000 %>%
+  left_join(.,lc2crop_lvst)
 
 ### SAVE
 write_csv(ag_stat_2000, file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/ag_stat_2000_MWI.csv"))
