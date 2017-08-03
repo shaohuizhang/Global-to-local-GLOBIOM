@@ -42,6 +42,9 @@ lu_adm <- model_data[["lu_adm"]]
 lc_ir <- model_data[["lc_ir"]]
 lc_av <- model_data[["lc_av"]]
 
+# Pop per grid cell
+tot_pop_grid <- read_csv(file.path(dataPath, "Data/MWI/Processed/Spatial_data/tot_pop_grid_2000_MWI.csv"))
+
 
 ### CREATE GAMS INPUT DATA FILES
 # CHECK: WILL BE REPLACED BY SCRIPT THAT WRITES GDX
@@ -60,13 +63,14 @@ avail <- lc_av %>%
 write_csv(avail, file.path(dataPath, "Model/Data/avail.csv"), col_names = F)
 
 # produ(j)
-produ <- lu_system 
+produ <- lu_system %>%
+  dplyr::select(system, value)
+write_csv(produ, file.path(dataPath, "Model/Data/produ.csv"), col_names = F)
 
 # icrops(i,j)
 icrops <- lc_ir %>%
-  dplyr::select(gridID, short_name, value)
-
-write_csv(produ, file.path(dataPath, "Model/Data/iprodu.csv"), col_names = F)
+  dplyr::select(gridID, system, value)
+write_csv(icrops, file.path(dataPath, "Model/Data/icrops.csv"), col_names = F)
 
 
 ### CREATE GAMS SETS
@@ -83,23 +87,28 @@ write_csv(produ, file.path(dataPath, "Model/Data/iprodu.csv"), col_names = F)
 #               row.names = FALSE, col.names = FALSE, quote = FALSE)
 # }
 
+# c: crop groups
+c_set <- lc_av %>%
+  dplyr::select(lc) %>%
+  unique()
+write_set_f(file.path(dataPath, "Model/Data"), c_set)
+
 # i: grid cells
 i_set <- lc_av %>%
   dplyr::select(gridID) %>%
-  unique() %>%
-  rename(i = gridID)
+  unique()
 write_set_f(file.path(dataPath, "Model/Data"), i_set)
 
 # j: Crops with technology identifier
 j_set <- lu_system %>%
   dplyr::select(system) %>%
-  unique()
+  unique() 
 write_set_f(file.path(dataPath, "Model/Data"), j_set)
 
 # s: Main crops
 s_set <- lu_adm %>%
   dplyr::select(short_name) %>%
-  unique()
+  unique() 
 write_set_f(file.path(dataPath, "Model/Data"), s_set)
 
 # k: Subnat names wich have statistics 
@@ -116,12 +125,12 @@ n_set <- lu_system %>%
   setNames(c("s", "j")) %>%
   mutate(n = paste(s, j, sep = "    .    ")) %>%
   dplyr::select(n)
-n_set <- paste(n_set$n, collapse = ", ")
 write_set_f(file.path(dataPath, "Model/Data"), n_set)
 
 # l(k,i)  Pixels in subnat with statistics   
 l_set <- lc_av %>%
   dplyr::select(adm2, gridID) %>%
+  unique() %>%
   setNames(c("k", "i")) %>%
   mutate(l = paste(k, i, sep = "    .    ")) %>%
   dplyr::select(l)
@@ -145,3 +154,60 @@ cg_set <- lu_adm %>%
   mutate(cg = paste(c, s, sep = "    .    ")) %>%
   dplyr::select(cg)
 write_set_f(file.path(dataPath, "Model/Data"), cg_set)
+
+
+### CREATE PRIORS
+# Calculate prior for crop area by using share of rural population. 
+# If we have information on crop area at adm2 level, we calculate the prior at adm2 level.
+
+# Create gridID and system combinations
+priors_base <- expand.grid(gridID = i_set$gridID, system = j_set$system)
+
+# Merge pop and crop cover data
+priors <- priors_base %>%
+  left_join(.,tot_pop_grid) %>%
+  mutate(prior = value/sum(value)) %>%
+  dplyr::select(gridID, system, prior)
+
+# 
+# # Calculate crop area prior for crops at adm2 level
+# crop_area_prior_adm2 <- grid_sel %>%
+#   group_by(adm2) %>%
+#   mutate(pop_share = value/sum(value)) %>%
+#   dplyr::select(gridID, adm = adm2, pop_share) %>%
+#   left_join(.,lu_adm) %>%
+#   mutate(crop_area_prior = pop_share * value) %>%
+#   dplyr::select(gridID, adm, short_name, crop_area_prior)
+# 
+# # Calculate crop area prior for crops at adm0 level
+# # Need to filter out crops for which adm2 data is available
+# crops_adm2 <- unique(crop_area_prior_adm2$short_name)
+# lu_adm0 <- filter(lu_adm, !(short_name %in% crops_adm2))
+# 
+# crop_area_prior_adm0 <- grid_sel %>%
+#   group_by(adm0) %>%
+#   mutate(pop_share = value/sum(value)) %>%
+#   dplyr::select(gridID, adm = adm0, pop_share) %>%
+#   left_join(., lu_adm0) %>%
+#   mutate(crop_area_prior = pop_share * value) %>%
+#   dplyr::select(gridID, adm, short_name, crop_area_prior)
+# 
+# # Calculate prior as share of total
+# # Apply crop_cover
+# prior <- bind_rows(crop_area_prior_adm0, crop_area_prior_adm2) %>%
+#   ungroup() %>%
+#   group_by(short_name) %>%
+#   mutate(prior = crop_area_prior/sum(crop_area_prior)) %>%
+#   dplyr::select(-crop_area_prior, -adm) %>%
+#   rename(i = gridID, j = short_name, rev = prior)
+
+
+# Check if total area adds to sum as in ag_stat
+#sum(prior$crop_area_prior)
+#sum(ag_stat_2000$value)
+
+# save
+# NB: data is only read correctly by GAMS if GRID_ID numbers are manually formated to number, zero digits
+# Perhaps save as txt?
+write_csv(priors, file.path(dataPath, "Model/Data/priors.csv"), col_names = F)
+

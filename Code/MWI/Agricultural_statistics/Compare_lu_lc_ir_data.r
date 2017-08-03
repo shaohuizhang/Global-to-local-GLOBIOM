@@ -39,10 +39,7 @@ lc_raw <- readRDS(file.path(dataPath, "Data/MWI/Processed\\Spatial_data/land_cov
   rename(value = area)
 
 # Agricultural statistics
-ag_stat <- read_csv(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/ag_stat_2000_MWI.csv")) 
-
-# land cover crop_lvst mapping
-lc2crop_lvst <- read_excel(file.path(dataPath, "Data/MWI/Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI_lc2crop_lvst")
+lu_adm_raw <- read_csv(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/ag_stat_2000_MWI.csv")) 
 
 # Irrigation
 ir_grid <- readRDS(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/ir_grid_MWI_2000.rds")) 
@@ -64,9 +61,8 @@ lc_adm0 <- lc_raw %>%
   mutate(type = "land_cover")
 
 # land use at adm 0 level
-lu_adm0 <- ag_stat %>%
+lu_adm0 <- lu_adm_raw %>%
   filter(variable == "area" & adm_level == 0) %>%
-  left_join(lc2crop_lvst) %>%
   rename(adm0 = adm) %>%
   mutate(type = "land_use") %>%
   group_by(adm0, type, lc) %>%
@@ -74,7 +70,6 @@ lu_adm0 <- ag_stat %>%
 
 # Irrigation at adm level
 ir_adm0 <- ir_grid %>%
-  left_join(lc2crop_lvst) %>%
   group_by(lc) %>%
   summarize(value = sum(ir_area, na.rm = T)) %>%
   mutate(type = "irrigated",
@@ -103,8 +98,7 @@ lc_adm2 <- lc_raw %>%
   rename(adm = adm2)
 
 # Land use at adm 2 level
-lu_adm2 <- ag_stat %>%
-  left_join(lc2crop_lvst) %>%
+lu_adm2 <- lu_adm_raw %>%
   filter(variable == "area", adm_level == 2) %>%
   mutate(type = "land_use") %>%
   group_by(adm, lc, type) %>%
@@ -112,7 +106,6 @@ lu_adm2 <- ag_stat %>%
 
 # Irrigation at adm level
 ir_adm2 <- ir_grid %>%
-  left_join(lc2crop_lvst) %>%
   group_by(adm2, lc) %>%
   summarize(value = sum(ir_area, na.rm = T)) %>%
   rename(adm = adm2) %>%
@@ -149,8 +142,8 @@ rm(lu_adm2, lc_adm2, ir_adm2, adm2)
 
 # We applied the following corrections:
 
-# (1) We discard adm rice statistics and allocate national statistics to rice land cover.
-lu_adm <- ag_stat %>%
+# (1) We discard adm rice statistics and allocate national statistics to rice land cover and add lc classification
+lu_adm <- lu_adm_raw %>%
   filter(!(adm != "MWI" & short_name == "rice"))
 
 # (2) We add all non pure agri grid cells to adms where lc < lu, add and select relevant variables
@@ -191,7 +184,8 @@ rm(lc_non_ir)
 
 # (6) We prepare irrigated lc 
 lc_ir <- ir_grid %>%
-  dplyr::select(gridID, short_name, adm0, adm2, value = ir_area)
+  dplyr::select(gridID, short_name, adm0, adm2, value = ir_area) %>%
+  mutate(system = paste(short_name, "I", sep = "_"))
 
 
 ### CHECK AGAIN
@@ -205,7 +199,6 @@ lc_adm0 <- lc_av %>%
 # land use at adm 0 level
 lu_adm0 <- lu_adm %>%
   filter(variable == "area" & adm_level == 0) %>%
-  left_join(lc2crop_lvst) %>%
   rename(adm0 = adm) %>%
   mutate(type = "land_use") %>%
   group_by(adm0, type, lc) %>%
@@ -213,7 +206,6 @@ lu_adm0 <- lu_adm %>%
 
 # Irrigation at adm level
 ir_adm0 <- ir_grid %>%
-  left_join(lc2crop_lvst) %>%
   group_by(lc) %>%
   summarize(value = sum(ir_area, na.rm = T)) %>%
   mutate(type = "irrigated",
@@ -243,7 +235,6 @@ lc_adm2 <- lc_av %>%
 
 # Land use at adm 2 level
 lu_adm2 <- lu_adm %>%
-  left_join(lc2crop_lvst) %>%
   filter(variable == "area", adm_level == 2) %>%
   mutate(type = "land_use") %>%
   group_by(adm, lc, type) %>%
@@ -297,6 +288,7 @@ S <- lu_adm %>%
   dplyr::select(value, short_name, system)
 
 # Combine
+# keep short_name and lc to make mapping for GAMS later
 lu_system <- bind_rows(I, H, S) %>%
   mutate(system = paste(short_name, system, sep = "_"))
 
