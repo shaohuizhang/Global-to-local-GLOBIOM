@@ -44,35 +44,83 @@ panderOptions('keep.trailing.zeros', TRUE)
 - Crop statistics at adm2 
 - Validation using households survey
 
-# The Spatial allocation model
+# The spatial production allocation model
+
+The spatial allocation model we use in this paper builds on the SPAM model presented in @You2014. SPAM uses a cross entropy framework to allocate aggregate land use information to grid cells. An objective function that expresses land allocation shares as probabilities is minimized subject to a set of constraints that capture the available information on location of certain crops and crop systems (e.g. crop cover and irrigation maps) or the likelihood a crop is grown in a certain area (e.g. suitability maps and subnational land use statistics). Although @You2014 use country specific data sources for subnational land use statistics, they mainly rely on global sources to define the land allocation constraints. In this study, we were able to collect more detailed information, which allowed us to refine the allocation procedure. In particular, we collected a high resolution land cover map, which reveals the location of five crop groups and created new crop specific irrigation maps for Malawi. [@PERHAPS UPDATE OF SUITABILITY MAPS]. In the sections below we present the adjusted SPAM model as well as the calculation of priors, which are needed to start the cross entropy optimization. To remain comparability with @You2014, we use the same variable names and indices.
 
 
-$$\min_{s_{ijl}} \quad CE(s_{ijl}, \pi_{ijl})=\sum_{i}\sum_{j}\sum_{l}s_{ijl}\ lns_{ijl}-\sum_{i}\sum_{j}\sum_{l}s_{ijl}\ lns_{ijl}  $$
+## Cross entropy framework and constraints
+For the cross entropy framework can be implemented, the allocated area needs to be converted into a probability with value between 0 and 1. This is done as follows:
 
-$$\min_{i}$$
+$$ s_{ijl} = \frac{A_{ijl}} {CropArea_{jl}}$$
+where, $s_{ijl}$ is the area share allocated to grid cell identifier $i = 1,2,3,...$ and crop identifier $j = maize, cassave, rice,...$ at input level $l=irrigated, rainfed-high input, subsistence$. $A_{ijl}$ is the area allocated to grid cell $i$ for crop $j$ at input level $l$. $CropArea_{jl}$ is the total physical crop area in Malawi for crop $j$ at input level $l$.
+
+The spatial allocation model can then be defined as a non-linear optimization problem in which the error between prior information on allocated area shares ({$\pi_{ij}$) and allocated area shares ($s_{ijl}$) is minimized, subject to a set of constraints. The objective function is defined as follows:
+
+$$\min_{s_{ijl}} \quad CE(s_{ijl}, \pi_{ijl})= \sum_{i} \sum_{j} \sum_{l}s_{ijl} \ lns_{ijl}- \sum_{i} \sum_{j} \sum_{l}s_{ijl} \ ln\pi_{ijl}  $$
+subject to:
+
+(i) A constraint defining the range of permitted physical area shares:
+
+$$0 \leq s_{ijl} \leq 1$$
+
+(ii) A constraint (@X), which ensures  ensures that the sum of allocated physical area shares within grid cells sum to one. This ensures all physical crop area is allocated to grid cells. 
+
+$$\sum_{i}s_{ij}=1 \qquad \forall j \quad \forall l$$
+
+(iii) A constraint, which specifies that the sum of allocated physical area for each crop group, $c=rice, tropical \, fruits, sugar \, cane,...,$ and production systems is lower or equal than the actual crop area ($Avail_{ij}$) that is available for each crop group $c$ in grid cell $i$. This equation extends the one in @You, by adding spatialy explicit information on the location of specific crops in the country.    
+
+
+$$\sum_{j \in c} \sum_{l}CropArea_{jl} \times s_{ijl} \leq Avail_{ic} \qquad \forall i$$
+
+(iv) A constraint [@ADD suitability equation]
+
+
+$$CropArea_{jl} \times s_{ijl} \leq SuitArea_{ijl} \qquad \forall i \quad \forall j \quad\forall l$$
+
+(v) A constraint, which ensures that the sum of allocated physical area over all production systems within a  sub-national geopolitical unit,$k=1,2,3,...$ (in this case administrative zone 2 level) is equal to the  physical area information ($SubCropArea_{jk}$) for commodities $J$ for which information is available from sub-national land use statistics. Crops for which only national level information is available are not affected by this constraint. 
+
+
+$$\sum_{i\in k} \sum_{l}CropArea_{jl} \times s_{ijl} = SubCropArea_{jk} \qquad \forall k \quad \forall j \in J$$
+
+(vi) A constraint, which allocates spatially explicit information on irrigated areas ($IRRArea_{ijl}$) for  irrigated crops ($J$) that belong to the irrigated crop system in grid cells $I$. In contrast to $You2014, who do not have crop specific irrigation area, we have detailed location and crop specific data on irrigated areas, which we incorporate in the spatial allocation model. 
+
+$$CropArea_{jl} \times s_{ijl} = IRRArea_{ijl} \qquad \forall i \in I \quad \forall l = irrigated \quad \forall j \in N$$
+
+
+## Calculation of priors
 
 
 
 # Data
+We combined information from a number of different sources to run the model described above (see Table X for an overview). A key input for the analysis is a high resolution land cover map that provides detailed information on the location of agricultural production. Recently, several new land use and land cover maps were produced for Malawi that cover the period 1990-2010 [see @Haack2014 for a comparison]. We decided to use the maps produced by the FAO [@FAO] that is available for 2010. The advantage of this map in comparison to others is that it has a very high resolution of 30x30 meter and therefore provides spatially explicit information on the location of five crop groups (rice, tropical fruits, sugar cane, tea & coffee and other crops) in Malawi. We aggregated the map to a resolution of @X and calculated the physical area share for each crop group per grid cell $i$.
 
-## Land cover
+Statistics on actual land use at the national level were taken from @FAO and extended with data from @Add, @add and @add for the administrative zone two level. We follow the approach of @Wood-Sichra2016 and aggregate all crop statistics to a set of standardised crops and subsequently allign the subnational data with national statistics from FAO. We were able to collect subnational data for XX out of the XX crops that are cultivated in Malawi. Annex X provides more information on the prepartion of the crop statistics.
 
-## Irrigation
+Similar to @You2014, we use @GAEZ suitability map, which can be mapped to the standardised crops (see @Wood-Sichra2016). [@or perhaps use IFPRI maps].
 
-
-
-## Suitability
+Finally, we used detailed information from the National irrigation master plan and investment framework [@Add], which presents a geo-referenced inventory of irrigation systems in Malawi, including the size of the irrigated area and crop, for the period @add. Where needed we compared and extended the inventory with data from @Add, which provides similar but less detailed information. As the irrigated production system in SPAM are defined as high-input system, we decided only to include the estate and large smallholder association estates and excluded small-scale farmer schemes. A comparison showed that the resulting area is comparable to @GMIA, which is used by @You2014 as input layer. To create the final irrigation map, we compared the FAO land cover map with the irrigation map and allocated the point data to grid cells with matching crops (i.e. sugar cane irrigated areas to sugar cane grid cells). Annex X provides more detailed information about the procedure. 
 
 
-_Table X: Data sources_
+__Table 1: Data sources__
 
+```{r Tab_data}
+
+```
 
 
 # Results
 
+
+
+
 # Validation
 
+
+
 # Discussion
+
+
 
 # Conclusions
 
