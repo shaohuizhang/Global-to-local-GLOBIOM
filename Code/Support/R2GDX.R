@@ -1,23 +1,10 @@
 #'========================================================================================================================================
 #' Project:  TOOLS
-#' Subject:  Functions to write a dataframe as GDX files
+#' Subject:  Functions to write r dataframes as GDX files
 #' Author:   Michiel van Dijk
 #' Contact:  michiel.vandijk@wur.nl
 #'========================================================================================================================================
 
-### PACKAGES
-#if(!require(pacman)) install.packages("pacman")
-# Key packages
-#p_load("tidyverse", "readxl", "stringr", "scales", "RColorBrewer", "rprojroot")
-# Spatial packages
-#p_load("rgdal", "ggmap", "raster", "rasterVis", "rgeos", "sp", "mapproj", "maptools", "proj4", "gdalUtils")
-# Additional packages
-#p_load("WDI", "countrycode")
-
-### R SETTINGS
-options(scipen=999) # surpress scientific notation
-options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e.g. csv) is not turned into factors
-options(digits=4)
 
 ### NOTES
 #' This script contains functions to convert dataframes into gdx files.
@@ -35,55 +22,80 @@ options(digits=4)
 #' 6. Create the name of the GDX file including the full path
 #' 7. Use wdgx to create the file with as arguments: First the parameter file and second the sets files (in the same order as the parameter file).
 #' 
-#' Example
-#' df: dataframe with first sets (as factors) and then value
-#' level_file <- extractLevels_f(df)
-#' matrix_file <- factor2Number_f(df)
-#' set1_file <- GDXSet_f("set1", "set 1 description", unname(levelsfile["set1"]))
-#' set2_file <- GDXSet_f("set2", "set 2 description", unname(levelsfile["set2"]))
-#' parameter_file GDXPara_f(matrix_file, "valueName", "value description", unname(level_file))
-#' filename <- file.path(dataPath, "filename.gdx"))
-#' 
-#' wdgx(filename, parameter_file, set1_file, set2_file)
 
-### Function to extract levels of data frame
-extractLevels_f <- function(df){
-  fac <- which(sapply(df, class) == "factor")
-  df2 <- lapply(fac, function(x) (levels(df[[x]])))
-  return((df2))
-}
-
-### Function to convert data.frame to matrix, converting all factors to numeric
-factor2Number_f<- function(df){
-  for(i in which(sapply(df, class) == "factor")) df[[i]] = as.numeric(df[[i]])
-  df<-as.matrix(df, rownames.force = NA) # rownames.force does not work so followed by dimnames
-  dimnames(df)<-NULL
-  return(df)
+# Function to create val for parameter prep file
+val_gdx <- function(val, variables){
+  
+  # Create factors of variables
+  val[,variables] <- lapply(val[,variables] , factor)
+  
+  # Convert factor variables to numeric
+  for(i in which(sapply(val, class) == "factor")) val[[i]] = as.numeric(val[[i]])  
+  val <- as.matrix(val)
+  val <- unname(val)
+  return(val)  
 }
 
 
-### Function to create list with information for a set
-GDXSet_f<-function(name, ts, levels){
-  Set <- list()
-  Set[["name"]] <-name
-  Set[["ts"]] <- ts
-  Set[["type"]] <- "set"
-  Set[["dim"]] <- 1
-  Set[["form"]] <- "full"
-  Set[["uels"]] <- levels
-  Set[["val"]] <- array(rep(1, length(levels[[1]])))
-  return(Set)
+# Function to create uels for parameter prep file
+uels_gdx <- function(uels, variables){
+  uels <- uels[names(uels) %in% variables]
+  uels <- lapply(uels, factor)
+  uels <- lapply(uels,levels)
+  return(uels)
 }
 
-### Function to create list with information for a parameter
-GDXPara_f<-function(val, name, ts, levels){
-  Para <- list()
-  Para[["name"]] <- name
-  Para[["ts"]] <- ts
-  Para[["type"]] <- "parameter"
-  Para[["dim"]] <- length(levels)
-  Para[["form"]] <- "sparse"
-  Para[["uels"]] <- levels
-  Para[["val"]] <- val
-  return(Para)
+# Function prepare parameter gdx file
+para_gdx <- function(df, variables, name, ts = NULL, type = "parameter",  form = "sparse"){
+  
+  # Prepare input
+  val <- val_gdx(df, variables)
+  uels <- uels_gdx(df, variables)
+  dim <- length(uels)
+  ts <- ifelse(is.null(ts), name, ts)
+  
+  # Create parameter list
+  para <- list()
+  para[["val"]] <- val    # Array containing the symbol data
+  para[["name"]] <- name  # Symbol name (data item)
+  para[["dim"]] <- dim    # Dimension of symbol = levels
+  para[["ts"]] <- ts      # Explanatory text for the symbol
+  para[["uels"]] <- uels  # Unique Element Labels (UELS) (levels)
+  para[["type"]] <- type  # Type of the symbol
+  para[["form"]] <- form  # Representation, sparse or full
+  return(para)
 }
+
+
+# Function prepare sets gdx file
+set_gdx <- function(df, variables, name = NULL, ts = NULL, type = "set"){
+  
+  # Prepare input
+  uels <- uels_gdx(df, variables)
+  
+  if(length(variables) > 1) {
+    val <- val_gdx(df, variables)
+    form <- "sparse"
+  } else {
+    val <- array(rep(1, length(uels[[1]])))
+    form <- "full"
+  }
+  
+  dim <- length(uels)
+  name <- ifelse(is.null(name), variables, name)
+  ts <- ifelse(is.null(ts), variables, ts)
+  
+  # Create set list
+  # Create set list
+  set <- list()
+  set[["val"]] <- val
+  set[["name"]] <- name
+  set[["ts"]] <- ts
+  set[["type"]] <- type
+  set[["dim"]] <- dim
+  set[["form"]] <- form
+  set[["uels"]] <- uels
+  return(set)
+}
+
+set[["val"]] <- array(rep(1, length(uels[[1]])))

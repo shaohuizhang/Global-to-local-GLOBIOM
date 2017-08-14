@@ -12,7 +12,7 @@ p_load("tidyverse", "readxl", "stringr", "car", "scales", "RColorBrewer", "rproj
 # Spatial packages
 #p_load("rgdal", "ggmap", "raster", "rasterVis", "rgeos", "sp", "mapproj", "maptools", "proj4", "gdalUtils")
 # Additional packages
-p_load("countrycode")
+p_load("countrycode", "gdxrrw")
 
 
 ### SET ROOT AND WORKING DIRECTORY
@@ -26,6 +26,7 @@ source(file.path(root, "Code/get_dataPath.r"))
 
 ### SOURCE FUNCTIONS
 source(file.path(root, "Code/Support/functions.r"))
+source(file.path(root, "Code/Support/R2GDX.r"))
 
 
 ### R SETTINGS
@@ -33,6 +34,11 @@ options(scipen=999) # surpress scientific notation
 options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e.g. csv) is not turned into factors
 options(digits=4)
 options(max.print=1000000) # more is printed on screen
+
+
+### LINK GAMS LIBRARIES
+GAMSPath <- "C:\\GAMS\\win64\\24.4"
+igdx(GAMSPath)
 
 
 ### LOAD DATA
@@ -46,117 +52,116 @@ lc_av <- model_data[["lc_av"]]
 tot_pop_grid <- read_csv(file.path(dataPath, "Data/MWI/Processed/Spatial_data/tot_pop_grid_2000_MWI.csv"))
 
 
-### CREATE GAMS INPUT DATA FILES
-# CHECK: WILL BE REPLACED BY SCRIPT THAT WRITES GDX
-
+### CREATE GAMS PARAMETERS 
 # deptots(k,s)
 deptots <- lu_adm %>%
   filter(adm_level == 2) %>%
   dplyr::select(adm, short_name, value)
 
-write_csv(deptots, file.path(dataPath, "Model/Data/deptots.csv"), col_names = F)
+deptots_gdx <- para_gdx(deptots, c("adm", "short_name"), "deptots", "Ratio per main crops")
+
 
 # avail(i,c)
 avail <- lc_av %>%
   dplyr::select(gridID, lc, value)
 
-write_csv(avail, file.path(dataPath, "Model/Data/avail.csv"), col_names = F)
+avail_gdx <- para_gdx(avail, c("gridID", "lc"), "avail", "Available area per plot and crop group")
+
 
 # produ(j)
 produ <- lu_system %>%
   dplyr::select(system, value)
-write_csv(produ, file.path(dataPath, "Model/Data/produ.csv"), col_names = F)
+
+produ_gdx <- para_gdx(produ, c("system"), "produ", "Production of crops")
+
 
 # icrops(i,j)
 icrops <- lc_ir %>%
   dplyr::select(gridID, system, value)
-write_csv(icrops, file.path(dataPath, "Model/Data/icrops.csv"), col_names = F)
+
+icrops_gdx <- para_gdx(icrops, c("gridID", "system"), "icrops", "areas of irrigated crops per pixel")
+
 
 
 ### CREATE GAMS SETS
-
-# # Function to write set as table with x columns
-# # Need to be improved to add, between each element but not last.
-# table_f <- function(vec, col){
-#   fname <- deparse(substitute(vec))
-#   vec <- paste(vec, collapse = ", ")
-#   suppressWarnings(length(vec) <- prod(dim(matrix(vec, ncol = col))))
-#   df <- matrix(vec, ncol = col,byrow = T)
-#   df[is.na(df)] <- ""
-#   write.table(df, file = file.path(dataPath, paste0("Data/MWI/Processed/sets/", fname, ".txt")), 
-#               row.names = FALSE, col.names = FALSE, quote = FALSE)
-# }
-
 # c: crop groups
 c_set <- lc_av %>%
   dplyr::select(lc) %>%
   unique()
-write_set_f(file.path(dataPath, "Model/Data"), c_set)
+
+c_set_gdx <- set_gdx(c_set, c("lc"), "c", "Land cover crop groups")
+
 
 # i: grid cells
 i_set <- lc_av %>%
   dplyr::select(gridID) %>%
   unique()
-write_set_f(file.path(dataPath, "Model/Data"), i_set)
+
+i_set_gdx <- set_gdx(i_set, c("gridID"), "i", "Pixels")
 
 # j: Crops with technology identifier
 j_set <- lu_system %>%
   dplyr::select(system) %>%
   unique() 
-write_set_f(file.path(dataPath, "Model/Data"), j_set)
+
+j_set_gdx <- set_gdx(j_set, c("system"), "j", "Crops with technology identifier")
+
 
 # s: Main crops
 s_set <- lu_adm %>%
   dplyr::select(short_name) %>%
   unique() 
-write_set_f(file.path(dataPath, "Model/Data"), s_set)
+
+s_set_gdx <- set_gdx(s_set, c("short_name"), "s", "Main crops")
+
 
 # k: Subnat names wich have statistics 
 k_set <- lu_adm %>%
   filter(adm_level == 2) %>%
   dplyr::select(adm) %>%
   unique()
-write_set_f(file.path(dataPath, "Model/Data"), k_set)
+
+k_set_gdx <- set_gdx(k_set, c("adm"), "k", "Subnat names wich have statistics")
+
 
 # n(s,j)  Main crops with corresponding sub-crops 
 n_set <- lu_system %>%
   dplyr::select(short_name, system) %>%
   unique() %>%
-  setNames(c("s", "j")) %>%
-  mutate(n = paste(s, j, sep = "    .    ")) %>%
-  dplyr::select(n)
-write_set_f(file.path(dataPath, "Model/Data"), n_set)
+  setNames(c("s", "j"))
+
+n_set_gdx <- set_gdx(n_set, c("s","j"), "n", ts="Main crops with corresponding sub-crops")
+
 
 # l(k,i)  Pixels in subnat with statistics   
 l_set <- lc_av %>%
   dplyr::select(adm2, gridID) %>%
   unique() %>%
-  setNames(c("k", "i")) %>%
-  mutate(l = paste(k, i, sep = "    .    ")) %>%
-  dplyr::select(l)
-write_set_f(file.path(dataPath, "Model/Data"), l_set)
+  setNames(c("k", "i"))
+
+l_set_gdx <- set_gdx(l_set, c("k","i"), "l", ts="Pixels in Subnat with statistics")
+
 
 # m(k, s) Main crop names in subnat with stat
 m_set <- lu_adm %>%
   filter(adm_level == 2) %>%
   dplyr::select(adm, short_name) %>%
   unique() %>%
-  setNames(c("k", "s")) %>%
-  mutate(m = paste(k, s, sep = "    .    ")) %>%
-  dplyr::select(m)
-write_set_f(file.path(dataPath, "Model/Data"), m_set)
+  setNames(c("k", "s"))
+
+m_set_gdx <- set_gdx(m_set, c("k", "s"), "m", ts="Main crop names in Subnat with stat")
+
 
 # cg(c, s) Main crops in crop groups 
 cg_set <- lu_adm %>%
   dplyr::select(lc, short_name) %>%
   unique() %>%
-  setNames(c("c", "s")) %>%
-  mutate(cg = paste(c, s, sep = "    .    ")) %>%
-  dplyr::select(cg)
-write_set_f(file.path(dataPath, "Model/Data"), cg_set)
+  setNames(c("c", "s"))
+
+cg_set_gdx <- set_gdx(cg_set, c("c", "s"), "cg", ts="Main crops in crop groups")
 
 
-### CREATE PRIORS
+### CREATE GAMS PRIORS
 # Calculate prior for crop area by using share of rural population. 
 # If we have information on crop area at adm2 level, we calculate the prior at adm2 level.
 
@@ -209,5 +214,10 @@ priors <- priors_base %>%
 # save
 # NB: data is only read correctly by GAMS if GRID_ID numbers are manually formated to number, zero digits
 # Perhaps save as txt?
-write_csv(priors, file.path(dataPath, "Model/Data/priors.csv"), col_names = F)
+priors_gdx <- para_gdx(priors, c("gridID", "system"), "rev", "Priors for cross-entropy")
 
+
+# Write gdx file
+wgdx(file.path(dataPath, "Model/Data/spam_data.gdx"), 
+     avail_gdx, deptots_gdx, icrops_gdx, produ_gdx, priors_gdx,
+     c_set_gdx, i_set_gdx, j_set_gdx, k_set_gdx, n_set_gdx, l_set_gdx, m_set_gdx, cg_set_gdx, s_set_gdx)
