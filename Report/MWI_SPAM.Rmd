@@ -89,7 +89,7 @@ $$CropArea_{jl} \times s_{ijl} = IRRArea_{ijl} \qquad \forall i \in I \quad \for
 
 
 ## Calculation of priors
-
+[TO ADD. At the moment I use population density but for the high-intensity we can follow the approach of @You2014]
 
 
 # Data
