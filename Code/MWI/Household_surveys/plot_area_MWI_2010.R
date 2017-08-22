@@ -15,12 +15,12 @@ p_load("tidyverse", "readxl", "stringr", "scales", "RColorBrewer", "rprojroot")
 #p_load("WDI", "countrycode")
 
 
-### SET WORKING DIRECTORY
-# wdPath<-"~/Global-to-local-GLOBIOM"
-# setwd(wdPath)
+### DETERMINE ROOT PATH AND SET WORKING DIRECTORY
+root <- find_root(is_rstudio_project)
+setwd(root)
 
 ### SET DATAPATH
-dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM\\Data\\Raw\\MWI\\Household_survey\\2010\\IHS3"
+source(file.path(root, "Code/get_dataPath.r"))
 
 ### R SETTINGS
 options(scipen=999) # surpress scientific notation
@@ -29,9 +29,8 @@ options(digits=4)
 
 
 ### PLOT AREA
-plot_area2010 <- read_dta(file.path(dataPath, "Agriculture/AG_MOD_C.dta")) %>%
+plot_area2010 <- read_dta(file.path(dataPath, "Data\\MWI\\Raw\\Household_surveys\\2010\\IHS3\\Agriculture/AG_MOD_C.dta")) %>%
   transmute(case_id, ea_id, plotnum=ag_c00,
             plot_area_qty_f=ag_c04a, plot_area_unit_f=as_factor(ag_c04b), plot_area_qty_gps=ag_c04c)
 
-rm(dataPath)
 

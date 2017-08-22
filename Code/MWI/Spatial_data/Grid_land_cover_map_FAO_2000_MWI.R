@@ -11,9 +11,9 @@ if(!require(pacman)) install.packages("pacman")
 # Key packages
 p_load("tidyverse", "readxl", "stringr", "car", "scales", "RColorBrewer", "rprojroot")
 # Spatial packages
-p_load("rgdal", "ggmap", "raster", "rasterVis", "rgeos", "sp", "mapproj", "maptools", "proj4", "gdalUtils")
+p_load("rgdal", "ggmap", "raster", "rasterVis", "rgeos", "sp", "mapproj", "maptools", "proj4", "gdalUtils", "leaflet", "mapview")
 # Additional packages
-p_load("countrycode")
+p_load("countrycode", "plotKML")
 
 ### SET ROOT AND WORKING DIRECTORY
 root <- find_root(is_rstudio_project)
@@ -45,6 +45,8 @@ plot(adm2)
 
 ### LOAD COUNTRY GRID
 grid <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/grid_MWI.rds"))
+grid_r <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/grid_r_MWI.rds"))
+
 plot(grid)
 
 
@@ -168,13 +170,21 @@ check_total_ir <- lc %>%
   group_by(irrigation, agg2) %>%
   summarize(area = sum(area))
 
-### ASSESS NON-PURE AGRI GRID CELLS (with suitability level 2)
-lc_check <- lc %>%
+### ASSESS CROP CATEGORIES
+# grid info
+grid_df <- as.data.frame(rasterToPoints(grid_r))
+
+land_use <- land_use %>%
+  left_join(grid_df,.) %>%
+  gather(system, value, -gridID, -x, -y)
+
+# Non-pure agri grid cells (with suitability level 2)
+lc_non-pure <- lc %>%
   filter(suitability_level %in% c(2)) %>%
   group_by(class_short, adm2) %>%
   summarize(area = sum(area, na.rm = T))
 
-ggplot(data = lc_check, aes(x = factor(class_short), y = area, fill = factor(class_short))) +
+ggplot(data = lc_non-pure, aes(x = factor(class_short), y = area, fill = factor(class_short))) +
   geom_bar(stat="identity", position = "dodge") +
   labs(title = "suitability comparison",
        y = "ha",
@@ -185,6 +195,30 @@ ggplot(data = lc_check, aes(x = factor(class_short), y = area, fill = factor(cla
   facet_wrap(~adm2, scales = "free") +
   theme(axis.text.x=element_blank())
 
+# Trof
+lc_trof <- lc %>%
+  filter(lc == "trof") %>%
+  left_join(grid_df,.)
+
+lc_trof_r <- rasterFromXYZ(lc_trof[c("x", "y", "area")])
+crs(lc_trof_r) <- "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"
+plotKML(lc_trof_r)
+mapview(lc_trof_r, legend = T, alpha = 0.5) 
+
+# Compare results with land cover map
+waterbody <- land_cover_shares$SimUID[land_cover_shares$"210" > 0.1]
+urban_areas <- land_cover_shares$SimUID[land_cover_shares$"190" > 0.03]
+cropland <- land_cover_shares$SimUID[land_cover_shares$"10" > 0.2]
+missing <- land_cover_shares$SimUID[land_cover_shares$"0" > 0]
+
+# Create mask for specific class: 10 annual cropland
+check_r <- keep_value_r_f(land_cover_map, 10, filename= "Cache/check.grd")
+plot(check_r, col = "black")
+plot(country_map, add = T, border = "blue")
+plot(simu2country_poly[simu2country_poly$SimUID %in% cropland,], add = T, border = "red")
+rm(check_r)
+file.remove("Cache/check.grd")
+file.remove("Cache/check.gri")
 
 # Save
 saveRDS(lc, file.path(dataPath, "Data/MWI/processed/Spatial_data/land_cover_FAO_2000_MWI.rds"))

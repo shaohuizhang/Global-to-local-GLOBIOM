@@ -28,25 +28,31 @@ suppressMessages(source("Code/MWI/Household_surveys/survey_MWI_2010.R"))
 summary(survey2010)
 
 # Location
-suppressMessages(source("Code/Household/location_MWI_2010.R"))
+suppressMessages(source("Code/MWI/Household_surveys/location_MWI_2010.R"))
 summary(location2010)
 
-# Output
-suppressMessages(source("Code/Household/output_MWI_2010.R")) # includes duplicates! CHECK
-summary(output2010)
+# Crops
+suppressMessages(source("Code/MWI/Household_surveys/crops_MWI_2010.R")) 
+summary(crops2010)
+
+# Permanent crops
+suppressMessages(source("Code/MWI/Household_surveys/pcrops_MWI_2010.R")) 
+summary(pcrops2010)
 
 # Plot area
-suppressMessages(source("Code/Household/plot_area_MWI_2010.R"))
+suppressMessages(source("Code/MWI/Household_surveys/plot_area_MWI_2010.R"))
 summary(plot_area2010)
 
 ### JOIN DATA
-MWI2010 <- left_join(survey2010, output2010)
-MWI2010 <- left_join(MWI2010, output2010)
+# Bind crops and permanent crops
+crops <- bind_rows(crops2010, pcrops2010) %>%
+  dplyr::select(case_id, ea_id, plotnum, crop_code, crop_qty_harv)
 
-# Save file
-saveRDS(MWI2010, "cache/MWI2010_raw.rds")
-
-MWI2010 <- left_join(MWI2010, output2010)
+# link other variables
+MWI2010 <- left_join(crops, survey2010)
 MWI2010 <- left_join(MWI2010, plot_area2010)
+MWI2010 <- left_join(MWI2010, location2010)
 
-output2010X <- unique(output2010)
+### CLEAN UP
+rm(location2010, crops2010, pcrops2010, crops, plot_area2010, survey2010)
+

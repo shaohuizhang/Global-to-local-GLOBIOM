@@ -19,11 +19,11 @@ p_load("haven")
 root <- find_root(is_rstudio_project)
 
 ### SET DATAPATH
-dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM"
+source(file.path(root, "Code/get_dataPath.r"))
 
 ### CREATE LOCATION DF
 # Load region and district information
-location <- read_dta(file.path(dataPath, "Data\\MWI\\Raw\\Household_surveys\\2010\\IHS3\\Household/HH_MOD_A_FILT.dta")) %>%
+location2010 <- read_dta(file.path(dataPath, "Data\\MWI\\Raw\\Household_surveys\\2010\\IHS3\\Household/HH_MOD_A_FILT.dta")) %>%
   transmute(case_id, ea_id, region=NA, district = as.character(as_factor(hh_a01)), district_code = hh_a01, rural = as_factor(reside)) %>%
   mutate(rural) 
 
@@ -32,27 +32,31 @@ location <- read_dta(file.path(dataPath, "Data\\MWI\\Raw\\Household_surveys\\201
 # number of the district code tels us which
 # is which
 
-location <- location %>%
+location2010 <- location2010 %>%
   mutate(region = ifelse(district_code < 200, "NORTH",
                     ifelse(district_code >=200 & district_code < 300, "CENTRAL",
                        "SOUTH"))) %>%
   dplyr::select(-district_code)
 
 # Load geo-location
-geo <- read_dta(file.path(dataPath, "Data\\MWI\\Raw\\Household_surveys\\2010\\IHS3\\HouseholdGeovariables_DTA/HouseholdGeovariables.dta")) %>%
+geo2010 <- read_dta(file.path(dataPath, "Data\\MWI\\Raw\\Household_surveys\\2010\\IHS3\\HouseholdGeovariables_DTA/HouseholdGeovariables.dta")) %>%
   rename(lon = lon_modified, lat = lat_modified)
 
 
 # Rename districts so they match up with GADM map. 
 # Allocate the four urban regions (cities) to the regions they are located in. Mzuzu City is located in the Mzimba District
-location <- location %>%
+location2010 <- location2010 %>%
   mutate(district = dplyr::recode(district, "Blantyre City" = "Blantyre",
                                      "Lilongwe City" = "Lilongwe",
                                      "Mzuzu City" = "Mzimba",
                                      "Zomba City" = "Zomba",
-                                     "Nkhatabay" = "Nkhata Bay",
+                                     "Nkhatabay" = "Nkhata_Bay",
                                      "Nkhota kota" = "Nkhotakota",
-                                     "Blanytyre" = "Blantyre"))
+                                     "Blanytyre" = "Blantyre"),
+         district = toupper(district))
 
 # Join location and geo 
-location <- left_join(location, geo)
+location2010 <- left_join(location2010, geo2010)
+
+# Clean up
+rm(geo2010)

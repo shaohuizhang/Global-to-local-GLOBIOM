@@ -27,5 +27,5 @@ options(digits=4)
 
 
 ## SURVEY DATA
-survey2010 <- read_dta(file.path(dataPath, "MWI/Raw/Household_surveys/2010/IHS3/IHS3_Summary_DTA/ihs3_summary.dta")) %>%
-  select(case_id, ea_id, strata, cluster, hhweight)
+survey2010 <- read_dta(file.path(dataPath, "Data\\MWI\\Raw\\Household_surveys\\2010\\IHS3\\IHS3_Summary_DTA/ihs3_summary.dta")) %>%
+  dplyr::select(case_id, ea_id, strata, cluster, hhweight)

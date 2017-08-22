@@ -6,7 +6,7 @@
 #'========================================================================================================================================
 
 ### PACKAGES
-if(!require(pacman)) install.packages("pacman")
+if (!require(pacman)) install.packages("pacman")
 # Key packages
 p_load("tidyverse", "readxl", "stringr", "scales", "RColorBrewer", "rprojroot")
 # Spatial packages
