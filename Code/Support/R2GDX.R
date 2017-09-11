@@ -23,6 +23,9 @@
 #' 7. Use wdgx to create the file with as arguments: First the parameter file and second the sets files (in the same order as the parameter file).
 #' 
 
+
+# CHECK: writing dim might not even necessary. See writeTansport.R in gdxrrw package folder for examples.
+
 # Function to create val for parameter prep file
 val_gdx <- function(val, variables){
   
@@ -86,7 +89,6 @@ set_gdx <- function(df, variables, name = NULL, ts = NULL, type = "set"){
   ts <- ifelse(is.null(ts), variables, ts)
   
   # Create set list
-  # Create set list
   set <- list()
   set[["val"]] <- val
   set[["name"]] <- name
@@ -98,4 +100,17 @@ set_gdx <- function(df, variables, name = NULL, ts = NULL, type = "set"){
   return(set)
 }
 
-set[["val"]] <- array(rep(1, length(uels[[1]])))
+# Function to prepare scalar gdx file
+scalar_gdx <- function(val, name = NULL, ts = NULL, type = "parameter", form = "full"){
+  
+  # Create scalar list
+  scalar <- list()
+  scalar[["val"]] <- val
+  scalar[["name"]] <- name
+  scalar[["ts"]] <- ts
+  scalar[["type"]] <- type
+  scalar[["form"]] <- form
+  return(scalar)
+}
+
+  

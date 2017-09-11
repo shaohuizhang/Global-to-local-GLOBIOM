@@ -161,6 +161,11 @@ cg_set <- lu_adm %>%
 cg_set_gdx <- set_gdx(cg_set, c("c", "s"), "cg", ts="Main crops in crop groups")
 
 
+# scalelp: number of grid cells to scale optimization so numbers do not get too small
+# Equal to number of i_set
+scalelp <- nrow(i_set)
+scalelp_gdx <- scalar_gdx(scalelp, "scalelp", "Scalar for lp")
+
 ### CREATE GAMS PRIORS
 # Calculate prior for crop area by using share of rural population. 
 # If we have information on crop area at adm2 level, we calculate the prior at adm2 level.
@@ -217,7 +222,9 @@ priors <- priors_base %>%
 priors_gdx <- para_gdx(priors, c("gridID", "system"), "rev", "Priors for cross-entropy")
 
 
+scalelp_gdx <- scalar_gdx(scalelp, "scalelp", "Scalar for lp")
 # Write gdx file
 wgdx(file.path(dataPath, "Model/Data/spam_data.gdx"), 
      avail_gdx, deptots_gdx, icrops_gdx, produ_gdx, priors_gdx,
-     c_set_gdx, i_set_gdx, j_set_gdx, k_set_gdx, n_set_gdx, l_set_gdx, m_set_gdx, cg_set_gdx, s_set_gdx)
+     c_set_gdx, i_set_gdx, j_set_gdx, k_set_gdx, n_set_gdx, l_set_gdx, m_set_gdx, cg_set_gdx, s_set_gdx, 
+     scalelp_gdx)
