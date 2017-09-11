@@ -1,7 +1,8 @@
 ---
 title: "Global-to-local GLOBIOM procedure"
-author: "Michiel van Dijk"
+author: "Michiel van Dijk, ...."
 date: "`r format(Sys.time(), '%B %d, %Y')`"
+abstract: "This is my abstract."
 #output: pdf_document
 output:
   word_document:
@@ -32,6 +33,11 @@ panderOptions('keep.trailing.zeros', TRUE)
 #source(file.path(root, "Code/Tab.R"))
 source(file.path(root, "Code/Paper/Map.R"))
 ```
+
+# ABSTRACT
+
+
+
 
 # Introduction [TO BE EXPANDED]
 Information on the location and size of crop area is essential to assess future agricultural growth and food security. Unfortunately, for most countries and in particular for developing countries, detailed agricultural statistics, such as crop-specific area, output and yield are often not available or only presented at highly aggregate levels (e.g country, district or province). Only very rarely is such data presented in map form with the high resolution that is required for land use modelling and scenario analysis. 
@@ -79,7 +85,7 @@ $$0 \leq s_{ijl} \leq 1$$
 
 $$\sum_{i}s_{ij}=1 \qquad \forall j \quad \forall l$$
 
-(iii) A constraint, which specifies that the sum of allocated physical area for each crop group, $c=rice, sugar \, cane,...,$ and production systems is lower or equal than the actual crop area ($Avail_{ij}$) that is available for each crop group $c$ in grid cell $i$. This equation extends the one in @You, by adding spatialy explicit information on the location of specific crops in the country.    
+(iii) A constraint, which specifies that the sum of allocated physical area for each crop group, $c=rice, sugar \, cane,...,$ and production systems is lower or equal than the actual crop area ($Avail_{ij}$) that is available for each crop group $c$ in grid cell $i$. This equation extends the one in @You2014a, by adding spatialy explicit information on the location of specific crops in the country.    
 
 
 $$\sum_{j \in c} \sum_{l}CropArea_{jl} \times s_{ijl} \leq Avail_{ic} \qquad \forall i$$
@@ -94,7 +100,7 @@ $$CropArea_{jl} \times s_{ijl} \leq SuitArea_{ijl} \qquad \forall i \quad \foral
 
 $$\sum_{i\in k} \sum_{l}CropArea_{jl} \times s_{ijl} = SubCropArea_{jk} \qquad \forall k \quad \forall j \in J$$
 
-(vi) A constraint, which allocates spatially explicit information on irrigated areas ($IRRArea_{ijl}$) for  irrigated crops ($J$) that belong to the irrigated crop system in grid cells $I$. In contrast to $You2014, who do not have crop specific irrigation area, we have detailed location and crop specific data on irrigated areas, which we incorporate in the spatial allocation model. 
+(vi) A constraint, which allocates spatially explicit information on irrigated areas ($IRRArea_{ijl}$) for  irrigated crops ($J$) that belong to the irrigated crop system in grid cells $I$. In contrast to @You2014a, who do not have crop specific irrigation area, we have detailed location and crop specific data on irrigated areas, which we incorporate in the spatial allocation model. 
 
 $$CropArea_{jl} \times s_{ijl} = IRRArea_{ijl} \qquad \forall i \in I \quad \forall l = irrigated \quad \forall j \in N$$
 
@@ -133,11 +139,19 @@ plot_crop_raster_f(c("maiz", "rice"))
 
 
 # Validation
+To assess the quality of spatial allocation procedure it is important to compare the results with information that is not used in the model. A number of approaches and data sources have used to validate crop land maps in the literature. @You2006 use municipality level agriculotural statistics to validate a land use map for Brazil, while @Fritz2011 used high-resolution imagery from Google Earth to assess results.  @Pekkarinen2009 combine both approaches to validate a European forest map. As it is difficult to derive information on crop specific land use from Google Earth, we use a recent household survey to evaluate our results model results. The LSMS 2010 is a nationally and regionally (administrative zone 2) representative household survey for Malawi. It specifically focuses on agriculture [@check] and contains information on the number of plots owned by farmers and the specific crops that are grown. Plots (and crop location) can be linked to the location of X enumeration areas that are surveyed. To compare the survey data with our model results, we reclassified the crop types to the SPAM crop classification.
+
+Figure X compares the results of our model to the LSMS-ISA information on crop location for the four largest crops in Malawi: maize, rice, X and X. We also included information on the number of households that cultivate the crop as an indicator, which serves as a proxy of the importance of the crop. Although the LSMS-ISA is representative, there is no reason to expect that it covers all grid cells where crops are cultivated. In contrast, if the household survey indicates a certain crop is located in a particular grid cell, the model should be able to replicate this. 
+
+The figures show a reasonable overlap for most crops and only for a relative small number of points are located in areas where there is no [@OR NOT ALLOCATED!!!!! MAKE TWO COLOURS] crop cover. There is particular good overlap for rice, for which we have explicit spatial information from the FAO land cover map. This shows that the land cover map is of good quality. [PERHAPS INCREASE CROP COVER AREA!!]
+
+
 ## Comparison with SPAM
 [TO ADD]
 
 
 ## Comparison with LSMS-ISA
+NOTE this is a comparison between 2000 land use model results and 2010 survey data. Eventually, we will run the model for 2010 for this paper but I started with 2000 as this is the base year of GLOBIOM.
 
 
 __Figure X: Comparison between land use allocation and LSMS-ISA__

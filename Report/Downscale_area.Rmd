@@ -78,6 +78,7 @@ Questions:
 - How to deal with missing data. Understand that if one only has adm1 data, eq 12 holds only for adm1 for that crop. 
 - But what about if there is no data at all for a crop at adm1 level? For instance data for MWI at adm1 (from CountryStat) only covers a few crops. Not banana. Banana is mapped in SPAM in MWI, probably from FAOSTAT. How?
 - How to deal with subnational cropstatistics that only cover core crops. Downscale other crops from national level downwards?
+
 - How to deal with border issues => center rule? Some cells are partly outside the country!
 
 Next steps
@@ -86,10 +87,9 @@ Next steps
 
 Questions on downscaling
 - What is scalelp? Something is scaled with exogenous variable. Why? Related to alloc.up(i,j) = min(scalelp,scalelp*pixel*avail(i)/produ(j))$produ(j);
-- Difference main crops and crops with technology identifier?
 - Why is suitability turned into a bound (not an equation)?
-- produ(j) is crop land cover per j and l, right?
-- what is deptot (ratio per main crop)? From eq 12 (subcrop), it should be total area of crop j in admk but description says 'ratio' 
+- what is deptot (ratio per main crop)? From eq 12 (subcrop), it should be total area of crop j in adm k but description says 'ratio' 
+
 - Why the name production of crops? This is in fact total physical area for crop j, right. 
 - When subnational data is available, slack is minimized not entropy....
 - How to deal when harvested area is larger than land cover in some ADMs.
