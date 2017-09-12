@@ -75,7 +75,7 @@ area_remove <- c("Area under National Administration")
 GAUL_MWI_adm_2000_list <- GAUL_MWI_adm2_2000_df %>%
   transmute(adm2_GAUL = toupper(ADM2_NAME), adm1_GAUL = toupper(ADM1_NAME)) %>%
   arrange(adm2_GAUL)
-write_csv(GAUL_MWI_adm_2000_list, file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm_2000_list.csv"))
+write_csv(GAUL_MWI_adm_2000_list, file.path(dataPath, "Data/MWI/Processed/Mappings/gaul_MWI_adm_2000_list.csv"))
 
 # Gaul adm0
 plot(GAUL_MWI_adm0_2000)
@@ -86,13 +86,20 @@ plot(GAUL_MWI_adm1_2000[GAUL_MWI_adm1_2000$ADM1_NAME == area_remove,], add = T, 
 GAUL_MWI_adm1_2000_adj <- GAUL_MWI_adm1_2000[GAUL_MWI_adm1_2000$ADM1_NAME != area_remove,]
 plot(GAUL_MWI_adm1_2000_adj)
 
+# GAUL adm0 adj
+GAUL_MWI_adm0_2000_adj <- unionSpatialPolygons(GAUL_MWI_adm1_2000_adj, GAUL_MWI_adm1_2000_adj$ADM0_NAME)
+plot(GAUL_MWI_adm0_2000_adj)
+
 # Gaul adm2
 plot(GAUL_MWI_adm2_2000)
 plot(GAUL_MWI_adm2_2000[GAUL_MWI_adm2_2000$ADM1_NAME == area_remove,], add = T, border = "red")
 GAUL_MWI_adm2_2000_adj <- GAUL_MWI_adm2_2000[GAUL_MWI_adm2_2000$ADM2_NAME != area_remove,]
 plot(GAUL_MWI_adm2_2000_adj)
 
-### SAVE MAPS
+
+### SAVE
+# Maps
+saveRDS(GAUL_MWI_adm0_2000_adj, file.path(dataPath, "Data\\MWI\\Processed\\Maps\\GAUL_MWI_adm0_2000_adj.rds"))
 saveRDS(GAUL_MWI_adm1_2000_adj, file.path(dataPath, "Data\\MWI\\Processed\\Maps\\GAUL_MWI_adm1_2000_adj.rds"))
 saveRDS(GAUL_MWI_adm2_2000_adj, file.path(dataPath, "Data\\MWI\\Processed\\Maps\\GAUL_MWI_adm2_2000_adj.rds"))
 saveRDS(GAUL_MWI_adm0_2000, file.path(dataPath, "Data\\MWI\\Processed\\Maps\\GAUL_MWI_adm0_2000.rds"))

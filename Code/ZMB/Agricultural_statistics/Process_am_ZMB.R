@@ -34,45 +34,45 @@ options(digits=4)
 
 # OBTAIN ADM AND CROP_LVST LIST
 # Load data
-am_raw <- read_csv(file.path(dataPath, "Data/MWI/Raw/Agricultural_statistics/Agro-maps/mwi_all_data.csv")) 
+am_raw <- read_csv(file.path(dataPath, "Data/ZMB/Raw/Agricultural_statistics/Agro-maps/ZMB_all_data.csv")) 
 
 # Save adm1 list
-am_MWI_adm1_list <- am_raw %>%
+am_ZMB_adm1_list <- am_raw %>%
   filter(ADMIN_LEVEL == 1) %>%
   dplyr::transmute(adm1_am = toupper(AREA_NAME)) %>%
   unique %>%
   arrange(adm1_am)
 
-write_csv(am_MWI_adm1_list, file.path(dataPath, "Data/MWI/Processed/Mappings/am_MWI_adm1_list.csv"))
+write_csv(am_ZMB_adm1_list, file.path(dataPath, "Data/ZMB/Processed/Mappings/am_ZMB_adm1_list.csv"))
 
 # Save adm2 list
-am_MWI_adm2_list <- am_raw %>%
+am_ZMB_adm2_list <- am_raw %>%
   filter(ADMIN_LEVEL == 2) %>%
   dplyr::transmute(adm2_am = toupper(AREA_NAME)) %>%
   unique %>%
   arrange(adm2_am)
   
-write_csv(am_MWI_adm2_list, file.path(dataPath, "Data/MWI/Processed/Mappings/am_MWI_adm2_list.csv"))
+write_csv(am_ZMB_adm2_list, file.path(dataPath, "Data/ZMB/Processed/Mappings/am_ZMB_adm2_list.csv"))
 
 # Save crop_lvst list
-am_MWI_crop_lvst_list <- am_raw %>%
+am_ZMB_crop_lvst_list <- am_raw %>%
   dplyr::transmute(crop_lvst_am = ITEM_NAME, FCL_item_code = ITEM_CODE) %>%
   unique %>%
   arrange(crop_lvst_am)
 
-write_csv(am_MWI_crop_lvst_list, file.path(dataPath, "Data/MWI/Processed/Mappings/am_MWI_crop_lvst_list.csv"))
+write_csv(am_ZMB_crop_lvst_list, file.path(dataPath, "Data/ZMB/Processed/Mappings/am_ZMB_crop_lvst_list.csv"))
 
 
 ### PROCESS AGRO-MAPS
 # Read adm1 mappping
-MWI2adm1 <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI2adm") %>%
+ZMB2adm1 <- read_excel(file.path(dataPath, "Data\\ZMB\\Processed/Mappings/Mappings_ZMB.xlsx"), sheet = "ZMB2adm") %>%
   filter(year == 2000) %>%
   dplyr::select(adm1, adm1_am) %>%
   na.omit %>%
   unique()
 
 # Read adm2 mappping
-MWI2adm2 <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI2adm") %>%
+ZMB2adm2 <- read_excel(file.path(dataPath, "Data\\ZMB\\Processed/Mappings/Mappings_ZMB.xlsx"), sheet = "ZMB2adm") %>%
   filter(year == 2000) %>%
   dplyr::select(adm2, adm2_am) %>%
   na.omit %>%
@@ -99,7 +99,7 @@ am_adm1 <- am %>%
   filter(ADMIN_LEVEL == 1) %>%
   dplyr::select(-ADMIN_LEVEL) %>%
   rename(adm1_am = AREA_NAME) %>%
-  left_join(MWI2adm1) %>%
+  left_join(ZMB2adm1) %>%
   group_by(year, adm1, short_name, unit, variable) %>%
   summarize(value = sum(value, na.rm = T)) %>%
   mutate(adm_level = 1,
@@ -111,7 +111,7 @@ am_adm2 <- am %>%
   filter(ADMIN_LEVEL == 2) %>%
   dplyr::select(-ADMIN_LEVEL) %>%
   rename(adm2_am = AREA_NAME) %>%
-  left_join(MWI2adm2) %>%
+  left_join(ZMB2adm2) %>%
   group_by(year, adm2, short_name, unit, variable) %>%
   summarize(value = sum(value, na.rm = T)) %>%
   mutate(adm_level = 2,
@@ -122,5 +122,5 @@ am_adm2 <- am %>%
 am <- bind_rows(am_adm1, am_adm2)
 
 # save file
-write_csv(am, file.path(dataPath, "Data\\MWI\\Processed\\agricultural_statistics\\am_MWI.csv"))
+write_csv(am, file.path(dataPath, "Data\\ZMB\\Processed\\agricultural_statistics\\am_ZMB.csv"))
 

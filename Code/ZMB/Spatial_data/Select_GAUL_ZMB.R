@@ -72,12 +72,12 @@ GAUL_ZMB_adm0_2000_df <- GAUL_ZMB_adm0_2000@data
 GAUL_ZMB_adm1_2000_df <- GAUL_ZMB_adm1_2000@data
 GAUL_ZMB_adm2_2000_df <- GAUL_ZMB_adm2_2000@data
 
-
-# Save adm info
+# Save adm info: only adm1 is relevant
 GAUL_ZMB_adm_2000_list <- GAUL_ZMB_adm2_2000_df %>%
-  transmute(adm2_GAUL = toupper(ADM2_NAME), adm1_GAUL = toupper(ADM1_NAME)) %>%
-  arrange(adm2_GAUL)
-write_csv(GAUL_ZMB_adm_2000_list, file.path(dataPath, "Data/ZMB/Processed/Maps/GAUL_ZMB_adm_2000_list.csv"))
+  transmute(adm1_GAUL = toupper(ADM1_NAME)) %>%
+  arrange(adm1_GAUL) %>%
+  unique()
+write_csv(GAUL_ZMB_adm_2000_list, file.path(dataPath, "Data/ZMB/Processed/Mappings/GAUL_ZMB_adm_2000_list.csv"))
 
 # Gaul adm0
 plot(GAUL_ZMB_adm0_2000)
@@ -88,7 +88,17 @@ plot(GAUL_ZMB_adm1_2000)
 # Gaul adm2
 plot(GAUL_ZMB_adm2_2000)
 
-### SAVE MAPS
+
+### SAVE
+# Adm names
+adm1_list <- GAUL_ZMB_adm1_2000_df %>%
+  transmute(adm1_GAUL = toupper(ADM1_NAME))
+write_csv(adm1_list, file.path(dataPath, "Data/ZMB/Processed/Mappings/gaul_ZMB_adm1_list.csv"))
+adm2_list <- GAUL_ZMB_adm2_2000_df %>%
+  transmute(adm2_GAUL = toupper(ADM2_NAME))
+write_csv(adm2_list, file.path(dataPath, "Data/ZMB/Processed/Mappings/gaul_ZMB_adm2_list.csv"))
+
+# Maps
 saveRDS(GAUL_ZMB_adm0_2000, file.path(dataPath, "Data\\ZMB\\Processed\\Maps\\GAUL_ZMB_adm0_2000.rds"))
 saveRDS(GAUL_ZMB_adm1_2000, file.path(dataPath, "Data\\ZMB\\Processed\\Maps\\GAUL_ZMB_adm1_2000.rds"))
 saveRDS(GAUL_ZMB_adm2_2000, file.path(dataPath, "Data\\ZMB\\Processed\\Maps\\GAUL_ZMB_adm2_2000.rds"))

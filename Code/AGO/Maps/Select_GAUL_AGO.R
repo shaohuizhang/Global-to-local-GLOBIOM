@@ -49,16 +49,16 @@ GAUL_adm2_2000 <- readOGR(file.path(dataPath, "Data\\Global\\GAUL\\g2015_2000_2\
 GAUL_adm2_2000_df <- GAUL_adm2_2000@data
 
 # Gaul adm0
-GAUL_ZWE_adm0_2000 <- GAUL_adm0_2000[GAUL_adm0_2000$ADM0_NAME == "Zimbabwe",]
-plot(GAUL_ZWE_adm0_2000)
+GAUL_AGO_adm0_2000 <- GAUL_adm0_2000[GAUL_adm0_2000$ADM0_NAME == "Angola",]
+plot(GAUL_AGO_adm0_2000)
 
 # Gaul adm1
-GAUL_ZWE_adm1_2000 <- GAUL_adm1_2000[GAUL_adm1_2000$ADM0_NAME == "Zimbabwe",]
-plot(GAUL_ZWE_adm1_2000)
+GAUL_AGO_adm1_2000 <- GAUL_adm1_2000[GAUL_adm1_2000$ADM0_NAME == "Angola",]
+plot(GAUL_AGO_adm1_2000)
 
 # Gaul adm2
-GAUL_ZWE_adm2_2000 <- GAUL_adm2_2000[GAUL_adm2_2000$ADM0_NAME == "Zimbabwe",]
-plot(GAUL_ZWE_adm2_2000)
+GAUL_AGO_adm2_2000 <- GAUL_adm2_2000[GAUL_adm2_2000$ADM0_NAME == "Angola",]
+plot(GAUL_AGO_adm2_2000)
 
 
 ### ANALYSE MAPS, SAVE ADM INFO, COMPARE WITH SECONDARY ADM INFORMATION AND CORRECT WHERE NECESSARY 
@@ -66,43 +66,43 @@ plot(GAUL_ZWE_adm2_2000)
 # For example in case of Malawi, simus are located in so-called 'Area under National Administration', which is Lake Malawi. These need to be removed.
 
 # Analyse areas that potentially need to be removed
-GAUL_ZWE_adm0_2000_df <- GAUL_ZWE_adm0_2000@data
-GAUL_ZWE_adm1_2000_df <- GAUL_ZWE_adm1_2000@data
-GAUL_ZWE_adm2_2000_df <- GAUL_ZWE_adm2_2000@data
+GAUL_AGO_adm0_2000_df <- GAUL_AGO_adm0_2000@data
+GAUL_AGO_adm1_2000_df <- GAUL_AGO_adm1_2000@data
+GAUL_AGO_adm2_2000_df <- GAUL_AGO_adm2_2000@data
 
 # Save adm info
-GAUL_ZWE_adm_2000_list <- GAUL_ZWE_adm2_2000_df %>%
+GAUL_AGO_adm_2000_list <- GAUL_AGO_adm2_2000_df %>%
   transmute(adm2_GAUL = toupper(ADM2_NAME), adm1_GAUL = toupper(ADM1_NAME)) %>%
   arrange(adm2_GAUL)
-write_csv(GAUL_ZWE_adm_2000_list, file.path(dataPath, "Data/ZWE/Processed/Mappings/gaul_ZWE_adm_2000_list.csv"))
+write_csv(GAUL_AGO_adm_2000_list, file.path(dataPath, "Data/AGO/Processed/Mappings/gaul_AGO_adm_2000_list.csv"))
 
 # # Gaul adm0
-# plot(GAUL_ZWE_adm0_2000)
+# plot(GAUL_AGO_adm0_2000)
 # 
 # # Gaul adm1
-# plot(GAUL_ZWE_adm1_2000)
-# plot(GAUL_ZWE_adm1_2000[GAUL_ZWE_adm1_2000$ADM1_ZWEE == area_remove,], add = T, border = "red")
-# GAUL_ZWE_adm1_2000_adj <- GAUL_ZWE_adm1_2000[GAUL_ZWE_adm1_2000$ADM1_ZWEE != area_remove,]
-# plot(GAUL_ZWE_adm1_2000_adj)
+# plot(GAUL_AGO_adm1_2000)
+# plot(GAUL_AGO_adm1_2000[GAUL_AGO_adm1_2000$ADM1_NAME == area_remove,], add = T, border = "red")
+# GAUL_AGO_adm1_2000_adj <- GAUL_AGO_adm1_2000[GAUL_AGO_adm1_2000$ADM1_NAME != area_remove,]
+# plot(GAUL_AGO_adm1_2000_adj)
 # 
 # # GAUL adm0 adj
-# GAUL_ZWE_adm0_2000_adj <- unionSpatialPolygons(GAUL_ZWE_adm1_2000_adj, GAUL_ZWE_adm1_2000_adj$ADM0_ZWEE)
-# plot(GAUL_ZWE_adm0_2000_adj)
+# GAUL_AGO_adm0_2000_adj <- unionSpatialPolygons(GAUL_AGO_adm1_2000_adj, GAUL_AGO_adm1_2000_adj$ADM0_NAME)
+# plot(GAUL_AGO_adm0_2000_adj)
 # 
 # # Gaul adm2
-# plot(GAUL_ZWE_adm2_2000)
-# plot(GAUL_ZWE_adm2_2000[GAUL_ZWE_adm2_2000$ADM1_ZWEE == area_remove,], add = T, border = "red")
-# GAUL_ZWE_adm2_2000_adj <- GAUL_ZWE_adm2_2000[GAUL_ZWE_adm2_2000$ADM2_ZWEE != area_remove,]
-# plot(GAUL_ZWE_adm2_2000_adj)
+# plot(GAUL_AGO_adm2_2000)
+# plot(GAUL_AGO_adm2_2000[GAUL_AGO_adm2_2000$ADM1_NAME == area_remove,], add = T, border = "red")
+# GAUL_AGO_adm2_2000_adj <- GAUL_AGO_adm2_2000[GAUL_AGO_adm2_2000$ADM2_NAME != area_remove,]
+# plot(GAUL_AGO_adm2_2000_adj)
 
 
 ### SAVE
 # Maps
-# saveRDS(GAUL_ZWE_adm0_2000_adj, file.path(dataPath, "Data\\ZWE\\Processed\\Maps\\GAUL_ZWE_adm0_2000_adj.rds"))
-# saveRDS(GAUL_ZWE_adm1_2000_adj, file.path(dataPath, "Data\\ZWE\\Processed\\Maps\\GAUL_ZWE_adm1_2000_adj.rds"))
-# saveRDS(GAUL_ZWE_adm2_2000_adj, file.path(dataPath, "Data\\ZWE\\Processed\\Maps\\GAUL_ZWE_adm2_2000_adj.rds"))
-saveRDS(GAUL_ZWE_adm0_2000, file.path(dataPath, "Data\\ZWE\\Processed\\Maps\\GAUL_ZWE_adm0_2000.rds"))
-saveRDS(GAUL_ZWE_adm1_2000, file.path(dataPath, "Data\\ZWE\\Processed\\Maps\\GAUL_ZWE_adm1_2000.rds"))
-saveRDS(GAUL_ZWE_adm2_2000, file.path(dataPath, "Data\\ZWE\\Processed\\Maps\\GAUL_ZWE_adm2_2000.rds"))
+# saveRDS(GAUL_AGO_adm0_2000_adj, file.path(dataPath, "Data\\AGO\\Processed\\Maps\\GAUL_AGO_adm0_2000_adj.rds"))
+# saveRDS(GAUL_AGO_adm1_2000_adj, file.path(dataPath, "Data\\AGO\\Processed\\Maps\\GAUL_AGO_adm1_2000_adj.rds"))
+# saveRDS(GAUL_AGO_adm2_2000_adj, file.path(dataPath, "Data\\AGO\\Processed\\Maps\\GAUL_AGO_adm2_2000_adj.rds"))
+saveRDS(GAUL_AGO_adm0_2000, file.path(dataPath, "Data\\AGO\\Processed\\Maps\\GAUL_AGO_adm0_2000.rds"))
+saveRDS(GAUL_AGO_adm1_2000, file.path(dataPath, "Data\\AGO\\Processed\\Maps\\GAUL_AGO_adm1_2000.rds"))
+saveRDS(GAUL_AGO_adm2_2000, file.path(dataPath, "Data\\AGO\\Processed\\Maps\\GAUL_AGO_adm2_2000.rds"))
 
 

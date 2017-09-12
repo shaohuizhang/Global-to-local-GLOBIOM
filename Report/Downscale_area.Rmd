@@ -96,3 +96,25 @@ Questions on downscaling
 - How to deal with countries where not all adm2 are covered?
 - CHECK: is outcome of SPAM physical area or harvested area? In first case, how is it linked with FAOSTAT harvested area?
 - How to determine irrigated area per crop (one of the four systems)? Is there data on irrigated area per crop?
+
+
+
+
+ANSWERS LIANG
+-	So far I have not been able to add the suitability maps because I do not have them. Downloading the maps one by one from the GAEZ is very cumbersome so I contacted Gunther Fischer directly. Although he promised to share them, this has not happened and he is very difficult to contact. Would it be possible for me to download them from an IFPRI server?
+
+-	I also wonder why you use the suitability maps as hard constraints in the model. I would argue that it makes more sense to use the suitability maps to inform the prior. Perhaps we can discuss.
+
+-	How do you deal with grid cells on the borders of countries? When I rasterize the Malawi polygon to 5 arcmin there are obviously borders which are not covered (those where the center of the raster cell is outside the country). One possibility is to take a different rasterize approach and calculate the share of the border cell that is located in Malawi (<50%) and allocate land cover to them. More work and I am not sure if it is worth to invest in it. 
+
+-	My land cover map presents physical value areas for crops that are around 20% larger than total harvested area from FAOSTAT. At the moment I left it this way and let the model decide where to allocate. As a consequence some land cover cells are not allocated any harvested area but also crops, such as maize, might have a ‘ thin’ distribution. On p. 24 of the manual, I read that you constrain the land cover are to the physical area statistical value even before you run the model (by sorting the land cover data using  the ‘reliability factor’). Why do you not let the model decide, like I do?
+
+
+Then some general questions about your GAMS code and my results:
+-	You use a scaling factor (scalelp) in all equations. Where does this come from? On p. 20 of the technical documentation the gamma scaling parameter is described but I don’t think this is the same thing – or I simply do not understand. => SOLVED
+
+-	It seems that your preferred model for countries with subnational data is landfeas, which minimizes the slack values. So far I have used the entropy model (landentsn), which solves (locally optimal) but, indeed, gives very large (and unrealistically) high slack values for a number of grid cells. Hope you can advise on this point. 
+
+-	Some marginal issues. Deptot is the ratio per main crop?. “ratio” is a bit odd here for me. It is total area of crop j in adm k but description, right? Similar for produ(j) which is described as production of crops but this is total physical area for crop j, right?
+
+# PROGRESS SPAM AND WHICH VERSION FOR 2005 => DATAVERSE
