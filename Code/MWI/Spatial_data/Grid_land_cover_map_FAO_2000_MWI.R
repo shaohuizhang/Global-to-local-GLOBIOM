@@ -141,10 +141,12 @@ lc <- lc_sh_raw %>%
 
 ### COMBINE WITH ADM DATA
 # Combine data and express area in ha
+# Remove Likoma as there is no land cover data
 lc <- lc %>%
   left_join(., adm_grid) %>%
   mutate(grid_size = grid_size,
          area = share*grid_size) %>%
+  filter(adm2 != "LIKOMA") %>%
   ungroup()
 
 
