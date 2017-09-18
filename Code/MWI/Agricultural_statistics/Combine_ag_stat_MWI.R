@@ -354,7 +354,7 @@ adm_missing
 # (4) Data for the adm2 Nkhata Bay is missing
 # (5) All pulses seem to be categorises under opul.
 
-# (2) use data from last available year as data Chiradzulu, Likoma, Thylo.
+# (2) use data from last available year as data for Chiradzulu and Thylo.
 chiradzulu <- ag_stat_upd %>%
   filter(id == "am_2", adm == "CHIRADZULU", year == 2002)
 chiradzulu_fix <- chiradzulu[rep(1:nrow(chiradzulu),3),]
@@ -363,13 +363,13 @@ chiradzulu_fix$source <- "updated"
 ag_stat_upd <- bind_rows(ag_stat_upd, chiradzulu_fix)
 rm(chiradzulu_fix)
 
-likoma <- ag_stat_upd %>%
-  filter(id == "am_2", adm == "LIKOMA", year == 2004)
-likoma_fix <- likoma[rep(1:nrow(likoma),5),]
-likoma_fix$year <- c(rep(1999:2003, each = nrow(likoma)))
-likoma_fix$source <- "updated"
-ag_stat_upd <- bind_rows(ag_stat_upd, likoma_fix)
-rm(likoma_fix)
+# likoma <- ag_stat_upd %>%
+#   filter(id == "am_2", adm == "LIKOMA", year == 2004)
+# likoma_fix <- likoma[rep(1:nrow(likoma),5),]
+# likoma_fix$year <- c(rep(1999:2003, each = nrow(likoma)))
+# likoma_fix$source <- "updated"
+# ag_stat_upd <- bind_rows(ag_stat_upd, likoma_fix)
+# rm(likoma_fix)
 
 thyolo <- ag_stat_upd %>%
   filter(id == "am_2", adm == "THYOLO", short_name %in% c("cass", "cott", "grou", "opul", "sorg"), year == 2002)
@@ -522,6 +522,9 @@ ggplot(data = filter(ag_stat_upd, variable == "area", id == "am_2"), aes(x = yea
 xtabs(~ variable + year + short_name, filter(ag_stat_upd, id == "am_2"))
 xtabs(~ adm + year, filter(ag_stat_upd, id == "am_2"))
 
+# We remove Likoma as this is an island with very limited land use and no land-cover information
+ag_stat_upd <- ag_stat_upd %>%
+  filter(adm != "LIKOMA")
 
 # aggregate adm1 tot adm0
 ag_stat_crop_adm0_upd <- ag_stat_upd %>%
