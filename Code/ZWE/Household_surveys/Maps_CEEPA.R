@@ -14,20 +14,24 @@ p_load("rgdal", "ggmap", "raster", "rasterVis", "rgeos", "sp", "mapproj", "mapto
 # Additional packages
 p_load("countrycode", "haven")
 
-### DETERMINE ROOT PATH
-root <- find_root(is_rstudio_project)
 
-### DATAPATH
-dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM" 
+### SET ROOT AND WORKING DIRECTORY
+root <- find_root(is_rstudio_project)
+setwd(root)
+
+
+### SET DATAPATH
+source(file.path(root, "Code/get_dataPath.r"))
 
 ### R SETTINGS
 options(scipen=999) # surpress scientific notation
 options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e.g. csv) is not turned into factors
 options(digits=4)
 
+
 ### DOWNLOAD MAPS AND PROCESS MAPS
 # Adm conversion table
-adm_names <- read_csv(file.path(dataPath, "Data/ZWE/Raw/Household_surveys/district_match_Jan2017.csv")) %>%
+adm_names <- read_csv(file.path(dataPath, "Data/ZWE/Raw/Household_surveys/CEEPA/district_match_Jan2017.csv")) %>%
   dplyr::select(country, adm2 = hs_original, GADM_original)
 
 # Download maps
@@ -69,4 +73,9 @@ ZWE_adm2_fo <- left_join(ZWE_adm2_fo, check)
 ggplot(ZWE_adm2_fo, aes(long, lat, group = group, fill = maize)) +
   geom_polygon() + 
   geom_path(colour = "black") +
-  coord_equal()
+  coord_equal() +
+  labs(x="", y="") +
+  theme_classic() +
+  theme(legend.position="none",
+        line = element_blank(),
+        axis.text = element_blank())
