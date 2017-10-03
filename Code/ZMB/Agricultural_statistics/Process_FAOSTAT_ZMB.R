@@ -55,7 +55,7 @@ FAOSTAT_crop <- FAOSTAT_prod_raw %>%
 #   mutate(variable = dplyr::recode(Element, "Area harvested" = "area", "Yield" = "yield", "Production" = "production"),
 #          iso3c = countrycode(`Area Code`, "fao", "iso3c")) %>%
 #   dplyr::select(iso3c, FCL_item_code = `Item Code`, variable, year = Year, unit = Unit, value = Value) %>%
-#   filter(iso3c == "MWI") %>%
+#   filter(iso3c == "ZMB") %>%
 #   left_join(., FCL) %>%
 #   mutate(value = ifelse(FCL_title %in% c("Poultry Birds", "Chickens"), value*1000, value),
 #          unit = "Head") %>%
@@ -99,6 +99,7 @@ FAOSTAT_comb <- bind_rows(area_FAOSTAT, prod_FAOSTAT, yld_FAOSTAT) %>%
          adm_level = 0,
          adm = "ZMB") %>%
   na.omit()
+summary(FAOSTAT_comb)
 
 # save files
-write_csv(FAOSTAT_comb, file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/FAOSTAT_ZMB.csv"))
+write_csv(FAOSTAT_comb, file.path(dataPath, "Data/ZMB/Processed/Agricultural_statistics/FAOSTAT_ZMB.csv"))

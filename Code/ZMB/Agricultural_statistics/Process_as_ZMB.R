@@ -13,7 +13,7 @@ p_load("tidyverse", "readxl", "stringr", "car", "scales", "RColorBrewer", "rproj
 # Spatial packages
 p_load("rgdal", "ggmap", "raster", "rasterVis", "rgeos", "sp", "mapproj", "maptools", "proj4", "gdalUtils")
 # Additional packages
-p_load("ghit", "tabulizer")
+#p_load("ghit", "tabulizer")
 
 
 ### SET ROOT AND WORKING DIRECTORY

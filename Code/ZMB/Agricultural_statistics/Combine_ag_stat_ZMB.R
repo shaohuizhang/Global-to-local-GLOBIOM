@@ -42,42 +42,38 @@ options(max.print=1000000) # more is printed on screen
 
 ### LOAD MAPPINGS
 # Regional mapping
-MWI2adm <- read_excel(file.path(dataPath, "Data/MWI/Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI2adm") %>%
+adm_map <- read_excel(file.path(dataPath, "Data/ZMB/Processed/Mappings/Mappings_ZMB.xlsx"), sheet = "ZMB2adm") %>%
   filter(year == 2000)
 
 crop_lvst <- read_excel(file.path(dataPath, "Data\\Mappings\\Mappings.xlsx"), sheet = "crop_lvst") %>%
   dplyr::select(short_name) %>%
   na.omit()
 
-lc2crop_lvst <- read_excel(file.path(dataPath, "Data/MWI/Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI_lc2crop_lvst")
-
 
 ### LOAD DATA
 # FAOSTAT
-FAOSTAT <- read_csv(file.path(dataPath, "Data/MWI/processed/Agricultural_statistics/FAOSTAT_MWI.csv"))
+FAOSTAT <- read_csv(file.path(dataPath, "Data/ZMB/processed/Agricultural_statistics/FAOSTAT_ZMB.csv"))
 
 # Agro-Maps
-am <- read_csv(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/am_MWI.csv"))
+am <- read_csv(file.path(dataPath, "Data/ZMB/Processed/Agricultural_statistics/am_ZMB.csv"))
 
 # CropSTAT
-cs <- read_csv(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/cs_MWI.csv"))
+cs <- read_csv(file.path(dataPath, "Data/ZMB/Processed/Agricultural_statistics/cs_ZMB.csv"))
 
 # Agricultural statistics
-as <- read_csv(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/as_MWI.csv"))
 
 
 ### COMBINE ADM DATA AND ADD ID
 # Filter out adm that are not relevant
 # Select only values for 1999 and later as older info is not necessary
-ag_stat <- bind_rows(am, as, cs, FAOSTAT) %>%
-  mutate(id = paste(source, adm_level, sep = "_")) %>%
-  filter(!adm %in% "AREA_UNDER_NATIONAL_ADMINISTRATION", year >= 1999) 
+ag_stat <- bind_rows(am, cs, FAOSTAT) %>%
+  mutate(id = paste(source, adm_level, sep = "_"))
 
 
 ### COMPARE AREA AT COUNTRY LEVEL
 # aggregate adm1 tot adm0
 ag_stat_area_adm0 <- ag_stat %>%
-  filter(variable %in% c("area"), year >= 1990) %>%
+  filter(variable %in% c("area")) %>%
   group_by(year, adm_level, unit, variable, source) %>%
   summarize( value = sum(value, na.rm = T)) %>%
   mutate(id = paste(adm_level, source, sep = "_"))
@@ -109,7 +105,7 @@ tab_area_rank_FAOSTAT <- FAOSTAT %>%
 
 # aggregate adm1 tot adm0
 ag_stat_crop_adm0 <- ag_stat %>%
-  filter(variable %in% c("area", "production"), year >= 1990) %>%
+  filter(variable %in% c("area", "production")) %>%
   group_by(id, year, adm_level, short_name, unit, variable, source) %>%
   summarize( value = sum(value, na.rm = T))
 
@@ -128,8 +124,8 @@ tab_area_rank_adm0 <- ag_stat_crop_adm0 %>%
 ### COMPARE AREA AND PRODUCTION AT CROP AND COUNTRY LEVEL
 # Area comparison over time
 fig_area_crop_adm0 <- ggplot(data = filter(ag_stat_crop_adm0, variable == "area"), aes(x = year, y = value, colour = id)) +
-  geom_line() +
-  geom_point() +
+  geom_line(alpha = 0.5) +
+  geom_point(alpha = 0.5) +
   facet_wrap(~short_name, scales = "free") +
   labs(title = "Area comparison between FAOSTAT, am, as and cs",
        y = "ha",
@@ -345,7 +341,7 @@ xtabs(~ adm + year, filter(ag_stat_upd, id == "am_2"))
 # Check if adm2 areas are missing
 # No info on Nkhata Bay
 am_2_adm2 <- unique(am$adm)
-adm_missing <- MWI2adm$adm2_am[!MWI2adm$adm2_am %in% am_2_adm2]
+adm_missing <- ZMB2adm$adm2_am[!ZMB2adm$adm2_am %in% am_2_adm2]
 adm_missing
 
 # (1) Use data from am_2 for harvested area. 
@@ -601,4 +597,4 @@ ag_stat_2000 <- ag_stat_2000 %>%
   left_join(.,lc2crop_lvst)
 
 ### SAVE
-write_csv(ag_stat_2000, file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/ag_stat_2000_MWI.csv"))
+write_csv(ag_stat_2000, file.path(dataPath, "Data/ZMB/Processed/Agricultural_statistics/ag_stat_2000_ZMB.csv"))
