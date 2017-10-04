@@ -40,6 +40,38 @@ copy_val_f <- function(df, y){
   return(df2)
 }
 
+# Add imputed value to x years by copying
+fill_val_f <- function(df, ty = 2000, direction = "past"){
+  if(ty %in% c(df$year)){
+    cat("year already available, no imputation\n")
+    df2 <- NULL
+    return(df[FALSE,])
+  } else {
+    if(direction == "future"){
+      cat("impute into the future\n")
+      sy <- max(df$year)
+      try(if(ty < sy) stop("use past option"))
+      copy_x <- length(c(ty:sy))-1
+      index <- which(df$year == sy)
+      df2 <- df[rep(index, copy_x),]
+      df2$year <- c((sy+1):ty)
+      df2$source <- "impute"
+      return(df2)      
+    } else {
+      if(direction == "past"){
+        cat("impute into the past\n")
+        sy <- min(df$year)
+        try(if(ty > sy) stop("use future option"))
+        copy_x <- length(c(sy:ty))-1
+        index <- which(df$year == sy)
+        df2 <- df[rep(index, copy_x),]
+        df2$year <- c(ty:(sy-1))
+        df2$source <- "impute"
+        return(df2)}
+      }
+  }
+}
+
 
 ### MODEL PREPARATION  
 # Function to write set as vector
@@ -48,3 +80,6 @@ write_set_f <- function(p, vec){
   write.table(vec, file = file.path(p, paste0(fname, ".txt")), 
               row.names = FALSE, col.names = FALSE, quote = FALSE)
 }
+
+
+empty_df = df[FALSE,]

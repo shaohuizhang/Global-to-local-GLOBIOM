@@ -156,27 +156,28 @@ fig_crop_area_adm1$plot
 dev.off()
 
 ### CHECK DATA AVAILABILITY
-period <- c(1999, 2000, 2001, 2009, 2010, 2011)
+period <- c(2000, 2010)
 
 # FAOSTAT:ok
 FAOSTAT_check <- ag_stat %>%
   filter(id == "FAOSTAT_0", year %in% period) %>%
   group_by(short_name) %>%
-  summarize(n=n()) %>%
+  mutate(n=n()) %>%
   filter(n < length(period))
 
-# am: missing for 1999 and 2010
+# am: missing for 2000 and 2010
+# Excludes combinations where both years are missing
 am_check <- ag_stat %>%
   filter(id == "am_1", year %in% period) %>%
   group_by(short_name, adm) %>%
-  summarize(n=n()) %>%
+  mutate(n=n()) %>%
   filter(n < length(period))
 
 # cs: missing after 2004
 cs_check <- ag_stat %>%
   filter(id == "cs_1", year %in% period) %>%
   group_by(short_name, adm) %>%
-  summarize(n=n()) %>%
+  mutate(n=n()) %>%
   filter(n < length(period))
 
 
