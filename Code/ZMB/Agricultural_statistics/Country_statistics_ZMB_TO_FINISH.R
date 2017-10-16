@@ -1,6 +1,6 @@
 ### ANALYSE WHICH ARE THE MOST IMPORTANT CROPS AT THE NATIONAL LEVEL
 # Rank area of crops using FAOSTAT
-tab_area_rank_FAOSTAT <- FAOSTAT %>%
+tab_area_rank_FAOSTAT <- faostat_raw %>%
   filter(year %in% c(2000, 2010), variable == "area") %>%
   group_by(year) %>%
   mutate(share = round(value/sum(value, na.rm=T)*100, 2)) %>%
@@ -70,3 +70,19 @@ fig_area_crop_adm0_2 <- ggplot(data = filter(ag_stat_crop_adm0, id == "FAOSTAT_0
   theme(text = element_text(size=10))
 
 fig_area_crop_adm0_2
+
+
+# Crop area over time
+ggplot(data = filter(faostat_raw, variable == "area"), 
+                                             aes(x = year, y = value, fill = short_name)) +
+  geom_col() +
+  facet_wrap(~ short_name, nrow = 6, scales = "free") +
+  scale_x_continuous(breaks = seq(1960, 2015, 10)) +
+  labs(y = "ha",
+       x ="") +
+  scale_y_continuous(labels=comma) +
+  theme_bw() +
+  theme(text = element_text(size=10)) +
+  guides(fill = F) +
+  theme(axis.text.x = element_text(size=5))
+
