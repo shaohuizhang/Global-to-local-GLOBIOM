@@ -30,6 +30,11 @@ options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e
 options(digits=4)
 
 
+
+### SET COUNTRY CODE
+iso3c <- "ZMB"
+country <- countrycode(iso3c, "iso3c", "country.name")
+
 ### LOAD GAUL
 # GAUL adm0
 ogrListLayers(file.path(dataPath, "Data\\Global\\GAUL\\g2015_2000_0\\g2015_2000_0.shp"))
@@ -49,16 +54,16 @@ GAUL_adm2_2000 <- readOGR(file.path(dataPath, "Data\\Global\\GAUL\\g2015_2000_2\
 GAUL_adm2_2000_df <- GAUL_adm2_2000@data
 
 # Gaul adm0
-GAUL_ZMB_adm0_2000 <- GAUL_adm0_2000[GAUL_adm0_2000$ADM0_NAME == "Zambia",]
-plot(GAUL_ZMB_adm0_2000)
+GAUL_adm0_2000 <- GAUL_adm0_2000[GAUL_adm0_2000$ADM0_NAME == country,]
+plot(GAUL_adm0_2000)
 
 # Gaul adm1
-GAUL_ZMB_adm1_2000 <- GAUL_adm1_2000[GAUL_adm1_2000$ADM0_NAME == "Zambia",]
-plot(GAUL_ZMB_adm1_2000)
+GAUL_adm1_2000 <- GAUL_adm1_2000[GAUL_adm1_2000$ADM0_NAME == country,]
+plot(GAUL_adm1_2000)
 
 # Gaul adm2
-GAUL_ZMB_adm2_2000 <- GAUL_adm2_2000[GAUL_adm2_2000$ADM0_NAME == "Zambia",]
-plot(GAUL_ZMB_adm2_2000)
+GAUL_adm2_2000 <- GAUL_adm2_2000[GAUL_adm2_2000$ADM0_NAME == country,]
+plot(GAUL_adm2_2000)
 
 
 ### ANALYSE MAPS, SAVE ADM INFO, COMPARE WITH SECONDARY ADM INFORMATION AND CORRECT WHERE NECESSARY 
@@ -66,15 +71,15 @@ plot(GAUL_ZMB_adm2_2000)
 # For example in case of Malawi, simus are located in so-called 'Area under National Administration', which is Lake Malawi. These need to be removed.
 
 # Analyse areas that potentially need to be removed
-GAUL_ZMB_adm0_2000_df <- GAUL_ZMB_adm0_2000@data
-GAUL_ZMB_adm1_2000_df <- GAUL_ZMB_adm1_2000@data
-GAUL_ZMB_adm2_2000_df <- GAUL_ZMB_adm2_2000@data
+GAUL_adm0_2000_df <- GAUL_adm0_2000@data
+GAUL_adm1_2000_df <- GAUL_adm1_2000@data
+GAUL_adm2_2000_df <- GAUL_adm2_2000@data
 
 # Save adm info
-GAUL_ZMB_adm_2000_list <- GAUL_ZMB_adm2_2000_df %>%
+GAUL_adm_2000_list <- GAUL_adm2_2000_df %>%
   transmute(adm2_GAUL = toupper(ADM2_NAME), adm1_GAUL = toupper(ADM1_NAME)) %>%
   arrange(adm2_GAUL)
-write_csv(GAUL_ZMB_adm_2000_list, file.path(dataPath, "Data/ZMB/Processed/Mappings/gaul_ZMB_adm_2000_list.csv"))
+write_csv(GAUL_adm_2000_list, file.path(dataPath, paste0("Data/", iso3c, "/Processed/Mappings/gaul_", iso3c, "_adm_2000_list.csv")))
 
 # # Gaul adm0
 # plot(GAUL_ZMB_adm0_2000)
@@ -101,8 +106,7 @@ write_csv(GAUL_ZMB_adm_2000_list, file.path(dataPath, "Data/ZMB/Processed/Mappin
 # saveRDS(GAUL_ZMB_adm0_2000_adj, file.path(dataPath, "Data\\ZMB\\Processed\\Maps\\GAUL_ZMB_adm0_2000_adj.rds"))
 # saveRDS(GAUL_ZMB_adm1_2000_adj, file.path(dataPath, "Data\\ZMB\\Processed\\Maps\\GAUL_ZMB_adm1_2000_adj.rds"))
 # saveRDS(GAUL_ZMB_adm2_2000_adj, file.path(dataPath, "Data\\ZMB\\Processed\\Maps\\GAUL_ZMB_adm2_2000_adj.rds"))
-saveRDS(GAUL_ZMB_adm0_2000, file.path(dataPath, "Data\\ZMB\\Processed\\Maps\\GAUL_ZMB_adm0_2000.rds"))
-saveRDS(GAUL_ZMB_adm1_2000, file.path(dataPath, "Data\\ZMB\\Processed\\Maps\\GAUL_ZMB_adm1_2000.rds"))
-saveRDS(GAUL_ZMB_adm2_2000, file.path(dataPath, "Data\\ZMB\\Processed\\Maps\\GAUL_ZMB_adm2_2000.rds"))
-
+saveRDS(GAUL_adm0_2000, file.path(dataPath, paste0("Data\\", iso3c, "\\Processed\\Maps\\GAUL_", iso3c, "_adm0_2000.rds")))
+saveRDS(GAUL_adm1_2000, file.path(dataPath, paste0("Data\\", iso3c, "\\Processed\\Maps\\GAUL_", iso3c, "_adm1_2000.rds")))
+saveRDS(GAUL_adm2_2000, file.path(dataPath, paste0("Data\\", iso3c, "\\Processed\\Maps\\GAUL_", iso3c, "_adm2_2000.rds")))
 

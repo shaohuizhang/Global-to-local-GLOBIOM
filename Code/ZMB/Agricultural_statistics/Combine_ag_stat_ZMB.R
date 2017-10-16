@@ -36,9 +36,13 @@ options(digits=4)
 options(max.print=1000000) # more is printed on screen
 
 
+### SET COUNTRY
+source("Code/ZMB/Set_country.R")
+
+
 ### LOAD MAPPINGS
 # Regional mapping
-adm_map <- read_excel(file.path(dataPath, "Data/ZMB/Processed/Mappings/Mappings_ZMB.xlsx"), sheet = "ZMB2adm") %>%
+adm <- read_excel(file.path(dataPath, paste0("Data/", iso3c, "/Processed/Mappings/Mappings_", iso3c, ".xlsx")), sheet = paste0(iso3c, "2adm")) %>%
   filter(year == 2000)
 
 crop_lvst <- read_excel(file.path(dataPath, "Data\\Mappings\\Mappings.xlsx"), sheet = "crop_lvst") %>%
@@ -48,13 +52,13 @@ crop_lvst <- read_excel(file.path(dataPath, "Data\\Mappings\\Mappings.xlsx"), sh
 
 ### LOAD DATA
 # FAOSTAT
-FAOSTAT <- read_csv(file.path(dataPath, "Data/ZMB/processed/Agricultural_statistics/FAOSTAT_ZMB.csv"))
+FAOSTAT <- read_csv(file.path(dataPath, paste0("Data/", iso3c, "/processed/Agricultural_statistics/FAOSTAT_", iso3c, ".csv")))
 
 # Agro-Maps
-am <- read_csv(file.path(dataPath, "Data/ZMB/Processed/Agricultural_statistics/am_ZMB.csv"))
+am <- read_csv(file.path(dataPath, paste0("Data/", iso3c, "/Processed/Agricultural_statistics/am_", iso3c, ".csv")))
 
 # CropSTAT
-cs <- read_csv(file.path(dataPath, "Data/ZMB/Processed/Agricultural_statistics/cs_ZMB.csv"))
+cs <- read_csv(file.path(dataPath, paste0("Data/", iso3c, "/Processed/Agricultural_statistics/cs_", iso3c, ".csv")))
 
 # Agricultural statistics
 
