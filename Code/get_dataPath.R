@@ -19,6 +19,9 @@ if(Sys.info()["user"] == "vandijkm") {
   FAOSTATPath <- "C:\\Users\\vandijkm\\DATA\\FAOSTAT_20170117"}
 
 if(Sys.info()["user"] == "vandijkm") {
+  modelPath <- "P:\\globiom\\Projects\\Water\\AP_side_calculations"}
+
+if(Sys.info()["user"] == "vandijkm") {
   ISWELPath <- "P:/is-wel"}
 
 # Anybody else:

@@ -26,25 +26,23 @@ options(scipen=999) # surpress scientific notation
 options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e.g. csv) is not turned into factors
 options(digits=4)
 
-
-### SET COUNTRY CODE
-iso3c <- "ZMB"
-country <- countrycode(iso3c, "iso3c", "country.name")
+### SET COUNTRY
+source("Code/ZMB/Set_country.R")
 
 ### LOAD DATA
 # Simu
-simu <- readRDS(file.path(dataPath, paste0("Data/", iso3c, "/Processed/Maps/simu_", iso3c, ".rds")))
+simu <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/simu_", iso3c_sel, ".rds")))
 
 # GAUL
-adm1 <- readRDS(file.path(dataPath, paste0("Data/", iso3c, "/Processed/Maps/GAUL_", iso3c, "_adm1_2000.rds")))
+adm1 <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/GAUL_", iso3c_sel, "_adm1_2000.rds")))
 adm1_df <- adm1@data %>%
   mutate(id = row.names(.))
 
 # land cover
-esa <- readRDS(file.path(dataPath, paste0("Data/", iso3c, "/Processed/Maps/ESA_", iso3c, "_2000.rds")))
+esa <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/ESA_", iso3c_sel, "_2000.rds")))
 
 # Irrigation
-gmia <- readRDS(file.path(dataPath, paste0("Data/", iso3c, "/Processed/Maps/gmia_", iso3c, ".rds")))
+gmia <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gmia_", iso3c_sel, ".rds")))
 
 # world map
 wld <- map_data("world") 
@@ -52,7 +50,7 @@ wld <- map_data("world")
 ### ADM MAP
 # Capital
 data(world.cities)
-capital <- filter(world.cities, country.etc == country, capital == 1)
+capital <- filter(world.cities, country.etc == country_sel, capital == 1)
 
 # Fortify polygon
 adm1_for <- fortify(adm1) %>%
@@ -157,7 +155,7 @@ fig_esa = ggplot()+
 
 ### GMIA 
 # Load GMIA
-gmia <- readRDS(file.path(dataPath, paste0("Data/", iso3c, "/Processed/Maps/GMIA_", iso3c, ".rds")))
+gmia <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/GMIA_", iso3c_sel, ".rds")))
 
 gmia_df <- as.data.frame(rasterToPoints(gmia)) %>%
   setNames(c("x", "y", "gmia")) %>%
@@ -180,7 +178,7 @@ ggplot() +
 
 # POPULATION
 # Load population map
-pop <- readRDS(file.path(dataPath, paste0("Data/", iso3c, "/Processed/Maps/pop_", iso3c, ".rds")))
+pop <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/pop_", iso3c_sel, ".rds")))
 
 pop_df <- as.data.frame(rasterToPoints(pop)) %>%
   setNames(c("x", "y", "pop")) %>%
@@ -202,7 +200,7 @@ ggplot() +
 
 
 # Travel time
-access <- readRDS(file.path(dataPath, paste0("Data/", iso3c, "/Processed/Maps/access_", iso3c, ".rds")))
+access <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/access_", iso3c_sel, ".rds")))
 access_df <- as.data.frame(rasterToPoints(access)) %>%
   setNames(c("x", "y", "access"))
 
@@ -251,7 +249,7 @@ ggplot() +
 # #ggsave("FigTabMap/fig_LSMS.png")
 
 # Create random enumeration areas
-ZMB_ext <- extent(adm)
+ZMB_ext <- extent(adm1)
 x_range <- seq(ZMB_ext@xmin, ZMB_ext@xmax, 0.1)
 y_range <- seq(ZMB_ext@ymin, ZMB_ext@ymax, 0.1)
 

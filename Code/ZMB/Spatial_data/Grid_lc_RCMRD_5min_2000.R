@@ -1,6 +1,6 @@
 #'========================================================================================================================================
 #' Project:  Global-to-local GLOBIOM
-#' Subject:  Script to grid FAO land cover data
+#' Subject:  Script to grid RCMRD 2000 land cover data to 10 x 10km/5 arc-min
 #' Author:   Michiel van Dijk
 #' Contact:  michiel.vandijk@wur.nl
 #'========================================================================================================================================
@@ -36,68 +36,42 @@ showTmpFiles()
 removeTmpFiles()
 
 
-### LOAD GAUL MAPS
-adm1 <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm1_2000_adj.rds"))
-adm2 <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm2_2000_adj.rds"))
-plot(adm1)
-plot(adm2)
+### SET COUNTRY
+source("Code/ZMB/Set_country.R")
+
+### DATA
+# Adm
+adm1 <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/GAUL_", iso3c_sel, "_adm1_2000.rds")))
+
+# Grid
+grid <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/5min_grid_", iso3c_sel, ".rds")))
+
+# Land cover
+lc_raw <- raster(file.path(dataPath, paste0("Data\\", iso3c_sel, "/Raw/Spatial_data/Land_cover/Zambia_LandCover_2000_Scheme_II/Zambia_Landcover2_2000_Scheme_II.tif")))
 
 
-### LOAD COUNTRY GRID
-grid <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/grid_MWI.rds"))
-grid_r <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/grid_r_MWI.rds"))
-plot(grid)
+### PROCESS LAND COVER MAP
+# Obtain land cover class
+lc_class <- levels(lc_raw)[[1]]
+write_csv(lc_class, file.path(dataPath, paste0("Data\\", iso3c_sel, "/Raw/Spatial_data/Land_cover/Zambia_LandCover_2000_Scheme_II/land_cover_classes_2000_Scheme_II.csv")))
 
-
-### LOAD ADM GRID INFO
-adm_grid <- read_csv(file.path(dataPath, "Data/MWI/Processed/Spatial_data/adm_grid_2000_MWI.csv"))
-
-
-### LOAD FAO MAP
-ogrListLayers(file.path(dataPath, "Data\\MWI\\Raw\\Spatial_data\\FAO_Land_Cover_Data\\DATA\\NATIONAL_LC/Malawi_lc.shp"))
-lcm_FAO_raw <- readOGR(file.path(dataPath, "Data\\MWI\\Raw\\Spatial_data\\FAO_Land_Cover_Data\\DATA\\NATIONAL_LC/Malawi_lc.shp"))
- 
-
-### RASTERIZE FAO MAP
-# Create factors needed for rasterize
-lcm_FAO <- lcm_FAO_raw
-lcm_FAO_df <- lcm_FAO@data %>% 
-  mutate(LCCSUSLB = factor(LCCSUSLB),
-         E2000USLB = factor(E2000USLB),
-         E1990USLB = factor(E1990USLB))
-lcm_FAO@data <- lcm_FAO_df
-
-# Land cover classes
-land_cover_class_FAO <- lcm_FAO_df %>%
-  dplyr::select(LCCSUSLB, CLASS_ELEM) %>%
-  unique
-
-land_cover_class_FAO <- as.data.frame(levels(lcm_FAO_df$E2000USLB))
-write_csv(land_cover_class_FAO, file.path(dataPath, "Data\\MWI\\Raw\\Spatial_data\\FAO_Land_Cover_Data\\DATA\\NATIONAL_LC/land_cover_class_FAO_raw.csv"))
-
-# Create raster frame with 30 m resolution
-r_ext <- raster(extent(lcm_FAO), resolution = 30)
-crs_fao <- crs(lcm_FAO)
-projection(r_ext) <- crs_fao
-
-# Rasterize 2000 map
-lcm_FAO_r_2000 <- rasterize(lcm_FAO, r_ext, field = lcm_FAO@data[,"E2000USLB"])
-writeRaster(lcm_FAO_r_2000, file.path(dataPath, "Data/MWI/Raw/Spatial_data/FAO_Land_Cover_Data/DATA/NATIONAL_LC/land_cover_map_FAO_2000.grd"))
-lcm_FAO_r_2000 <- raster(file.path(dataPath, "Data/MWI/Raw/Spatial_data/FAO_Land_Cover_Data/DATA/NATIONAL_LC/land_cover_map_FAO_2000.grd"))
-
-
-### CHECK PROJECTION, REPROJECT, IF NEEDED
+# Compare Projections
 crs(grid)
-crs(lcm_FAO_raw)
+crs(lc_raw)
+plot(lc_raw) # might take a long time in case of high resolution!
+plot(adm1, add = T)
+#plot(grid, add = T) # might take a long time in case of high resolution!
 
+
+# If not the same, reproject country polygon, conduct analysis and reproject back - faster than reprojecting high resolution maps
 # Set crs
-crs <- crs(lcm_FAO_raw)
+#crs <- crs(lc_raw)
 
 # Reproject grid
-grid <- spTransform(grid, crs)
+#grid <- spTransform(grid, crs)
 
-# Reproject adm2
-adm2 <-  spTransform(adm2, crs)
+# Reproject adm
+#adm1 <-  spTransform(adm1, crs)
 
 
 ### GRID CROP LAND DATA 2000 MAP
@@ -122,8 +96,8 @@ extract_grid_f <- function(polyID, cover){
 
 
 # Run function and combine
-lc_sh_raw <- bind_rows(lapply(grid_list, extract_grid_f, lcm_FAO_r_2000)) 
-saveRDS(lc_sh_raw, file.path(dataPath, "Data/MWI/Processed\\Spatial_data/land_cover_shares_raw_FAO_2000_MWI.rds"))
+lc_sh_raw <- bind_rows(lapply(grid_list, extract_grid_f, lc_raw)) 
+saveRDS(lc_sh_raw, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Spatial_data/land_cover/lc_sh_raw_RCMRD_2000_5min_", iso3c_sel, ".rds")))
 lc_sh_raw <- readRDS(file.path(dataPath, "Data/MWI/Processed\\Spatial_data/land_cover_shares_raw_FAO_2000_MWI.rds"))
 
 
