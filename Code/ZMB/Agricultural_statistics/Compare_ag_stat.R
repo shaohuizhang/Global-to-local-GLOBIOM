@@ -36,9 +36,14 @@ options(digits=4)
 options(max.print=1000000) # more is printed on screen
 
 
+
+### SET COUNTRY
+source("Code/ZMB/Set_country.R")
+
+
 ### LOAD MAPPINGS
 # Regional mapping
-adm_map <- read_excel(file.path(dataPath, "Data/ZMB/Processed/Mappings/Mappings_ZMB.xlsx"), sheet = "ZMB2adm") %>%
+adm_map <- read_excel(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Mappings/Mappings_", iso3c_sel, ".xlsx")), sheet = paste0(iso3c_sel, "2adm")) %>%
   filter(year == 2000)
 
 crop_lvst <- read_excel(file.path(dataPath, "Data\\Mappings\\Mappings.xlsx"), sheet = "crop_lvst") %>%
@@ -48,38 +53,23 @@ crop_lvst <- read_excel(file.path(dataPath, "Data\\Mappings\\Mappings.xlsx"), sh
 
 ### LOAD DATA
 # FAOSTAT
-FAOSTAT <- read_csv(file.path(dataPath, "Data/ZMB/processed/Agricultural_statistics/FAOSTAT_ZMB.csv"))
+faostat <- read_csv(file.path(dataPath, paste0("Data/", iso3c_sel, "/processed/Agricultural_statistics/FAOSTAT_", iso3c_sel, ".csv")))
 
 # Agro-Maps
-am <- read_csv(file.path(dataPath, "Data/ZMB/Processed/Agricultural_statistics/am_ZMB.csv"))
+am <- read_csv(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Agricultural_statistics/am_", iso3c_sel, ".csv")))
 
 # CropSTAT
-cs <- read_csv(file.path(dataPath, "Data/ZMB/Processed/Agricultural_statistics/cs_ZMB.csv"))
+cs <- read_csv(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Agricultural_statistics/cs_", iso3c_sel, ".csv")))
 
 # Agricultural statistics
+as <- read_csv(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Agricultural_statistics/as_", iso3c_sel, ".csv")))
 
 
 ### COMBINE ADM DATA AND ADD ID
 # Filter out adm that are not relevant
-ag_stat <- bind_rows(am, cs, FAOSTAT) %>%
+ag_stat <- bind_rows(am, cs, as, faostat) %>%
   filter(variable == "area") %>%
   mutate(id = paste(source, adm_level, sep = "_"))
-
-
-### CORRECTIONS
-# bean and cowp are presented in cs and am data but not in FAOSTAT => We assume they are part of opul in FAOSTAT 
-ag_stat <- ag_stat %>%
-  mutate(short_name = ifelse(short_name == "bean", "opul", short_name),
-         short_name = ifelse(short_name == "cowp", "opul", short_name)) %>%
-  group_by(year, adm, short_name, unit, variable, adm_level, source, id) %>%
-  summarize(value = sum(value, na.rm = T)) %>%
-  ungroup()
-  
-# am values for Sorgum are extremely high in 2001, while all other values are very similar to cs => use cs values for 2001
-cs_sorg <- filter(ag_stat, year == 2001, short_name == "sorg", id == "cs_1")
-sorg_fix <- filter(ag_stat, year == 2001, short_name == "sorg", id == "am_1") %>%
-  mutate(value =cs_sorg$value[match(adm, cs_sorg$adm)])
-ag_stat[ag_stat$year == 2001 & ag_stat$short_name == "sorg" & ag_stat$id == "am_1",] <- sorg_fix
 
 
 ### COMPARE AREA AT COUNTRY LEVEL
@@ -151,9 +141,10 @@ fig_crop_area_adm1 <- crop_area_adm1 %>%
   group_by(adm) %>%
   do(plot = p_crop_area_adm1(.))
 
-pdf(file = file.path(dataPath, "Data/ZMB/Processed/Agricultural_statistics/Graphs/fig_area_adm.pdf"), width = 15, height = 12)
+pdf(file = file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Agricultural_statistics/Graphs/fig_area_adm.pdf")), width = 15, height = 12)
 fig_crop_area_adm1$plot
 dev.off()
+
 
 ### CHECK DATA AVAILABILITY
 period <- c(2000, 2010)
@@ -181,7 +172,26 @@ cs_check <- ag_stat %>%
   filter(n < length(period))
 
 
+### CORRECTIONS
+# bean and cowp are presented in cs and am data but not in FAOSTAT => We assume they are part of opul in FAOSTAT 
+ag_stat <- ag_stat %>%
+  mutate(short_name = ifelse(short_name == "bean", "opul", short_name),
+         short_name = ifelse(short_name == "cowp", "opul", short_name)) %>%
+  group_by(year, adm, short_name, unit, variable, adm_level, source, id) %>%
+  summarize(value = sum(value, na.rm = T)) %>%
+  ungroup()
+
+# am and as values for Sorgum are extremely high in 2001, while all other values are very similar to cs => use cs values for 2001 for as
+cs_sorg <- filter(ag_stat, year == 2001, short_name == "sorg", id == "cs_1")
+sorg_fix <- filter(ag_stat, year == 2001, short_name == "sorg", id == "am_1") %>%
+  mutate(value =cs_sorg$value[match(adm, cs_sorg$adm)])
+ag_stat[ag_stat$year == 2001 & ag_stat$short_name == "sorg" & ag_stat$id == "am_1",] <- sorg_fix
+
+
 ### CONCLUSIONS
 # We decided to use am data as source for subnational information because it provides longer time series, also covering 2010
 # A comparison with cs data shows that the series are similar and the largest crops are covered.
 # am data needs to be imputed for 2010.
+
+
+### WRITE FUNCTION THAT takes one source and replaces by other if there is missing values
