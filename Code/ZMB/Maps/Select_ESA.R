@@ -28,12 +28,12 @@ options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e
 options(digits=4)
 
 
-### SET COUNTRY CODE
-iso3c <- "ZMB"
+### SET COUNTRY
+source("Code/ZMB/Set_country.R")
 
 ### LOAD GAUL MAPS
-adm2 <- readRDS(file.path(dataPath, paste0("Data/", iso3c, "/Processed/Maps/GAUL_",iso3c, "_adm2_2000.rds")))
-plot(adm2)
+adm0 <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/GAUL_",iso3c_sel, "_adm0_2000.rds")))
+plot(adm0)
 
 ### LOAD LAND COVER MAP 
 # Load global ESA map
@@ -43,5 +43,5 @@ land_cover_map <- mask(land_cover_map, adm2)
 plot(land_cover_map)
 
 # Save map
-saveRDS(land_cover_map, file.path(dataPath, paste0("Data/", iso3c, "/Processed/Maps/ESA_", iso3c, "_2000.rds")))
+saveRDS(land_cover_map, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/ESA_", iso3c_sel, "_2000.rds")))
 

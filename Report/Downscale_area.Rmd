@@ -118,3 +118,10 @@ Then some general questions about your GAMS code and my results:
 -	Some marginal issues. Deptot is the ratio per main crop?. “ratio” is a bit odd here for me. It is total area of crop j in adm k but description, right? Similar for produ(j) which is described as production of crops but this is total physical area for crop j, right?
 
 # PROGRESS SPAM AND WHICH VERSION FOR 2005 => DATAVERSE
+
+
+# Think about
+- how to deal with multicropping and conversion to area harvested if we would have such data
+- how to deal with fallowing
+- how to flexibly add new crops, e.g. palm oil. => not difficult because we already consider 40 crops, incl oil palm
+  

@@ -66,10 +66,12 @@ as <- read_csv(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Agricu
 
 
 ### COMBINE ADM DATA AND ADD ID
-# Filter out adm that are not relevant
+# Select area and filter out zeros
 ag_stat <- bind_rows(am, cs, as, faostat) %>%
-  filter(variable == "area") %>%
+  filter(variable == "area",
+         value != 0) %>%
   mutate(id = paste(source, adm_level, sep = "_"))
+summary(ag_stat)
 
 
 ### COMPARE AREA AT COUNTRY LEVEL
@@ -85,7 +87,7 @@ area_adm0 <- ag_stat %>%
 fig_area_adm0 <- ggplot(data = area_adm0, aes(x = year, y = value, colour = id)) +
   geom_line(alpha = 0.5) +
   geom_point(alpha = 0.5) +
-  labs(title = "Area comparison between FAOSTAT, am, as and cs",
+  labs(title = "Total area comparison between FAOSTAT, am, as and cs",
        y = "ha",
        x ="") +
   scale_y_continuous(labels=comma) +
@@ -106,7 +108,7 @@ fig_area_crop_adm0 <- ggplot(data = filter(crop_area_adm0, variable == "area"), 
   geom_line(alpha = 0.5) +
   geom_point(alpha = 0.5) +
   facet_wrap(~short_name, scales = "free") +
-  labs(title = "Area comparison between FAOSTAT, am, as and cs",
+  labs(title = "Crop area comparison between FAOSTAT, am, as and cs",
        y = "ha",
        x ="") +
   scale_y_continuous(labels=comma) +
@@ -117,6 +119,12 @@ fig_area_crop_adm0
 
 
 ### COMPARE AREA AT CROP AND ADM1 LEVEL
+# Compare numbers
+ag_stat_comp <- ag_stat %>%
+  filter(id %in% c("as_1","cs_1", "am_1")) %>%
+  dplyr::select(-source) %>%
+  spread(id, value)
+
 # Select data
 crop_area_adm1 <- ag_stat %>%
   filter(variable %in% c("area"), adm_level == 1) %>%
@@ -146,18 +154,19 @@ fig_crop_area_adm1$plot
 dev.off()
 
 
+
 ### CHECK DATA AVAILABILITY
 period <- c(2000, 2010)
 
 # FAOSTAT:ok
-FAOSTAT_check <- ag_stat %>%
+faostat_check <- ag_stat %>%
   filter(id == "FAOSTAT_0", year %in% period) %>%
   group_by(short_name) %>%
   mutate(n=n()) %>%
   filter(n < length(period))
 
+# Excludes combinations where both years are missing!!
 # am: missing for 2000 and 2010
-# Excludes combinations where both years are missing
 am_check <- ag_stat %>%
   filter(id == "am_1", year %in% period) %>%
   group_by(short_name, adm) %>%
@@ -171,27 +180,10 @@ cs_check <- ag_stat %>%
   mutate(n=n()) %>%
   filter(n < length(period))
 
+# as: missing after 2004
+as_check <- ag_stat %>%
+  filter(id == "as_1", year %in% period) %>%
+  group_by(short_name, adm) %>%
+  mutate(n=n()) %>%
+  filter(n < length(period))
 
-### CORRECTIONS
-# bean and cowp are presented in cs and am data but not in FAOSTAT => We assume they are part of opul in FAOSTAT 
-ag_stat <- ag_stat %>%
-  mutate(short_name = ifelse(short_name == "bean", "opul", short_name),
-         short_name = ifelse(short_name == "cowp", "opul", short_name)) %>%
-  group_by(year, adm, short_name, unit, variable, adm_level, source, id) %>%
-  summarize(value = sum(value, na.rm = T)) %>%
-  ungroup()
-
-# am and as values for Sorgum are extremely high in 2001, while all other values are very similar to cs => use cs values for 2001 for as
-cs_sorg <- filter(ag_stat, year == 2001, short_name == "sorg", id == "cs_1")
-sorg_fix <- filter(ag_stat, year == 2001, short_name == "sorg", id == "am_1") %>%
-  mutate(value =cs_sorg$value[match(adm, cs_sorg$adm)])
-ag_stat[ag_stat$year == 2001 & ag_stat$short_name == "sorg" & ag_stat$id == "am_1",] <- sorg_fix
-
-
-### CONCLUSIONS
-# We decided to use am data as source for subnational information because it provides longer time series, also covering 2010
-# A comparison with cs data shows that the series are similar and the largest crops are covered.
-# am data needs to be imputed for 2010.
-
-
-### WRITE FUNCTION THAT takes one source and replaces by other if there is missing values

@@ -30,26 +30,25 @@ options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e
 options(digits=4)
 
 
-### SET COUNTRY CODE
-iso3c <- "ZMB"
+### SET COUNTRY
+source("Code/ZMB/Set_country.R")
 
 
-### LOAD SIMU MAPS
+### LOAD GMIA MAPS
 GMIA_r_raw <- raster(file.path(dataPath, "Data/Global/GMIA/gmia_v5_aei_ha_asc/gmia_v5_aei_ha.asc"))
 GMIA_poly_raw <- readOGR(file.path(dataPath, "Data/Global/GMIA/gmia_v5_shp/gmia_v5_aai_pct_aei.shp"))
 crs(GMIA_r_raw) <- "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"
 
 ### LLOAD ADM
-adm1 <- readRDS(file.path(dataPath, paste0("Data\\", iso3c, "\\Processed\\Maps/GAUL_", iso3c, "_adm2_2000.rds")))
-adm0 <- readRDS(file.path(dataPath, paste0("Data\\", iso3c, "\\Processed\\Maps/GAUL_", iso3c, "_adm0_2000.rds")))
+adm0 <- readRDS(file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps/GAUL_", iso3c_sel, "_adm0_2000.rds")))
 
 ### SELECT COUNTRY GMIA RASTER MAP
-GMIA <- crop(GMIA_r_raw, adm2)
-GMIA <- mask(GMIA, adm2)
+GMIA <- crop(GMIA_r_raw, adm0)
+GMIA <- mask(GMIA, adm0)
 plot(GMIA)
 hist(GMIA, breaks = 50)
 cellStats(GMIA,sum)
 
 # Save map
-saveRDS(GMIA, file.path(dataPath, paste0("Data/", iso3c, "/Processed/Maps/GMIA_", iso3c, ".rds")))
+saveRDS(GMIA, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/GMIA_", iso3c_sel, ".rds")))
 

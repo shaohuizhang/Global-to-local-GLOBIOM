@@ -40,67 +40,83 @@ options(max.print=1000000) # more is printed on screen
 source("Code/ZMB/Set_country.R")
 
 
-### LOAD MAPPINGS
-# Regional mapping
-adm <- read_excel(file.path(dataPath, paste0("Data/", iso3c, "/Processed/Mappings/Mappings_", iso3c, ".xlsx")), sheet = paste0(iso3c, "2adm")) %>%
-  filter(year == 2000)
-
-crop_lvst <- read_excel(file.path(dataPath, "Data\\Mappings\\Mappings.xlsx"), sheet = "crop_lvst") %>%
-  dplyr::select(short_name) %>%
-  na.omit()
-
-
 ### LOAD DATA
 # FAOSTAT
-FAOSTAT <- read_csv(file.path(dataPath, paste0("Data/", iso3c, "/processed/Agricultural_statistics/FAOSTAT_", iso3c, ".csv")))
+faostat <- read_csv(file.path(dataPath, paste0("Data/", iso3c_sel, "/processed/Agricultural_statistics/FAOSTAT_", iso3c_sel, ".csv")))
 
 # Agro-Maps
-am <- read_csv(file.path(dataPath, paste0("Data/", iso3c, "/Processed/Agricultural_statistics/am_", iso3c, ".csv")))
+am <- read_csv(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Agricultural_statistics/am_", iso3c_sel, ".csv")))
 
 # CropSTAT
-cs <- read_csv(file.path(dataPath, paste0("Data/", iso3c, "/Processed/Agricultural_statistics/cs_", iso3c, ".csv")))
+cs <- read_csv(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Agricultural_statistics/cs_", iso3c_sel, ".csv")))
 
 # Agricultural statistics
+as <- read_csv(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Agricultural_statistics/as_", iso3c_sel, ".csv")))
+
 
 
 ### COMBINE ADM DATA AND ADD ID
-# Filter out adm that are not relevant
-ag_stat <- bind_rows(am, cs, FAOSTAT) %>%
-  filter(variable == "area") %>%
+# Select area and filter out zeros
+ag_stat <- bind_rows(am, cs, as, faostat) %>%
+  filter(variable == "area",
+         value != 0) %>%
   mutate(id = paste(source, adm_level, sep = "_"))
+summary(ag_stat)
 
+### CONCLUSIONS FROM Compare_ag_stat.R
+# We decided to use as data as source for subnational information because it provides longer time series and highest coverage
+# Apart from sunflowers the series are very similar.
+# There is a spike in the Sorgum data for 2001 in the as and am data which is clearly wrong. We replace by cs values.
+# Data for cott, cowp, pota and toba is largely incomplete => use national faostat data
+# After 2008 data is missing for cass. Also the 2008 values do not make sense (near zero) => we remove the 2008 values and impute
 
 ### CORRECTIONS
-ag_stat_upd <- ag_stat
+# Remove cott, pota and toba
+ag_stat <- ag_stat %>%
+  filter(!short_name %in% c("cott", "pota", "toba", "cowp"),
+         !(short_name == "cass" & year == 2008))
 
-# See Compare_ag_stat_ZMB.r for analysis
-# bean and cowp are presented in cs and am data but not in FAOSTAT => We assume they are part of opul in FAOSTAT 
-ag_stat_upd <- ag_stat_upd %>%
-  mutate(short_name = ifelse(short_name == "bean", "opul", short_name),
-         short_name = ifelse(short_name == "cowp", "opul", short_name)) %>%
+# beans are presented in as and am data but not in FAOSTAT => We assume they are part of opul in FAOSTAT 
+ag_stat <- ag_stat %>%
+  mutate(short_name = ifelse(short_name == "bean", "opul", short_name)) %>%
   group_by(year, adm, short_name, unit, variable, adm_level, source, id) %>%
   summarize(value = sum(value, na.rm = T)) %>%
   ungroup()
 
-# am values for Sorgum are extremely high in 2001, while all other values are very similar to cs => use cs values for 2001
-cs_sorg <- filter(ag_stat_upd, year == 2001, short_name == "sorg", id == "cs_1")
-sorg_fix <- filter(ag_stat_upd, year == 2001, short_name == "sorg", id == "am_1") %>%
+# am and as values for sorgum are extremely high in 2001, while all other values are very similar to cs
+# We use 2001 cs values for as our key series
+cs_sorg <- filter(ag_stat, year == 2001, short_name == "sorg", id == "cs_1")
+sorg_fix <- filter(ag_stat, year == 2001, short_name == "sorg", id == "as_1") %>%
   mutate(value =cs_sorg$value[match(adm, cs_sorg$adm)])
-ag_stat_upd[ag_stat_upd$year == 2001 & ag_stat_upd$short_name == "sorg" & ag_stat_upd$id == "am_1",] <- sorg_fix
+ag_stat[ag_stat$year == 2001 & ag_stat$short_name == "sorg" & ag_stat$id == "as_1",] <- sorg_fix
+rm(sorg_fix, cs_sorg)
 
-# Impute am values
-am_imp <- filter(ag_stat_upd, id == "am_1") 
-am_imp_sy_ey <- am_imp %>%
-  group_by(short_name, adm) %>%
-  mutate(sy = min(year),
-         ey = max(year)) %>%
-  dplyr::select(short_name, adm, sy, ey) %>%
-  unique
 
-# Impute missing values
+### IMPUTE MISSING AS VALUES
+# For some values am and cs provide data while as does not. First preference is as and then cs to add information
+as_imp <- ag_stat %>%
+  filter(source %in% c("as","cs", "am")) %>%
+  dplyr::select(-id) %>%
+  spread(source, value) %>%
+  mutate(as = ifelse(!is.na(as), as, ifelse(!is.na(am), am, cs))) %>%
+  dplyr::select(-am, -cs) %>%
+  rename(value = as) %>%
+  mutate(source = "as") %>%
+  na.omit
+
+
+# Linear imputation
 # Dataframe with all country combinations from start year to end year
-base <- expand.grid(year = c(min(am_imp$year):max(am_imp$year)), 
-                    short_name = unique(am_imp$short_name), adm = unique(am_imp$adm), stringsAsFactors = FALSE)
+base <- expand.grid(year = c(min(as_imp$year):max(as_imp$year)), 
+                    short_name = unique(as_imp$short_name), adm = unique(as_imp$adm), stringsAsFactors = FALSE)
+
+# Start end end year
+as_imp_sy_ey <- as_imp %>%
+  group_by(short_name, adm) %>%
+  summarize(sy = min(year),
+         ey = max(year)) %>%
+  ungroup()
+
 
 # Function to impute values
 impute_f <- function(df){
@@ -113,41 +129,41 @@ impute_f <- function(df){
   plotNA.imputations(df$value, imp, main = title)
   # Combine
   df$value <- imp
-  df$id = "am_1"
   df$variable = "area"
   df$unit = "ha"
   df$adm_level = 1
-  df$source[is.na(df$source)] <- "impute"
+  df$source[is.na(df$source)] <- "impute" # ADD SOURCE HERE
   return(df)
 }
 
 # Impute NA values
-am_imp <- left_join(base, am_imp) %>%
-  left_join(.,am_imp_sy_ey) %>%
+as_imp <- left_join(base, as_imp) %>%
+  left_join(.,as_imp_sy_ey) %>%
   group_by(adm, short_name) %>%
   filter(year >= sy & year <= ey) %>%
   do(impute_f(.))
 
 # Check if values are still missing for key years
-am_check <- am_imp %>%
+as_check <- as_imp %>%
   group_by(short_name, adm) %>%
   filter(sy >2000 | ey <2010)
 
 # Impute missing values by simply taking last available value
-am_imp <- bind_rows(
-  am_check %>%
+as_imp <- bind_rows(
+  as_check %>%
     group_by(short_name, adm) %>%
     do(fill_val_f(., 2000, "past")),
-  am_check %>%
+  as_check %>%
     group_by(short_name, adm) %>%
     do(fill_val_f(., 2010, "future")),
-  am_imp) %>%
+  as_imp) %>%
   dplyr::select(-ey, -sy)
-  
+rm(as_check, as_imp_sy_ey, base)  
+
 
 ### PLOT RESULTS
 # Plot function
-df <- filter(am_imp, adm == "NORTHERN")
+df <- filter(as_imp, adm == "NORTHERN")
 p_crop_adm <- function(df) {
   p = ggplot(data = df, aes(x = year, y = value)) +
     geom_line(colour = "red") +
@@ -162,37 +178,29 @@ p_crop_adm <- function(df) {
 }
 
 # Create plots
-fig_crop_adm <- am_imp %>%
+fig_crop_adm <- as_imp %>%
   group_by(adm) %>%
   do(plot = p_crop_adm(.))
 
-pdf(file = file.path(dataPath, "Data/ZMB/Processed/Agricultural_statistics/Graphs/fig_am_imp.pdf"), width = 15, height = 12)
+pdf(file = file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Agricultural_statistics/Graphs/fig_am_imp.pdf")), width = 15, height = 12)
 fig_crop_adm$plot
 dev.off()
 
 
-### 
-
 ### HARMONISE ADM TOTAL WITH NATIONAL TOTAL FROM FAOSTAT
-# Create new ag_stat_upd
-rm(ag_stat_upd)
-ag_stat_upd <- bind_rows(am_imp, FAOSTAT) %>%
-  filter(variable == "area") %>%
-  mutate(id = paste(source, adm_level, sep = "_"))
-
 # Create FAO adm0 data: Calculate averages for 1999-2001
-FAOSTAT_2000 <- ag_stat_upd %>%
-  filter(id %in% c("FAOSTAT_0"), year %in% c(1999:2001)) %>%
-  group_by(short_name, id, variable, adm_level, adm) %>%
+FAOSTAT_2000 <- faostat %>%
+  filter(year %in% c(1999:2001)) %>%
+  group_by(short_name, variable, adm_level, adm) %>%
   summarize(value = mean(value)) %>%
   ungroup() %>%
   dplyr::select(adm, value, short_name, adm_level, variable)
 
 # Create adm area data
-adm_2000 <-  ag_stat_upd %>%
+adm_2000 <-  as_imp %>%
   ungroup() %>%
-  filter(id == "am_1", year %in% c(1999:2001)) %>%
-  group_by(short_name, id, variable, adm_level, adm) %>%
+  filter(year %in% c(1999:2001)) %>%
+  group_by(short_name, variable, adm_level, adm) %>%
   summarize(value = mean(value)) %>%
   ungroup() %>%
   group_by(short_name, variable) %>%
@@ -219,18 +227,6 @@ ag_stat_2000_adm <- filter(ag_stat_2000, adm_level == 1) %>%
 ag_stat_2000 <- filter(ag_stat_2000, !(adm_level == 1)) %>%
   bind_rows(ag_stat_2000_adm)
 
-
-### RECODE CROPS AND ADD LC CLASS
-# Recode teas and coff to teas_coff because they are combined in lc mapping
-ag_stat_2000 <- ag_stat_2000 %>%
-  mutate(short_name = dplyr::recode(short_name, "teas" = "teas_coff", "coff" = "teas_coff")) %>%
-  ungroup() %>%
-  group_by(short_name, adm, adm_level, variable) %>%
-  summarize(value = sum(value, na.rm = T))
-
-# Add lc classes
-ag_stat_2000 <- ag_stat_2000 %>%
-  left_join(.,lc2crop_lvst)
 
 ### SAVE
 write_csv(ag_stat_2000, file.path(dataPath, "Data/ZMB/Processed/Agricultural_statistics/ag_stat_2000_ZMB.csv"))

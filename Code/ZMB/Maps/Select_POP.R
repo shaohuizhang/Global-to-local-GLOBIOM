@@ -30,16 +30,15 @@ options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e
 options(digits=4)
 
 
-### SET COUNTRY CODE
-iso3c <- "ZMB"
+### SET COUNTRY
+source("Code/ZMB/Set_country.R")
 
 
 ### LOAD POPULATION MAP
 pop_af_2000 <- raster(file.path(dataPath, "Data/Global/WorldPop/Africa-POP-1KM_AFR_PPP_2000_adj_v2/AFR_PPP_2000_adj_v2.tif"))
 
 ### LLOAD ADM
-adm1 <- readRDS(file.path(dataPath, paste0("Data\\", iso3c, "\\Processed\\Maps/GAUL_", iso3c, "_adm2_2000.rds")))
-adm0 <- readRDS(file.path(dataPath, paste0("Data\\", iso3c, "\\Processed\\Maps/GAUL_", iso3c, "_adm0_2000.rds")))
+adm0 <- readRDS(file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps/GAUL_", iso3c_sel, "_adm0_2000.rds")))
 
 ### SELECT COUNTRY POPULATION RASTER MAP
 pop <- crop(pop_af_2000, adm0)
@@ -49,5 +48,5 @@ hist(pop, breaks = 50)
 cellStats(pop,sum)
 
 # Save map
-saveRDS(pop, file.path(dataPath, paste0("Data/", iso3c, "/Processed/Maps/pop_", iso3c, ".rds")))
+saveRDS(pop, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/pop_", iso3c_sel, ".rds")))
 

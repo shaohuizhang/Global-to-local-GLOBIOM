@@ -30,8 +30,8 @@ options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e
 options(digits=4)
 
 
-### SET COUNTRY CODE
-iso3c <- "ZMB"
+### SET COUNTRY
+source("Code/ZMB/Set_country.R")
 
 
 ### LOAD TRAVEL TIME MAP
@@ -39,8 +39,7 @@ access_raw <- "P:\\d4ca\\Data Resources\\ACCESS_50K\\access_50k/acc_50k"
 access_raw <- raster(file.path(dataPath, "Data\\Global\\ACCESS_50K\\access_50k/acc_50k"))
 
 ### LLOAD ADM
-adm1 <- readRDS(file.path(dataPath, paste0("Data\\", iso3c, "\\Processed\\Maps/GAUL_", iso3c, "_adm2_2000.rds")))
-adm0 <- readRDS(file.path(dataPath, paste0("Data\\", iso3c, "\\Processed\\Maps/GAUL_", iso3c, "_adm0_2000.rds")))
+adm0 <- readRDS(file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps/GAUL_", iso3c_sel, "_adm0_2000.rds")))
 
 ### SELECT COUNTRY GMIA RASTER MAP
 access <- crop(access_raw, adm0)
@@ -48,5 +47,5 @@ access <- mask(access, adm0)
 plot(access)
 
 # Save map
-saveRDS(access, file.path(dataPath, paste0("Data/", iso3c, "/Processed/Maps/access_", iso3c, ".rds")))
+saveRDS(access, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/access_", iso3c_sel, ".rds")))
 
