@@ -1,13 +1,72 @@
+#'========================================================================================================================================
+#' Project:  Global-to-local GLOBIOM
+#' Subject:  Script to prepare agriculural statistics
+#' Author:   Michiel van Dijk
+#' Contact:  michiel.vandijk@wur.nl
+#'========================================================================================================================================
+
+### PACKAGES
+if(!require(pacman)) install.packages("pacman")
+# Key packages
+p_load("tidyverse", "readxl", "stringr", "car", "scales", "RColorBrewer", "rprojroot")
+# Spatial packages
+p_load("rgdal", "ggmap", "raster", "rasterVis", "rgeos", "sp", "mapproj", "maptools", "proj4", "gdalUtils", "sf", "leaflet", "mapview")
+# Additional packages
+p_load("countrycode")
+
+
+### SET ROOT AND WORKING DIRECTORY
+root <- find_root(is_rstudio_project)
+setwd(root)
+
+
+### SET DATAPATH
+source(file.path(root, "Code/get_dataPath.r"))
+
+
+### R SETTINGS
+options(scipen=999) # surpress scientific notation
+options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e.g. csv) is not turned into factors
+options(digits=4)
+options(max.print=1000000) # more is printed on screen
+
+
+### SET COUNTRY
+source("Code/ZMB/Set_country.R")
+
+
+### LOAD MAPPINGS
+# Regional mapping
+adm_map <- read_excel(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Mappings/Mappings_", iso3c_sel, ".xlsx")), sheet = paste0(iso3c_sel, "2adm")) %>%
+  filter(year == 2000)
+
+crop_lvst <- read_excel(file.path(dataPath, "Data\\Mappings\\Mappings.xlsx"), sheet = "crop_lvst") %>%
+  dplyr::select(short_name) %>%
+  na.omit()
+
+
+### LOAD DATA
+# FAOSTAT
+faostat_raw <- read_csv(file.path(dataPath, paste0("Data/", iso3c_sel, "/processed/Agricultural_statistics/FAOSTAT_", iso3c_sel, ".csv")))
+
+
 ### ANALYSE WHICH ARE THE MOST IMPORTANT CROPS AT THE NATIONAL LEVEL
 # Rank area of crops using FAOSTAT
-tab_area_rank_FAOSTAT <- faostat_raw %>%
-  filter(year %in% c(2000, 2010), variable == "area") %>%
+ey <- max(unique(faostat_raw$year))
+
+area_share_faostat <- faostat_raw %>%
+  filter(year %in% c(1980, 1990, 2000, 2010, ey), variable == "area") %>%
   group_by(year) %>%
-  mutate(share = round(value/sum(value, na.rm=T)*100, 2)) %>%
-  arrange(desc(share)) %>%
+  mutate(value = round(value/sum(value, na.rm=T)*100, 2)) %>%
+  arrange(desc(value))
+%>%
   dplyr::select(short_name, share, year) %>%
   spread(year, share) %>%
   arrange(desc(`2010`))
+
+
+ggplot(data = area_share_faostat, aes(x = year, y = value)) +
+  geom_bar()
 
 # aggregate adm1 tot adm0
 ag_stat_crop_adm0 <- ag_stat %>%

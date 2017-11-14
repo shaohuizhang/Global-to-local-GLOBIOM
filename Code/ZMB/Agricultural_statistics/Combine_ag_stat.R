@@ -64,32 +64,44 @@ ag_stat <- bind_rows(am, cs, as, faostat) %>%
 summary(ag_stat)
 
 ### CONCLUSIONS FROM Compare_ag_stat.R
-# We decided to use as data as source for subnational information because it provides longer time series and highest coverage
-# Apart from sunflowers the series are very similar.
-# There is a spike in the Sorgum data for 2001 in the as and am data which is clearly wrong. We replace by cs values.
-# Data for cott, cowp, pota and toba is largely incomplete => use national faostat data
-# After 2008 data is missing for cass. Also the 2008 values do not make sense (near zero) => we remove the 2008 values and impute
+
+# We decided to use 'as' data as source for subnational information because it provides longer time series and highest coverage
+# Apart from sunflowers and cassava the series are very similar.
+# Some data is missing and needs to be imputed.
+
+# (1) Data for cott, cowp, pota and toba is largely incomplete => use national faostat data
+# (2) beans are presented in as and am data but not in FAOSTAT => We assume they are part of opul in FAOSTAT. 
+# (3) There is a spike in the sorgum data for 2001 in the as and am data which is clearly wrong. We replace by cs values.
+# (4) After 2008 data is missing for cass. Also the 2008 values do not make sense (near zero)
+# and the total is much higher in comparison than am and faostat so we use cassava from cs.
+
 
 ### CORRECTIONS
-# Remove cott, pota and toba
+# (1) Remove cott, pota and toba
 ag_stat <- ag_stat %>%
   filter(!short_name %in% c("cott", "pota", "toba", "cowp"),
          !(short_name == "cass" & year == 2008))
 
-# beans are presented in as and am data but not in FAOSTAT => We assume they are part of opul in FAOSTAT 
+# (2) Reclassify beans 
 ag_stat <- ag_stat %>%
   mutate(short_name = ifelse(short_name == "bean", "opul", short_name)) %>%
   group_by(year, adm, short_name, unit, variable, adm_level, source, id) %>%
   summarize(value = sum(value, na.rm = T)) %>%
   ungroup()
 
-# am and as values for sorgum are extremely high in 2001, while all other values are very similar to cs
-# We use 2001 cs values for as our key series
+# (3) Fix sorghum
 cs_sorg <- filter(ag_stat, year == 2001, short_name == "sorg", id == "cs_1")
 sorg_fix <- filter(ag_stat, year == 2001, short_name == "sorg", id == "as_1") %>%
   mutate(value =cs_sorg$value[match(adm, cs_sorg$adm)])
 ag_stat[ag_stat$year == 2001 & ag_stat$short_name == "sorg" & ag_stat$id == "as_1",] <- sorg_fix
 rm(sorg_fix, cs_sorg)
+
+# (4) Use cassave from cs
+cass_fix <- filter(ag_stat, short_name == "cass", id == "cs_1") %>%
+  mutate(source = "as", id = "as_1")
+ag_stat <- ag_stat %>%
+  filter(!(short_name == "cass"& id == "as_1")) %>%
+  bind_rows(cass_fix)
 
 
 ### IMPUTE MISSING AS VALUES
@@ -190,13 +202,31 @@ dev.off()
 ### HARMONISE ADM TOTAL WITH NATIONAL TOTAL FROM FAOSTAT
 # Create FAO adm0 data: Calculate averages for 1999-2001
 FAOSTAT_2000 <- faostat %>%
-  filter(year %in% c(1999:2001)) %>%
+  filter(year %in% c(1999:2001), variable == "area") %>%
   group_by(short_name, variable, adm_level, adm) %>%
   summarize(value = mean(value)) %>%
   ungroup() %>%
   dplyr::select(adm, value, short_name, adm_level, variable)
 
-# Create adm area data
+# Compare adm total with FAOSTAT
+# Good match apart from cassava
+comp_2000 <- as_imp %>%
+  ungroup() %>%
+  filter(year %in% c(1999:2001)) %>%
+  group_by(short_name, variable, adm_level, adm) %>%
+  summarize(value = mean(value)) %>%
+  ungroup() %>%
+  group_by(short_name, variable) %>%
+  summarize(adm0 = sum(value)) %>%
+  left_join(transmute(FAOSTAT_2000, short_name, variable, FAOSTAT = value)) %>%
+  gather(source, value, -short_name, -variable)
+
+
+ggplot() +
+  geom_col(data = comp_2000, aes(y = value, x = source, fill = source)) +
+  facet_wrap(~short_name, scales = "free")
+
+# Harmonize
 adm_2000 <-  as_imp %>%
   ungroup() %>%
   filter(year %in% c(1999:2001)) %>%
@@ -208,24 +238,19 @@ adm_2000 <-  as_imp %>%
   left_join(transmute(FAOSTAT_2000, short_name, variable, FAOSTAT = value)) %>%
   mutate(value = value/adm0*FAOSTAT) %>%
   dplyr::select(adm, value, short_name, adm_level, variable) %>%
-  ungroup()
-
-# Combine and plot
-ag_stat_2000 <- bind_rows(FAOSTAT_2000, adm_2000)
-
+  ungroup() 
 
 ### ADD ZERO FOR CROPS THAT ARE NOT PRODUCED IN AN ADM. 
 # check coverage
-xtabs(~ adm + short_name, data = filter(ag_stat_2000, adm_level == 1))
+xtabs(~ adm + short_name, data = adm_2000)
 
 # Fill in zero
-ag_stat_2000_adm <- filter(ag_stat_2000, adm_level == 1) %>%
+adm_2000 <- adm_2000 %>%
   spread(short_name, value, fill = 0) %>%
   gather(short_name, value, -adm, -adm_level, -variable)
 
-# Replace
-ag_stat_2000 <- filter(ag_stat_2000, !(adm_level == 1)) %>%
-  bind_rows(ag_stat_2000_adm)
+# Combine
+ag_stat_2000 <- bind_rows(FAOSTAT_2000, adm_2000)
 
 
 ### SAVE

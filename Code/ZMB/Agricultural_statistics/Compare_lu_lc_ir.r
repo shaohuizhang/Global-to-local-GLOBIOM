@@ -5,7 +5,6 @@
 #' Contact:  michiel.vandijk@wur.nl
 #'========================================================================================================================================
 
-#CHECK: Change area into value for lc raw
 
 ### PACKAGES
 if(!require(pacman)) install.packages("pacman")
@@ -32,92 +31,107 @@ options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e
 options(digits=4)
 options(max.print=1000000) # more is printed on screen
 
+
+### SET COUNTRY
+source("Code/ZMB/Set_country.R")
+
+
 # LOAD DATA
 # Crop cover data
-lc_raw <- readRDS(file.path(dataPath, "Data/MWI/Processed\\Spatial_data/land_cover_FAO_2000_MWI.rds")) %>%
+lc_raw <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Spatial_data/land_cover/lc_RCMRD_2000_5min_", iso3c_sel, ".rds"))) %>%
   mutate(type = "land_cover") %>%
   rename(value = area)
 
 # Agricultural statistics
-lu_adm_raw <- read_csv(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/ag_stat_2000_MWI.csv")) 
+lu_adm_raw <- read_csv(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Agricultural_statistics/ag_stat_2000_", iso3c_sel, ".csv"))) 
 
 # Irrigation
-ir_grid <- readRDS(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/ir_grid_MWI_2000.rds")) 
+ir_raw <- read_csv(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Agricultural_statistics/irrigation_", iso3c_sel, ".csv"))) 
 
+# Suitability
+su_raw <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Spatial_data/gaez2iso_", iso3c_sel, ".rds")))
+                 
 # Grid
-grid <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/grid_MWI.rds"))
-grid_r <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/grid_r_MWI.rds"))
+grid <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/5min_grid_", iso3c_sel, ".rds")))
+grid_r <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/5min_grid_r_", iso3c_sel, ".rds")))
 
 # Adm
-adm2 <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm2_2000_adj.rds"))
+adm1 <- readRDS(file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps/GAUL_", iso3c_sel, "_adm1_2000.rds")))
 
-
-# COMPARE ADM0
+### COMPARE ADM0
 # Aggregate crop cover at adm 0 level
 lc_adm0 <- lc_raw %>%
-  filter(suitability_level %in% c(1)) %>%
-  group_by(adm0, lc) %>%
+  filter(ID == 8) %>%
   summarize(value = sum(value, na.rm = T)) %>%
-  mutate(type = "land_cover")
+  mutate(type = "land_cover",
+         adm0 = iso3c_sel)
 
 # land use at adm 0 level
 lu_adm0 <- lu_adm_raw %>%
   filter(variable == "area" & adm_level == 0) %>%
   rename(adm0 = adm) %>%
-  mutate(type = "land_use") %>%
-  group_by(adm0, type, lc) %>%
-  summarize(value = sum(value, na.rm = T)) 
+  group_by(adm0) %>%
+  summarize(value = sum(value, na.rm = T)) %>%
+  mutate(type = "land_use")
 
 # Irrigation at adm level
-ir_adm0 <- ir_grid %>%
-  group_by(lc) %>%
+ir_adm0 <- ir_raw %>%
   summarize(value = sum(ir_area, na.rm = T)) %>%
   mutate(type = "irrigated",
-         adm0 = "MWI")
+         adm0 = iso3c_sel)
 
 # Combine and plot
-adm0 <- bind_rows(lu_adm0, lc_adm0, ir_adm0)
+adm0_comp <- bind_rows(lu_adm0, lc_adm0, ir_adm0)
 
-ggplot(data = adm0, aes(x = adm0, y = value, fill = type)) +
-  geom_bar(stat="identity", position = "dodge") +
+ggplot(data = adm0_comp, aes(x = type, y = value, fill = type)) +
+  geom_col() +
   labs(title = "Crop cover and land use comparison",
        y = "ha",
        x ="") +
   scale_y_continuous(labels=comma, expand = c(0, 0)) +
   theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
-  facet_wrap(~lc, scales = "free")
-rm(lu_adm0, lc_adm0, ir_adm0, adm0)
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+rm(lu_adm0, lc_adm0, ir_adm0, adm0_comp)
 
-# COMPARE ADM2
+
+### COMPARE ADM0, CROP AND SYSTEM
+# land use at adm 0, crop level and system
+lu_adm0_crop <- lu_adm_raw %>%
+  filter(variable == "area" & adm_level == 0) %>%
+  rename(adm0 = adm) %>%
+  group_by(adm0, short_name) %>%
+  summarize(value = sum(value, na.rm = T)) %>%
+  mutate(type = "land_use")
+
+# suitable area at adm 0, crop and system
+su_adm0_crop <- su_raw %>%
+  filter(variable == "area" & adm_level == 0) %>%
+  rename(adm0 = adm) %>%
+  group_by(adm0, short_name) %>%
+  summarize(value = sum(value, na.rm = T)) %>%
+  mutate(type = "land_use")
+
+
+### COMPARE ADM2
 # Aggregate crop cover at adm 2 level
 lc_adm2 <- lc_raw %>%
-  filter(suitability_level %in% c(1)) %>%
-  group_by(adm2, lc, type) %>%
+  filter(ID == 8) %>%
+  group_by(adm1, type) %>%
   summarize(value = sum(value, na.rm = T)) %>%
-  rename(adm = adm2)
+  rename(adm = adm1)
 
 # Land use at adm 2 level
 lu_adm2 <- lu_adm_raw %>%
-  filter(variable == "area", adm_level == 2) %>%
-  mutate(type = "land_use") %>%
-  group_by(adm, lc, type) %>%
-  summarize(value = sum(value, na.rm = T)) 
-
-# Irrigation at adm level
-ir_adm2 <- ir_grid %>%
-  group_by(adm2, lc) %>%
-  summarize(value = sum(ir_area, na.rm = T)) %>%
-  rename(adm = adm2) %>%
-  mutate(type = "irrigated")
+  filter(variable == "area", adm_level == 1) %>%
+  group_by(adm) %>%
+  summarize(value = sum(value, na.rm = T)) %>%
+  mutate(type = "land_use")
 
 # Combine and plot
-adm2 <- bind_rows(lu_adm2, lc_adm2, ir_adm2) %>%
-  filter(lc %in% c("crops", "rice"))
+adm2_comp <- bind_rows(lu_adm2, lc_adm2)
 
-ggplot(data = adm2, aes(x = adm, y = value, fill = type)) +
+ggplot(data = adm2_comp, aes(x = adm, y = value, fill = type)) +
   geom_bar(stat="identity", position = "dodge") +
-  facet_wrap(~lc, scales = "free") +
   labs(title = "Crop cover and land use comparison",
        y = "ha",
        x ="") +

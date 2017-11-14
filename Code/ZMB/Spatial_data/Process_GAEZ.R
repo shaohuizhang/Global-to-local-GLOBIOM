@@ -34,8 +34,18 @@ source("Code/ZMB/Set_country.R")
 
 ### LOAD DATA
 # Adm
-adm0 <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/GAUL_",iso3c_sel, "_adm0_2000.rds")))
-plot(adm0)
+adm1 <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/GAUL_", iso3c_sel, "_adm1_2000.rds")))
+
+# Adm_map
+adm1_map <- read_excel(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Mappings/Mappings_",iso3c_sel, ".xlsx")), sheet = paste0(iso3c_sel, "2adm")) %>%
+  filter(year == 2000) %>%
+  dplyr::select(adm1, adm1_GAUL) %>%
+  na.omit %>%
+  unique()
+
+# Grid
+grid_r <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/5min_grid_r_", iso3c_sel, ".rds")))
+
 
 # gaez2lvst_crop_map
 gaez2lvst_crop <- read_excel(file.path(dataPath, "Data/Mappings/Mappings.xlsx"), sheet = "gaez2crop_lvst") %>%
@@ -121,19 +131,41 @@ I_stack
 suit_stack <- stack(S_stack, L_stack, H_stack, I_stack)
 
 # Crop and mask to iso
-gaez2iso_stack <- crop(suit_stack, adm0)
-gaez2iso_stack <- mask(gaez2iso_stack, adm0)
+gaez2iso_stack <- crop(suit_stack, adm1)
+gaez2iso_stack <- mask(gaez2iso_stack, adm1)
 plot(gaez2iso_stack)
 
-# Create data frame and divide by 10000 to calculate shares
-gaez2iso <- as.data.frame(rasterToPoints(gaez2iso_stack))
-gaez2iso <- gaez2iso %>%
-  gather(id, value, -x, -y) %>%
+### COMBINE WITH AREA AND ADM DATA
+# area size
+area <- area(grid_r)
+names(area) <- "grid_size"
+
+# Rasterize adm
+adm_r <- rasterize(adm1, grid_r)
+names(adm_r) <- "ID"
+
+# Stack 
+gaez <- stack(grid_r, adm_r, area, gaez2iso_stack)
+plot(gaez)
+
+# Get adm info
+adm1_df <- levels(adm_r)[[1]] %>%
+  transmute(adm1_GAUL = toupper(ADM1_NAME), ID) %>%
+  left_join(.,adm1_map) %>%
+  dplyr::select(-adm1_GAUL)
+
+# Create data.frame, remove cells outside border, add adm names and convert to probability
+gaez <- as.data.frame(rasterToPoints(gaez)) %>%
+  left_join(adm1_df) %>%
+  gather(id, value, -x, -y, -gridID, -ID, -grid_size, -adm1) %>%
+  na.omit() %>%
   separate(id, c("short_name", "system"), sep = "_") %>%
-  mutate(value = value/10000)
+  mutate(suit = as.numeric(value)/10000) %>%
+  dplyr::select(-ID, -value)
+
 
 # Save data
-write_csv(gaez2iso, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Spatial_data/gaez2iso_", iso3c_sel, ".csv")))
+saveRDS(gaez, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Spatial_data/gaez2iso_", iso3c_sel, ".rds")))
 
 
 

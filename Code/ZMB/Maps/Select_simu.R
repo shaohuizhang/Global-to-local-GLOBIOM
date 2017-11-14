@@ -20,7 +20,7 @@ root <- find_root(is_rstudio_project)
 setwd(root)
 
 ### SET DATAPATH
-dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM"
+source(file.path(root, "Code/get_dataPath.r"))
 
 
 ### R SETTINGS

@@ -1,6 +1,6 @@
 #'========================================================================================================================================
 #' Project:  Global-to-local GLOBIOM
-#' Subject:  Script to grid RCMRD 2000 land cover data to 10 x 10km/5 arc-min
+#' Subject:  Script to grid ESA land cover data to 10 x 10km/5 arc-min
 #' Author:   Michiel van Dijk
 #' Contact:  michiel.vandijk@wur.nl
 #'========================================================================================================================================
@@ -57,22 +57,16 @@ grid <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/
 grid_r <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/5min_grid_r_", iso3c_sel, ".rds")))
 
 # Land cover
-lc_raw <- raster(file.path(dataPath, paste0("Data\\", iso3c_sel, "/Raw/Spatial_data/Land_cover/Zambia_LandCover_2000_Scheme_II/Zambia_Landcover2_2000_Scheme_II.tif")))
-levels(lc_raw)
+lc_raw <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/ESA_", iso3c_sel, "_2000.rds")))
 
 
 ### PROCESS LAND COVER MAP
-# Obtain land cover class
-lc_class <- levels(lc_raw)[[1]]
-write_csv(lc_class, file.path(dataPath, paste0("Data\\", iso3c_sel, "/Raw/Spatial_data/Land_cover/Zambia_LandCover_2000_Scheme_II/land_cover_classes_2000_Scheme_II.csv")))
-
 # Compare Projections
 crs(grid)
 crs(lc_raw)
-plot(lc_raw) # might take a long time in case of high resolution!
+#levelplot(lc_raw) # might take a long time in case of high resolution!
 plot(adm1, add = T)
 #plot(grid, add = T) # might take a long time in case of high resolution!
-
 
 # If not the same, reproject country polygon, conduct analysis and reproject back - faster than reprojecting high resolution maps
 # Set crs
@@ -105,11 +99,10 @@ extract_grid_f <- function(polyID, cover){
     mutate(gridID = polyID)
 }
 
-
 # Run function and combine
-#lc_sh_raw <- bind_rows(lapply(grid_list, extract_grid_f, lc_raw)) 
-#saveRDS(lc_sh_raw, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Spatial_data/land_cover/lc_sh_raw_RCMRD_2000_5min_", iso3c_sel, ".rds")))
-lc_sh_raw <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Spatial_data/land_cover/lc_sh_raw_RCMRD_2000_5min_", iso3c_sel, ".rds")))
+lc_sh_raw <- bind_rows(lapply(grid_list, extract_grid_f, lc_raw)) 
+saveRDS(lc_sh_raw, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Spatial_data/land_cover/lc_sh_raw_ESA_2000_5min_", iso3c_sel, ".rds")))
+lc_sh_raw <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Spatial_data/land_cover/lc_sh_raw_ESA_2000_5min_", iso3c_sel, ".rds")))
 
 
 ### COMPUTE AREA BY LAND COVER CLASS
@@ -138,14 +131,16 @@ grid_all <- as.data.frame(rasterToPoints(grid_all)) %>%
   dplyr::select(-ID)
 
 # Load land cover classes
-lc_class <- read_csv(file.path(dataPath, paste0("Data\\", iso3c_sel, "/Raw/Spatial_data/Land_cover/Zambia_LandCover_2000_Scheme_II/land_cover_classes_2000_Scheme_II.csv"))) %>%
-  mutate(ID = as.character(ID)) %>%
-  dplyr::select(ID, Land_Cover)
+lc_class <- read_csv(file.path(dataPath, "Data\\Global\\ESA\\ESACCI-LC-Legend.csv")) %>%
+  mutate(ID = land_cover_code) %>%
+  dplyr::select(ID, land_cover_short)
+
 
 lc <- lc_sh_raw %>%
   gather(ID, share, -gridID) %>%
   group_by(gridID, ID) %>%
   summarize(share = sum(share, na.rm = T)) %>%
+  mutate(ID = as.integer(ID)) %>%
   left_join(., lc_class)
 
 # Calculate area size in ha (area is in m3)
@@ -157,8 +152,13 @@ lc <- lc %>%
   ungroup() %>%
   dplyr::select(-share)
 
+# Summarize
+lc_sum <- lc %>%
+  group_by(land_cover_short) %>%
+  summarize(area = sum(area, na.rm = T))
+
 # Save
-saveRDS(lc, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Spatial_data/land_cover/lc_RCMRD_2000_5min_", iso3c_sel, ".rds")))
+saveRDS(lc, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Spatial_data/land_cover/lc_ESA_2000_5min_", iso3c_sel, ".rds")))
 
 
 

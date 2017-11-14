@@ -37,11 +37,11 @@ plot(adm0)
 
 ### LOAD LAND COVER MAP 
 # Load global ESA map
-land_cover_map_ESA <- raster(file.path(dataPath, "Data\\Global\\ESA\\Annual_maps\\ESACCI-LC-L4-LCCS-Map-300m-P1Y-2000-v2.0.7.tif"))
-land_cover_map <- crop(land_cover_map_ESA, adm2)
-land_cover_map <- mask(land_cover_map, adm2)
-plot(land_cover_map)
+ESA_raw <- raster(file.path(dataPath, "Data\\Global\\ESA\\Annual_maps\\ESACCI-LC-L4-LCCS-Map-300m-P1Y-2000-v2.0.7.tif"))
+ESA <- crop(ESA_raw, adm0)
+ESA <- mask(ESA, adm0)
+plot(ESA)
 
 # Save map
-saveRDS(land_cover_map, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/ESA_", iso3c_sel, "_2000.rds")))
+saveRDS(ESA, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/ESA_", iso3c_sel, "_2000.rds")))
 

@@ -103,8 +103,8 @@ crop_area_adm0 <- ag_stat %>%
   group_by(id, year, adm_level, short_name, unit, variable, source) %>%
   summarize( value = sum(value, na.rm = T))
 
-# Area comparison over time
-fig_area_crop_adm0 <- ggplot(data = filter(crop_area_adm0, variable == "area"), aes(x = year, y = value, colour = id)) +
+# Area comparison over time: all years
+fig_area_crop_adm0_a <- ggplot(data = filter(crop_area_adm0, variable == "area"), aes(x = year, y = value, colour = id)) +
   geom_line(alpha = 0.5) +
   geom_point(alpha = 0.5) +
   facet_wrap(~short_name, scales = "free") +
@@ -115,7 +115,22 @@ fig_area_crop_adm0 <- ggplot(data = filter(crop_area_adm0, variable == "area"), 
   theme_bw() +
   theme(text = element_text(size=10))
 
-fig_area_crop_adm0
+fig_area_crop_adm0_a
+
+# Area comparison over time: all years
+fig_area_crop_adm0_b <- ggplot(data = filter(crop_area_adm0, variable == "area", year %in% c(2000:2010)),
+                               aes(x = year, y = value, colour = id)) +
+  geom_line(alpha = 0.5) +
+  geom_point(alpha = 0.5) +
+  facet_wrap(~short_name, scales = "free") +
+  labs(title = "Crop area comparison between FAOSTAT, am, as and cs",
+       y = "ha",
+       x ="") +
+  scale_y_continuous(labels=comma) +
+  theme_bw() +
+  theme(text = element_text(size=10))
+
+fig_area_crop_adm0_b
 
 
 ### COMPARE AREA AT CROP AND ADM1 LEVEL

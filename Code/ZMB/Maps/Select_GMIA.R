@@ -35,8 +35,7 @@ source("Code/ZMB/Set_country.R")
 
 
 ### LOAD GMIA MAPS
-GMIA_r_raw <- raster(file.path(dataPath, "Data/Global/GMIA/gmia_v5_aei_ha_asc/gmia_v5_aei_ha.asc"))
-GMIA_poly_raw <- readOGR(file.path(dataPath, "Data/Global/GMIA/gmia_v5_shp/gmia_v5_aai_pct_aei.shp"))
+GMIA_r_raw <- raster(file.path(dataPath, "Data/Global/GMIA/gmia_v5_aei_ha_asc/gmia_v5_aei_ha.asc")) # hectares per cell
 crs(GMIA_r_raw) <- "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"
 
 ### LLOAD ADM
