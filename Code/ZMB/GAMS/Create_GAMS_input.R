@@ -45,65 +45,56 @@ source("Code/ZMB/Set_country.R")
 
 
 ### LOAD DATA
-model_data <- readRDS(file.path(paste0(dataPath, "Data/", iso3c_sel, " /processed/GAMS/model_data.rds")))
-lu_system <- model_data[["lu_system"]]
-lu_adm <- model_data[["lu_adm"]]
-lc_ir <- model_data[["lc_ir"]]
-lc_av <- model_data[["lc_av"]]
+# Sy
+lu_sy <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/GAMS/lu_sy_2000_", iso3c_sel, ".rds")))
+
+# Lu adm
+lu_adm <- readRDS(file.path(paste0(dataPath, "/Data/", iso3c_sel, "/Processed/GAMS/lu_adm_2000_", iso3c_sel, ".rds"))) 
+
+# Lc  
+lc <- readRDS(file.path(paste0(dataPath, "/Data/", iso3c_sel, "/Processed/GAMS/lc_2000_", iso3c_sel, ".rds"))) 
+
+# lu_grid
+# add grid specific lu values
+# Kafue flats on wikipedia for location of sugar plantations
 
 # Pop per grid cell
-tot_pop_grid <- read_csv(file.path(dataPath, "Data/MWI/Processed/Spatial_data/tot_pop_grid_2000_MWI.csv"))
+pop <- readRDS(file.path(paste0(dataPath, "/Data/", iso3c_sel, "/Processed/GAMS/pop_2000_", iso3c_sel, ".rds"))) 
 
 
 ### CREATE GAMS PARAMETERS 
 # deptots(k,s)
 deptots <- lu_adm %>%
-  filter(adm_level == 2) %>%
+  filter(adm_level == 1) %>%
   dplyr::select(adm, short_name, value)
 
 deptots_gdx <- para_gdx(deptots, c("adm", "short_name"), "deptots", "Ratio per main crops")
 
 
 # avail(i,c)
-avail <- lc_av %>%
-  dplyr::select(gridID, lc, value)
+avail <- lc %>%
+  dplyr::select(gridID, value)
 
-avail_gdx <- para_gdx(avail, c("gridID", "lc"), "avail", "Available area per plot and crop group")
+avail_gdx <- para_gdx(avail, c("gridID"), "avail", "Available area per grid cell")
 
 
 # produ(j)
-produ <- lu_system %>%
+produ <- lu_sy %>%
   dplyr::select(system, value)
 
 produ_gdx <- para_gdx(produ, c("system"), "produ", "Production of crops")
 
 
-# icrops(i,j)
-icrops <- lc_ir %>%
-  dplyr::select(gridID, system, value)
-
-icrops_gdx <- para_gdx(icrops, c("gridID", "system"), "icrops", "areas of irrigated crops per pixel")
-
-
-
 ### CREATE GAMS SETS
-# c: crop groups
-c_set <- lc_av %>%
-  dplyr::select(lc) %>%
-  unique()
-
-c_set_gdx <- set_gdx(c_set, c("lc"), "c", "Land cover crop groups")
-
-
 # i: grid cells
-i_set <- lc_av %>%
+i_set <- lc %>%
   dplyr::select(gridID) %>%
   unique()
 
 i_set_gdx <- set_gdx(i_set, c("gridID"), "i", "Pixels")
 
 # j: Crops with technology identifier
-j_set <- lu_system %>%
+j_set <- lu_sy %>%
   dplyr::select(system) %>%
   unique() 
 
@@ -120,7 +111,7 @@ s_set_gdx <- set_gdx(s_set, c("short_name"), "s", "Main crops")
 
 # k: Subnat names wich have statistics 
 k_set <- lu_adm %>%
-  filter(adm_level == 2) %>%
+  filter(adm_level == 1) %>%
   dplyr::select(adm) %>%
   unique()
 
@@ -128,7 +119,7 @@ k_set_gdx <- set_gdx(k_set, c("adm"), "k", "Subnat names wich have statistics")
 
 
 # n(s,j)  Main crops with corresponding sub-crops 
-n_set <- lu_system %>%
+n_set <- lu_sy %>%
   dplyr::select(short_name, system) %>%
   unique() %>%
   setNames(c("s", "j"))
@@ -137,8 +128,8 @@ n_set_gdx <- set_gdx(n_set, c("s","j"), "n", ts="Main crops with corresponding s
 
 
 # l(k,i)  Pixels in subnat with statistics   
-l_set <- lc_av %>%
-  dplyr::select(adm2, gridID) %>%
+l_set <- lc %>%
+  dplyr::select(adm, gridID) %>%
   unique() %>%
   setNames(c("k", "i"))
 
@@ -147,27 +138,18 @@ l_set_gdx <- set_gdx(l_set, c("k","i"), "l", ts="Pixels in Subnat with statistic
 
 # m(k, s) Main crop names in subnat with stat
 m_set <- lu_adm %>%
-  filter(adm_level == 2) %>%
+  filter(adm_level == 1) %>%
   dplyr::select(adm, short_name) %>%
   unique() %>%
   setNames(c("k", "s"))
 
 m_set_gdx <- set_gdx(m_set, c("k", "s"), "m", ts="Main crop names in Subnat with stat")
 
-
-# cg(c, s) Main crops in crop groups 
-cg_set <- lu_adm %>%
-  dplyr::select(lc, short_name) %>%
-  unique() %>%
-  setNames(c("c", "s"))
-
-cg_set_gdx <- set_gdx(cg_set, c("c", "s"), "cg", ts="Main crops in crop groups")
-
-
 # scalelp: number of grid cells to scale optimization so numbers do not get too small
 # Equal to number of i_set
 scalelp <- nrow(i_set)
 scalelp_gdx <- scalar_gdx(scalelp, "scalelp", "Scalar for lp")
+
 
 ### CREATE GAMS PRIORS
 # Calculate prior for crop area by using share of rural population. 

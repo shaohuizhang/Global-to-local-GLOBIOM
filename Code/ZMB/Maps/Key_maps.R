@@ -112,7 +112,7 @@ ESA_colour <- ESA_colour %>%
   filter(ID %in% seq(0, 220, 10)) %>%
   mutate(colour= rgb(R, G, B, max = 255)) %>%
   unique()
-ESA_colour <- ESA_colour[order(ESA_colour$land_cover_short, decreasing = F),]
+ESA_colour <- ESA_colour[order(ESA_colour$class, decreasing = F),]
 
 # Links levels
 levels(esa) <- rat
@@ -120,7 +120,7 @@ levels(esa)
 rm(rat)
 
 # Visualise 
-fig_land_cover <- levelplot(esa, att='land_cover_short', col.regions = ESA_colour$colour, margin = F) +
+fig_land_cover <- levelplot(esa, att='class', col.regions = ESA_colour$colour, margin = F) +
     layer(sp.polygons(adm1, col = "black", lwd = 2))
 
 

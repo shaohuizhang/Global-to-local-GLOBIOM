@@ -100,8 +100,8 @@ extract_grid_f <- function(polyID, cover){
 }
 
 # Run function and combine
-lc_sh_raw <- bind_rows(lapply(grid_list, extract_grid_f, lc_raw)) 
-saveRDS(lc_sh_raw, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Spatial_data/land_cover/lc_sh_raw_ESA_2000_5min_", iso3c_sel, ".rds")))
+#lc_sh_raw <- bind_rows(lapply(grid_list, extract_grid_f, lc_raw)) 
+#saveRDS(lc_sh_raw, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Spatial_data/land_cover/lc_sh_raw_ESA_2000_5min_", iso3c_sel, ".rds")))
 lc_sh_raw <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Spatial_data/land_cover/lc_sh_raw_ESA_2000_5min_", iso3c_sel, ".rds")))
 
 
@@ -133,7 +133,7 @@ grid_all <- as.data.frame(rasterToPoints(grid_all)) %>%
 # Load land cover classes
 lc_class <- read_csv(file.path(dataPath, "Data\\Global\\ESA\\ESACCI-LC-Legend.csv")) %>%
   mutate(ID = land_cover_code) %>%
-  dplyr::select(ID, land_cover_short)
+  dplyr::select(ID, class)
 
 
 lc <- lc_sh_raw %>%
@@ -154,7 +154,7 @@ lc <- lc %>%
 
 # Summarize
 lc_sum <- lc %>%
-  group_by(land_cover_short) %>%
+  group_by(class) %>%
   summarize(area = sum(area, na.rm = T))
 
 # Save

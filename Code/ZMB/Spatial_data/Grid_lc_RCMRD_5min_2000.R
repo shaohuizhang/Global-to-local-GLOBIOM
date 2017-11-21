@@ -63,7 +63,8 @@ levels(lc_raw)
 
 ### PROCESS LAND COVER MAP
 # Obtain land cover class
-lc_class <- levels(lc_raw)[[1]]
+lc_class <- levels(lc_raw)[[1]] %>%
+  rename(class = `Land_Cover`)
 write_csv(lc_class, file.path(dataPath, paste0("Data\\", iso3c_sel, "/Raw/Spatial_data/Land_cover/Zambia_LandCover_2000_Scheme_II/land_cover_classes_2000_Scheme_II.csv")))
 
 # Compare Projections
@@ -140,7 +141,7 @@ grid_all <- as.data.frame(rasterToPoints(grid_all)) %>%
 # Load land cover classes
 lc_class <- read_csv(file.path(dataPath, paste0("Data\\", iso3c_sel, "/Raw/Spatial_data/Land_cover/Zambia_LandCover_2000_Scheme_II/land_cover_classes_2000_Scheme_II.csv"))) %>%
   mutate(ID = as.character(ID)) %>%
-  dplyr::select(ID, Land_Cover)
+  dplyr::select(ID, class)
 
 lc <- lc_sh_raw %>%
   gather(ID, share, -gridID) %>%

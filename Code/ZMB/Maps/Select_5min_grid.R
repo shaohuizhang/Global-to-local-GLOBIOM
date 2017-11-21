@@ -56,12 +56,16 @@ grid
 plot(grid)
 
 # Write raster
-saveRDS(grid, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/5min_grid_r_", iso3c_sel, ".rds")))
+writeRaster(grid, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid_5min_r_", iso3c_sel, ".tif")))
 
 # Create polygon
-#plot(grid_py) # Might take a long time in case of high resolution!
-Plot(grid_py) # Plot (with capital) from quickPlot package works faster but might still take time!
+grid_p <- rasterToPolygons(grid)
+library(quickPlot)
+grid_p
+
+#plot(grid_p) # Might take a long time in case of high resolution!
+plot(grid_p) # Plot (with capital) from quickPlot package works faster but might still take time!
 
 # Write polygon
-saveRDS(grid_py, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/5min_grid_", iso3c_sel, ".rds")))
+saveRDS(grid_p, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid_5min_p_", iso3c_sel, ".rds")))
 

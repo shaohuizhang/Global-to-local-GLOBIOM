@@ -250,8 +250,17 @@ adm_2000 <- adm_2000 %>%
   gather(short_name, value, -adm, -adm_level, -variable)
 
 # Combine
-ag_stat_2000 <- bind_rows(FAOSTAT_2000, adm_2000)
-
+ag_stat_2000 <- bind_rows(FAOSTAT_2000, adm_2000) %>%
+  rename(area = value) %>%
+  dplyr::select(-variable)
 
 ### SAVE
-write_csv(ag_stat_2000, file.path(dataPath, "Data/ZMB/Processed/Agricultural_statistics/ag_stat_2000_ZMB.csv"))
+# Agricultural statistics
+write_csv(ag_stat_2000, file.path(paste0(dataPath, "/Data/", iso3c_sel, "/Processed/Agricultural_statistics/ag_stat_2000_", iso3c_sel, ".csv")))
+
+# Crop list
+crop_list <- ag_stat_2000 %>%
+  filter(adm == iso3c_sel) %>%
+  dplyr::select(short_name, adm) %>%
+  unique
+write_csv(crop_list, file.path(paste0(dataPath, "/Data/ZMB/Processed/Mappings/Total_crop_lvst_list_2000_", iso3c_sel, ".csv")))
