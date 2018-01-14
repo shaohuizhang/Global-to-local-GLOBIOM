@@ -30,7 +30,7 @@
 val_gdx <- function(val, variables){
   
   # Create factors of variables
-  val[,variables] <- lapply(val[,variables] , factor)
+  val[,variables] <- lapply(val[,variables, drop = F] , factor) # Drop added otherwise val becomes a vector
   
   # Convert factor variables to numeric
   for(i in which(sapply(val, class) == "factor")) val[[i]] = as.numeric(val[[i]])  

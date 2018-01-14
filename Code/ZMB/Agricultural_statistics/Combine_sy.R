@@ -94,7 +94,7 @@ lu_sy <- left_join(sy, lu_nir) %>%
   dplyr::select(-share, -area) %>%
   filter(value != 0) %>%
   bind_rows(ir) %>%
-  mutate(system = paste(short_name, system, sep = "_")) %>%
+  mutate(sy = paste(short_name, system, sep = "_")) %>%
   dplyr::select(-adm, -adm_level)
 
 # Compare total with lu => should be the same

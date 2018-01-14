@@ -38,7 +38,7 @@ source("Code/ZMB/Set_country.R")
 
 # LOAD DATA
 # Crop cover data
-lc_raw <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Spatial_data/land_cover/lc_RCMRD_2000_5min_", iso3c_sel, ".rds"))) %>%
+lc_raw <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Agricultural_statistics/lc_ESA_2000_", iso3c_sel, ".rds"))) %>%
   mutate(type = "lc")
 
 # Agricultural statistics
@@ -54,9 +54,10 @@ adm0_comp <- bind_rows(
     group_by(type) %>%
     summarise(value = sum(area, na.rm = T)),
   lc_raw %>%
-    filter(class == "Cropland") %>%
+    #filter(lc_class == "Cropland") %>%
+    filter(lc_class %in% c("Mosaic cropland", "Cropland irrigated / post-flooding", "Cropland, rainfed")) %>%
     group_by(type) %>%
-    summarise(value = sum(area, na.rm = T)))
+    summarise(value = sum(lc_area, na.rm = T)))
 
 ggplot(data = adm0_comp, aes(x = type, y = value, fill = type)) +
   geom_bar(stat="identity", position = "dodge") +
@@ -75,10 +76,11 @@ adm2_comp <- bind_rows(
     group_by(type, adm) %>%
     summarise(value = sum(area, na.rm = T)),
   lc_raw %>%
-    filter(class == "Cropland") %>%
+#    filter(lc_class == "Cropland") %>%
+  filter(lc_class %in% c("Mosaic cropland", "Cropland irrigated / post-flooding", "Cropland, rainfed")) %>%
     rename(adm = adm1) %>%
     group_by(type, adm) %>%
-    summarise(value = sum(area, na.rm = T)))
+    summarise(value = sum(lc_area, na.rm = T)))
 
 ggplot(data = adm2_comp, aes(x = adm, y = value, fill = type)) +
   geom_bar(stat="identity", position = "dodge") +
@@ -99,8 +101,9 @@ check_adm2 <- adm2_comp %>%
 ### CORRECT DISCREPANCY LAND COVER AND LAND USE AND PREPARE GRID FILES
 # lc
 lc <- lc_raw %>%
-  filter(class == "Cropland") %>%
-  dplyr::select(gridID, adm = adm1, value = area)
+  #filter(lc_class == "Cropland")
+  filter(lc_class %in% c("Mosaic cropland", "Cropland irrigated / post-flooding", "Cropland, rainfed")) 
+  
 
 # lu_adm
 lu_adm <- lu_adm_raw %>%
