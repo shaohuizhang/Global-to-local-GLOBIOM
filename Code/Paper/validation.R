@@ -58,73 +58,73 @@ hs2crop_lvst <- read_excel(file.path(dataPath, "Data/MWI/Processed/Mappings/Mapp
 
 
 ### LAND USE MAPS
-# Add NA to missing values to show where there is no crop cover
-land_use <- land_use_raw %>%
-  spread(system, value, fill = NA) 
-
-# Add grid cell coordinates
-grid_df <- as.data.frame(rasterToPoints(grid_r))
-
-land_use <- land_use %>%
-  left_join(grid_df,.) %>%
-  gather(system, value, -gridID, -x, -y)
-
 # Add short_name
-land_use <- land_use %>%
+land_use <- land_use_raw %>%
   mutate(short_name = substr(system,0,4),
-         short_name = ifelse(system %in% c("teas_coff_H", "teas_coff_I"), "teas_coff", short_name))
+         short_name = ifelse(system %in% c("teas_coff_H", "teas_coff_I"), "teas_coff", short_name)) %>%
+  na.omit
 
-# Plot function
-plot_crop_raster_f <- function(crop){
-  df <- filter(land_use, short_name %in% crop)
-  p = ggplot() +
-    geom_raster(data = df, aes(x = x, y = y, fill = value)) +
-    scale_fill_viridis(na.value = "light grey", direction = -1, labels = comma) +
-    geom_path(data = adm2, aes (x = long, y = lat, group = group), colour = "black") +
-    facet_wrap(~short_name) +
-    coord_quickmap() +
-    labs(x="", y="", fill = "Crop area (ha)") +
-    theme_classic() +
-    theme(line = element_blank(),
-          axis.text = element_blank(),
-          strip.background = element_rect(colour = NA, fill = NA)) +
-    geom_point(data = cities, aes(x = long, y = lat), col = "black") +
-    geom_text(data = cities, aes(x = long, y = lat, label = name), size = 4)
-  
-  p
-}
 
-plot_crop_raster_f(c("maiz", "rice"))
-
-### VALIDATION
+### PREPARE VALIDATION DATA
 # prepare data
-val_df <- MWI2010 %>%
+MWI2010 <- MWI2010 %>%
   left_join(.,hs2crop_lvst) %>%
   dplyr::select(case_id, plotnum, crop_code, short_name, lat, lon) %>%
   group_by(lat, lon, short_name) %>%
   summarize(hh = n())
 
-# Function to plot validation and land use data
-# Plot function
-plot_crop_val_f <- function(crop){
-  df_val <- filter(val_df, short_name %in% crop)
-  df_lu <-  filter(land_use, short_name %in% crop)
-  p = ggplot() +
-    geom_raster(data = df_lu, aes(x = x, y = y, fill = value)) +
-    scale_fill_viridis(na.value = "light grey", direction = -1, labels = comma) +
-    geom_path(data = adm2, aes (x = long, y = lat, group = group), colour = "black") +
-    geom_point(data = df_val, aes(x = lon, y = lat, size = hh), colour = "red", alpha = 0.3) +
-    facet_wrap(~short_name) +
-    coord_quickmap() +
-    labs(x="", y="", size = "Number of \n households", fill = "Crop area (ha)") +
-    theme_classic() +
-    theme(line = element_blank(),
-          axis.text = element_blank(),
-          strip.background = element_rect(colour = NA, fill = NA)) +
-    geom_point(data = cities, aes(x = long, y = lat), col = "black") +
-    geom_text(data = cities, aes(x = long, y = lat, label = name), size = 4)
-  
-  p
-}
+lsms_coord <- dplyr::select(MWI2010, lat, lon)
+coordinates(lsms_coord) <-  ~ lon + lat
 
-plot_crop_raster_f(c("maiz"))
+# Extract land use values
+lsms_sel <- extract(grid_r, lsms_coord, df = T)
+
+# Combine
+# CHECK WHY THERE ARE NA GRID CELLS? BORDERS?
+lsms_df <- bind_cols(MWI2010, lsms_sel) %>%
+  ungroup() %>%
+  dplyr::select(gridID, short_name) %>%
+  mutate(source = "lsms") %>%
+  na.omit %>%
+  unique # filter out ea located in one grid cell
+rm(MWI2010)
+
+length(unique(lsms_df$gridID))
+gridID_df <- lsms_df %>% 
+  group_by(gridID) %>%
+  summarize(n_crops = length(short_name))
+
+# Select comparable land use data
+# IGNORE SYSTEMS FOR NOW
+# WHY ARE THERE DUPLICATES????
+lu_val_df <- filter(land_use, gridID %in% lsms_df$gridID) %>%
+  dplyr::select(gridID, short_name) %>%
+  mutate(source = "model") %>%
+  unique
+rm(land_use, land_use_raw)
+
+# Combine data
+val <- bind_rows(lsms_df, lu_val_df) %>%
+  mutate(value = 1) %>%
+  spread(source, value) %>%
+  filter(!is.na(lsms))
+
+tab_val <- bind_rows(
+  val %>%
+    group_by(short_name) %>%
+    summarize(n_model = sum(!is.na(model)),
+               n_lsms = n(),
+              "Misclassified (%)" = round((1-(n_model/n_lsms))*100)) %>%
+    arrange(desc(n_model)),
+  val %>%
+    summarize(short_name = "total",
+              n_model = sum(!is.na(model)),
+              n_lsms = n(),
+              "Misclassified (%)" = round((1-(n_model/n_lsms))*100))) %>%
+      rename(`Modelled land use (Number of cells)` = n_model,
+           `LSMS land use (Number of cells)` = n_lsms)
+    
+              
+
+
+  
