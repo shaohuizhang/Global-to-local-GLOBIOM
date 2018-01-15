@@ -33,20 +33,20 @@ options(digits=4)
 
 ### LOAD MAPS AND DATA
 # Adm
-adm1 <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm1_2000_adj.rds"))
-adm2 <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm2_2000_adj.rds"))
+adm1 <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/gaul/GAUL_MWI_adm1_2000_adj.rds"))
+adm2 <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/gaul/GAUL_MWI_adm2_2000_adj.rds"))
 
 # Grid
-grid <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/grid_MWI.rds"))
-grid_r <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/grid_r_MWI.rds"))
+grid <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/grid/grid_30sec_p_MWI.rds"))
+grid_r <- raster(file.path(dataPath, "Data/MWI/Processed/Maps/grid/grid_30sec_r_MWI.tif"))
 
 # Irrigation
-GMIA <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/GMIA_MWI.rds"))
+GMIA <- raster(file.path(dataPath, "Data/MWI/Processed/Maps/gmia/gmia_5min_MWI.tif"))
 ir_2000_raw <- read_excel(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/Irrigation_MWI_combined.xlsx"), sheet = "ir_2000")
 ir_2010_raw <- read_excel(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/Irrigation_MWI_combined.xlsx"), sheet = "ir_2010")
 
 # land_cover
-lc_raw <- readRDS(file.path(dataPath, "Data/MWI/processed/Spatial_data/land_cover_FAO_2000_MWI.rds"))
+lc_raw <- readRDS(file.path(dataPath, "Data/MWI/processed/Agricultural_statistics/lc_FAO_2000_MWI.rds"))
 
 ### COMPARE LAND COVER with IRRIGATION POINTS
 # There is a good overlap between sugar, tea and rice estates and related land cover. 
@@ -75,9 +75,10 @@ proj4string(ir_2010_geo) <- crs
 # Prepare lc
 lc <- lc_raw %>%
   group_by(gridID, lc) %>%
-  summarize(area = sum(area, na.rm = T))
+  summarize(area = sum(lc_area, na.rm = T))
   
 # Prepare maps with irrigated crops
+names(grid_r) <- "gridID"
 grid_r_p <- rasterToPoints(grid_r) %>%
   as.data.frame()
 
@@ -87,7 +88,7 @@ grid_r_p <- rasterToPoints(grid_r) %>%
 # Kavuzi tea estate, which geocodes were not exact (river instead of estate) is located too far North.
 lc_teas_map <- grid_r_p %>%
   left_join(lc,.) %>%
-  filter(lc == "teas", area >0) %>%
+  filter(lc == "teas_coff", area >0) %>%
   ungroup() %>%
   dplyr::select(x, y, area) %>%
   as.data.frame()

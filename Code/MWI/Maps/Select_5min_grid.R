@@ -31,7 +31,7 @@ options(digits=4)
 
 
 ### SET COUNTRY
-source("Code/ZMB/Set_country.R")
+source("Code/MWI/Set_country.R")
 
 
 ### CHECK IF THEIR ARE TEMPORARY FILES (CREATED BY RASTER PACKAGE) AND REMOVE
@@ -40,36 +40,32 @@ removeTmpFiles()
 
 
 ### LOAD GAUL MAPS
-adm1 <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gaul/GAUL_", iso3c_sel, "_adm1_2000.rds")))
-plot(adm1)
+adm2 <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gaul/GAUL_", iso3c_sel, "_adm2_2000_adj.rds")))
+plot(adm2)
 
 
 ### CREATE COUNTRY GRID
 # NB method to first assign gridID numbers to global raster and then crop does not result in unique gridID?
 r <- raster() # 1 degree raster
-r <- disaggregate(r, fact=120) # 30 arcsec raster
-grid <- crop(r, adm1)
+r <- disaggregate(r, fact=12) # 5 arcmin raster
+grid <- crop(r, adm2)
 values(grid) <- 1:ncell(grid) # Add ID numbers
 names(grid) <- "gridID" 
-grid <- mask(grid, adm1)
+grid <- mask(grid, adm2)
 grid
 plot(grid)
 
 # Write raster
-gridPath <- file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\grid"))
-dir.create(gridPath)
-
-writeRaster(grid, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid_30sec_r_", iso3c_sel, ".tif")), overwrite = T)
+writeRaster(grid, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid_5min_r_", iso3c_sel, ".tif")), overwrite = T)
 
 # Create polygon
 grid_p <- rasterToPolygons(grid)
 library(quickPlot)
 grid_p
+
 #plot(grid_p) # Might take a long time in case of high resolution!
-#Plot(grid_p) # Plot (with capital) from quickPlot package works faster but might still take time!
+plot(grid_p) # Plot (with capital) from quickPlot package works faster but might still take time!
 
 # Write polygon
-saveRDS(grid_p, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid/grid_30sec_p_", iso3c_sel, ".rds")))
-
-
+saveRDS(grid_p, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid_5min_p_", iso3c_sel, ".rds")))
 

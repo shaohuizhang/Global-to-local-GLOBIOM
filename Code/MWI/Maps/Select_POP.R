@@ -35,14 +35,14 @@ source(file.path(root, "Code/Support/functions.r"))
 
 
 ### SET COUNTRY
-source("Code/ZMB/Set_country.R")
+source("Code/MWI/Set_country.R")
 
 
 ### LOAD POPULATION MAP
 pop_af_2000 <- raster(file.path(dataPath, "Data/Global/WorldPop/Africa-POP-1KM_AFR_PPP_2000_adj_v2/AFR_PPP_2000_adj_v2.tif"))
 
 ### LOAD ADM
-adm0 <- readRDS(file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps/gaul/GAUL_", iso3c_sel, "_adm0_2000.rds")))
+adm0 <- readRDS(file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps/gaul/GAUL_", iso3c_sel, "_adm0_2000_adj.rds")))
 
 ### SELECT COUNTRY POPULATION RASTER MAP
 pop <- crop(pop_af_2000, adm0)

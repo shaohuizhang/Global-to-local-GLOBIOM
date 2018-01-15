@@ -38,8 +38,10 @@ source("Code/ZMB/Set_country.R")
 gmia_r_raw <- raster(file.path(dataPath, "Data/Global/gmia/gmia_v5_aei_ha_asc/gmia_v5_aei_ha.asc")) # hectares per cell
 crs(gmia_r_raw) <- "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"
 
+
 ### LOAD ADM
-adm0 <- readRDS(file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps/GAUL_", iso3c_sel, "_adm0_2000.rds")))
+adm0 <- readRDS(file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps/GAUL/GAUL_", iso3c_sel, "_adm0_2000.rds")))
+
 
 ### SELECT COUNTRY GMIA MAP
 gmia <- crop(gmia_r_raw, adm0)
@@ -50,5 +52,5 @@ hist(gmia, breaks = 50)
 cellStats(gmia,sum)
 
 # Save map
-writeRaster(gmia, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gmia_5min_", iso3c_sel, ".tif")), overwrite = T)
+writeRaster(gmia, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gmia/gmia_5min_", iso3c_sel, ".tif")), overwrite = T)
 

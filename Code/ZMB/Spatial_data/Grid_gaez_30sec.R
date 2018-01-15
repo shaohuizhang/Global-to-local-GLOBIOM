@@ -22,6 +22,9 @@ setwd(root)
 ### SET DATAPATH
 source(file.path(root, "Code/get_dataPath.r"))
 
+### SOURCE FUNCTIONS
+source(file.path(root, "Code/Support/functions.r"))
+
 ### R SETTINGS
 options(scipen=999) # surpress scientific notation
 options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e.g. csv) is not turned into factors
@@ -34,7 +37,7 @@ source("Code/ZMB/Set_country.R")
 
 ### LOAD DATA
 # Adm
-adm1 <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/GAUL_", iso3c_sel, "_adm1_2000.rds")))
+adm1 <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gaul/GAUL_", iso3c_sel, "_adm1_2000.rds")))
 
 # Adm_map
 adm1_map <- read_excel(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Mappings/Mappings_",iso3c_sel, ".xlsx")), sheet = paste0(iso3c_sel, "2adm")) %>%
@@ -44,12 +47,14 @@ adm1_map <- read_excel(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processe
   unique()
 
 # Grid
-grid_r <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/5min_grid_r_", iso3c_sel, ".rds")))
-
+grid_r <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid/grid_5min_r_", iso3c_sel, ".tif")))
 
 # gaez2lvst_crop_map
 gaez2lvst_crop <- read_excel(file.path(dataPath, "Data/Mappings/Mappings.xlsx"), sheet = "gaez2crop_lvst") %>%
-  mutate(id = paste(short_name, system, sep = "_"))
+  mutate(sy = paste(short_name, system, sep = "_"))
+
+# Sy
+lu_sy <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/GAMS/lu_sy_2000_", iso3c_sel, ".rds")))
 
 
 ### PREPARE GAEZ MAPS FOR SUBSISTENCE
@@ -62,12 +67,6 @@ S_files <- data.frame(files = list.files(file.path(dataPath, "Data/Global/GAEZv3
          gaez_code = gsub("^.*\\_","", gaez_code))
 S_files <- left_join(S_crops, S_files)
 
-# Create raster stack
-S_stack <- stack(file.path(dataPath, paste0("Data/Global/GAEZv3/rainfed/L/", S_files$files)))
-
-# Replace gaez crop names with id
-names(S_stack) <- S_crops$id
-S_stack
 
 
 ### PREPARE GAEZ MAPS FOR LOW-INPUT
@@ -80,13 +79,6 @@ L_files <- data.frame(files = list.files(file.path(dataPath, "Data/Global/GAEZv3
          gaez_code = gsub("^.*\\_","", gaez_code))
 L_files <- left_join(L_crops, L_files)
 
-# Create raster stack
-L_stack <- stack(file.path(dataPath, paste0("Data/Global/GAEZv3/rainfed/L/", L_files$files)))
-
-# Replace gaez crop names with id
-names(L_stack) <- L_crops$id
-L_stack
-
 
 ### PREPARE GAEZ MAPS FOR HIGH_INPUT
 # Select crops
@@ -98,13 +90,6 @@ H_files <- data.frame(files = list.files(file.path(dataPath, "Data/Global/GAEZv3
          gaez_code = gsub("^.*\\_","", gaez_code))
 H_files <- left_join(H_crops, H_files)
 
-# Create raster stack
-H_stack <- stack(file.path(dataPath, paste0("Data/Global/GAEZv3/rainfed/H/", H_files$files)))
-
-# Replace gaez crop names with id
-names(H_stack) <- H_crops$id
-H_stack
-
 
 ### PREPARE GAEZ MAPS FOR IRRIGATED
 # Select crops
@@ -112,60 +97,57 @@ I_crops <- filter(gaez2lvst_crop, system == "I")
 
 # Create file lookup table
 # NB REPLACE FILES WITH IRRIGATED FILES WHEN AVAILABLE!!!!!!!!!!!!!!!!!!!!
-I_files <- data.frame(files = list.files(file.path(dataPath, "Data/Global/GAEZv3/rainfed/H"), pattern = ".rst$")) %>%
+I_files <- data.frame(files = list.files(file.path(dataPath, "Data/Global/GAEZv3/irrigated/H"), pattern = ".rst$")) %>%
   mutate(gaez_code = gsub("\\..*","", files),
          gaez_code = gsub("^.*\\_","", gaez_code))
-I_files <- left_join(H_crops, I_files)
-
-# Create raster stack
-# NB REPLACE FILES WITH IRRIGATED FILES WHEN AVAILABLE!!!!!!!!!!!!!!!!!!!!
-I_stack <- stack(file.path(dataPath, paste0("Data/Global/GAEZv3/rainfed/H/", I_files$files)))
-
-# Replace gaez crop names with id
-names(I_stack) <- I_crops$id
-I_stack
+I_files <- left_join(I_crops, I_files)
 
 
-### COMBINE, CROP AND MASK TO ISO
-# Combine
-suit_stack <- stack(S_stack, L_stack, H_stack, I_stack)
+### FILTER OUT RELEVANT SYSTEMS AND SELECT ISO
+# Filter out relevant systems
+sy_files <- bind_rows(S_files, L_files, H_files, I_files) %>%
+  filter(sy %in% lu_sy$sy) 
+
+# Stack
+gaez_stack <- stack(file.path(dataPath, "Data/Global/GAEZv3", sy_files$gaez_system, sy_files$gaez_input, sy_files$files))
+
+# Replace gaez crop names with sy
+names(gaez_stack) <- sy_files$sy
 
 # Crop and mask to iso
-gaez2iso_stack <- crop(suit_stack, adm1)
+gaez2iso_stack <- crop(gaez_stack, adm1)
 gaez2iso_stack <- mask(gaez2iso_stack, adm1)
 plot(gaez2iso_stack)
 
-### COMBINE WITH AREA AND ADM DATA
-# area size
-area <- area(grid_r)
-names(area) <- "grid_size"
 
-# Rasterize adm
-adm_r <- rasterize(adm1, grid_r)
-names(adm_r) <- "ID"
+### SAVE TIF FILES 
+# Function to save tif files
+iso2tif_f <- function(i){
+    r <- gaez2iso_stack[[i]]
+    name <- names(r)
+    print(name)
+    writeRaster(r, 
+                file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gaez/5min/", name, "_5min_", iso3c_sel, ".tif")), overwrite = T)
+}
 
-# Stack 
-gaez <- stack(grid_30sec, gaez)
-plot(gaez)
-
-# Get adm info
-adm1_df <- levels(adm_r)[[1]] %>%
-  transmute(adm1_GAUL = toupper(ADM1_NAME), ID) %>%
-  left_join(.,adm1_map) %>%
-  dplyr::select(-adm1_GAUL)
-
-# Create data.frame, remove cells outside border, add adm names and convert to probability
-gaez <- as.data.frame(rasterToPoints(gaez)) %>%
-  left_join(adm1_df) %>%
-  gather(id, value, -x, -y, -gridID, -ID, -grid_size, -adm1) %>%
-  na.omit() %>%
-  separate(id, c("short_name", "system"), sep = "_") %>%
-  mutate(suit = as.numeric(value)/10000) %>%
-  dplyr::select(-ID, -value)
+# Save
+lapply(c(1:nlayers(gaez2iso_stack)), iso2tif_f)
 
 
-# Save data
-saveRDS(gaez, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Spatial_data/gaez2iso_", iso3c_sel, ".rds")))
+### RESAMPLE MAP TO 30 ARC-SEC GRID
+# function to resample
+resample_f <- function(i){
+  input_file <- file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gaez/5min/", files_5min[i]))
+  output_file <- file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gaez/30sec/", files_30sec[i]))
+  grid_30sec_file <- file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid/grid_30sec_r_", iso3c_sel, ".tif"))
+  name <- names(raster(input_file))
+  print(name)
+  align_raster2_f(input_file, grid_30sec_file, output_file, nThreads = "ALL_CPUS", verbose = F, 
+                             output_Raster = F, overwrite = TRUE, r = "bilinear")
+}
 
-
+# Resample and save
+files_5min <- list.files(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gaez/5min")))
+files_30sec <- gsub("5min", "30sec", files_5min)
+lapply(c(1:length(files_5min)), resample_f)
 

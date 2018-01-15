@@ -1,6 +1,6 @@
 #'========================================================================================================================================
 #' Project:  Global-to-local GLOBIOM
-#' Subject:  Script to grid RCMRD 2000 land cover data to 1 x 1km/30 arc-sec
+#' Subject:  Script to grid ESA 2000 land cover data to 1 x 1km/30 arc-sec
 #' Author:   Michiel van Dijk
 #' Contact:  michiel.vandijk@wur.nl
 #'========================================================================================================================================
@@ -55,10 +55,10 @@ adm1_map <- read_excel(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processe
   unique()
 
 # Land cover
-lc_raw <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Land_cover/Zambia_LandCover_2000_Scheme_II/Zambia_Landcover2_2000_Scheme_II.tif")))
+lc_raw <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Land_cover/ESA/ESA_", iso3c_sel, "_raw_2000.tif")))
 
 # Load land cover classes
-lc_class <- read_csv(file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Land_cover/Zambia_landcover_2000_Scheme_II/Zambia_landcover_2000_Scheme_II_legend.csv"))) %>%
+lc_class <- read_csv(file.path(dataPath, "Data/Global/ESA/ESACCI-LC-Legend.csv")) %>%
    dplyr::select(lc_code, lc_class)
 
 # Grid
@@ -67,12 +67,8 @@ names(grid_30sec) <- "gridID"
 
 
 ### PROCESS LAND COVER MAP
-# Obtain land cover class
-#lc_class <- levels(lc_raw)[[1]]
-#write_csv(lc_class, file.path(dataPath, paste0("Data\\", iso3c_sel, "/Raw/Spatial_data/Land_cover/Zambia_LandCover_2000_Scheme_II/land_cover_classes_2000_Scheme_II.csv")))
-
 # Compare Projections
-crs(grid)
+crs(grid_30sec)
 crs(lc_raw)
 plot(lc_raw) # might take a long time in case of high resolution!
 plot(adm1, add = T)
@@ -80,8 +76,8 @@ plot(adm1, add = T)
 
 ### RESAMPLE MAP TO 30 ARC-SEC GRID
 # Specify input and output files
-lc_raw_file <- file.path(dataPath, paste0("Data\\", iso3c_sel, "/Raw/Spatial_data/Land_cover/Zambia_LandCover_2000_Scheme_II/Zambia_Landcover2_2000_Scheme_II.tif"))
-lc_30sec_file <- file.path(dataPath, paste0("Data\\", iso3c_sel, "/Processed/Maps/lc/lc_RCMRD_30sec_2000_", iso3c_sel, ".tif"))
+lc_raw_file <- file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Land_cover/ESA/ESA_", iso3c_sel, "_raw_2000.tif"))
+lc_30sec_file <- file.path(dataPath, paste0("Data\\", iso3c_sel, "/Processed/Maps/lc/lc_ESA_30sec_2000_", iso3c_sel, ".tif"))
 grid_30sec_file <- file.path(dataPath, paste0("Data\\", iso3c_sel, "/Processed/Maps/grid/grid_30sec_r_", iso3c_sel, ".tif"))
 
 # Resample
@@ -121,4 +117,4 @@ lc_df <- as.data.frame(rasterToPoints(lc_stack)) %>%
   dplyr::select(-ID, -lc_code)
 
 # Save
-saveRDS(lc_df, file.path(dataPath, paste0("Data/", iso3c_sel, "/processed/Agricultural_statistics/lc_2000_", iso3c_sel, ".rds")))
+saveRDS(lc_df, file.path(dataPath, paste0("Data/", iso3c_sel, "/processed/Agricultural_statistics/lc_ESA_2000_", iso3c_sel, ".rds")))

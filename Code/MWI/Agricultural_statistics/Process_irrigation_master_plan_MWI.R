@@ -32,10 +32,11 @@ options(digits=4)
 
 
 ### LOAD MAPS
-adm1 <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm1_2000_adj.rds"))
-adm2 <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm2_2000_adj.rds"))
-grid <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/grid_MWI.rds"))
-GMIA <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/GMIA_MWI.rds"))
+# adm1
+adm1 <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/gaul/GAUL_MWI_adm1_2000_adj.rds"))
+adm2 <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/gaul/GAUL_MWI_adm2_2000_adj.rds"))
+grid <- raster(file.path(dataPath, "Data/MWI/Processed/Maps/grid/grid_30sec_r_MWI.tif"))
+GMIA <- raster(file.path(dataPath, "Data/MWI/Processed/Maps/gmia/gmia_5min_MWI.tif"))
 
 # DEFINE PROJECTION AND REPROJECT
 # Projection of irrigation data is UTM 36 South (Arc 1960) - printed on maps in report
@@ -46,13 +47,12 @@ crs <- CRS("+init=EPSG:4326") # WSG84
 # Reproject adm and grid
 # Projection is the same but have to be identically specified for some functions to work
 adm2 <-  spTransform(adm2, crs)
-grid <-  spTransform(grid, crs)
 GMIA <-  projectRaster(GMIA, crs = crs)
 
 
 ### PROCESS AND PLOT ESTATE IRRIGATION DATA
 # Load data
-ir_est_raw <- read_excel(file.path(dataPath, "Data/MWI/Raw/Agricultural_statistics/Other/Irrigation/Estate_irrigation_raw.xlsx"))
+ir_est_raw <- read_excel(file.path(dataPath, "Data/MWI/Raw/Agricultural_statistics/Irrigation/Estate_irrigation_raw.xlsx"))
 
 # Add projection to points and reproject to WSG84
 ir_est_geo <- ir_est_raw %>%
@@ -75,7 +75,6 @@ plot(adm2, add = T)
 plot(ir_est_geo, add = T, col = "red")
 axis(1)
 axis(2)
-
 
 pal <- colorNumeric(c("#0C2C84", "#41B6C4", "#FFFFCC"), values(GMIA),
                     na.color = "transparent")
@@ -129,7 +128,7 @@ multi_sheet_f <- function(sh, sheet){
 }  
 
 # File
-file <- file.path(dataPath, "Data/MWI/Raw/Agricultural_statistics/Other/Irrigation/District_irrigation_raw.xlsx")
+file <- file.path(dataPath, "Data/MWI/Raw/Agricultural_statistics/Irrigation/District_irrigation_raw.xlsx")
 
 # get sheet names
 wb <- loadWorkbook(file)

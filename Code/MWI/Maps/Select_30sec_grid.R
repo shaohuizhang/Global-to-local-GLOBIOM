@@ -12,7 +12,7 @@ p_load("tidyverse", "readxl", "stringr", "scales", "RColorBrewer", "rprojroot")
 # Spatial packages
 p_load("rgdal", "ggmap", "raster", "rasterVis", "rgeos", "sp", "mapproj", "maptools", "proj4", "gdalUtils")
 # Additional packages
-p_load("WDI", "countrycode", "plotKML", "sf")
+p_load("quickPlot")
 
 
 ### SET ROOT AND WORKING DIRECTORY
@@ -30,42 +30,46 @@ options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e
 options(digits=4)
 
 
+### SET COUNTRY
+source("Code/MWI/Set_country.R")
+
+
 ### CHECK IF THEIR ARE TEMPORARY FILES (CREATED BY RASTER PACKAGE) AND REMOVE
 showTmpFiles()
 removeTmpFiles()
 
-### PREPARE 30 ARCSEC GLOBAL RASTER IN WSG84
-r <- raster() # 1 degree raster
-r <- disaggregate(r, fact=120) # 30 arcsec raster
-
 
 ### LOAD GAUL MAPS
-adm1 <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm1_2000_adj.rds"))
-adm2 <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm2_2000_adj.rds"))
+adm1 <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gaul/GAUL_", iso3c_sel, "_adm1_2000_adj.rds")))
 plot(adm1)
-plot(adm2)
 
 
-### CREATE 5 ARCMIN COUNTRY GRID
-# crop and mask
-# Mask and crop raster
+### CREATE COUNTRY GRID
 # NB method to first assign gridID numbers to global raster and then crop does not result in unique gridID?
+r <- raster() # 1 degree raster
+r <- disaggregate(r, fact=120) # 30 arcsec raster
 grid <- crop(r, adm1)
 values(grid) <- 1:ncell(grid) # Add ID numbers
 names(grid) <- "gridID" 
 grid <- mask(grid, adm1)
+grid
 plot(grid)
 
 # Write raster
-saveRDS(grid, file.path(dataPath, "Data/MWI/Processed/Maps/grid_30sec_r_MWI.rds"))
+gridPath <- file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\grid"))
+dir.create(gridPath)
 
+writeRaster(grid, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid/grid_30sec_r_", iso3c_sel, ".tif")), overwrite = T)
 
 # Create polygon
-grid_py <- rasterToPolygons(grid)
-#plot(grid_py)
-#plot(adm1, add = T, border = "red")
+grid_p <- rasterToPolygons(grid)
+library(quickPlot)
+grid_p
+#plot(grid_p) # Might take a long time in case of high resolution!
+#Plot(grid_p) # Plot (with capital) from quickPlot package works faster but might still take time!
 
 # Write polygon
-saveRDS(grid_py, file.path(dataPath, "Data/MWI/Processed/Maps/grid_30sec_MWI.rds"))
+saveRDS(grid_p, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid/grid_30sec_p_", iso3c_sel, ".rds")))
+
 
 

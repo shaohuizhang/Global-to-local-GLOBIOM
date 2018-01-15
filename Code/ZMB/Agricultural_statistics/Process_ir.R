@@ -11,10 +11,10 @@ if(!require(pacman)) install.packages("pacman")
 # Key packages
 p_load("tidyverse", "readxl", "stringr", "car", "scales", "RColorBrewer", "rprojroot")
 # Spatial packages
-#p_load("rgdal", "ggmap", "raster", "rasterVis", "rgeos", "sp", "mapproj", "maptools", "proj4", "gdalUtils")
+p_load("rgdal", "ggmap", "raster", "rasterVis", "rgeos", "sp", "mapproj", "maptools", "proj4", "gdalUtils")
 # Additional packages
-p_load("countrycode", "imputeTS")
-
+p_load("countrycode", "imputeTS", "plotKML")
+library(plotKML)
 
 ### SET ROOT AND WORKING DIRECTORY
 root <- find_root(is_rstudio_project)
@@ -46,10 +46,10 @@ ir_crop_raw <- read_csv(file.path(dataPath, "Data/Global/AQUASTAT/Irrigated_area
   filter(iso3c == iso3c_sel)
 
 # GMIA
-gmia_5min <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/GMIA_", iso3c_sel, ".rds")))
+gmia_5min <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gmia/GMIA_5min_", iso3c_sel, ".tif")))
 
 # Adm
-adm1 <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/GAUL_", iso3c_sel, "_adm1_2000.rds")))
+adm1 <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gaul/GAUL_", iso3c_sel, "_adm1_2000.rds")))
 
 # Adm_map
 adm1_map <- read_excel(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Mappings/Mappings_",iso3c_sel, ".xlsx")), sheet = paste0(iso3c_sel, "2adm")) %>%
@@ -59,10 +59,14 @@ adm1_map <- read_excel(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processe
   unique()
 
 # Grid
-grid_5min <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid_5min_r_", iso3c_sel, ".tif")))
+grid_5min <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid/grid_5min_r_", iso3c_sel, ".tif")))
 names(grid_5min) <- "gridID"
-grid_30sec <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid_30sec_r_", iso3c_sel, ".tif")))
+grid_30sec <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid/grid_30sec_r_", iso3c_sel, ".tif")))
 names(grid_30sec) <- "gridID"
+
+# lc raw
+lc <- readRDS(file.path(paste0(dataPath, "/Data/", iso3c_sel, "/Processed/GAMS/lc_2000_", iso3c_sel, ".rds"))) 
+
 
 ### COMPARE TOTALS BETWEEN SOURCES
 # GMIA area equipped for irrigation
@@ -84,7 +88,7 @@ ir_crop_2000 <- filter(ir_crop_raw, short_name != "total", year == 2002) %>%
   dplyr::select(-variable) %>%
   dplyr::rename(adm = iso3c) %>%
     mutate(system = "I", 
-           ir_area = ir_area*1000,
+           ir_area = ir_area*1000, # in ha
            adm_level = 0)
 sum(ir_crop_2000$ir_area)
 
@@ -97,13 +101,13 @@ write_csv(ir_crop_2000, file.path(dataPath, paste0("Data/", iso3c_sel, "/Process
 # We calculate the share of irrigated area first and then warp
 area_5min <- area(grid_5min)
 gmia_5min_share <- gmia_5min/(area_5min*100)
-writeRaster(gmia_5min_share, file.path(dataPath, paste0("Data\\", iso3c_sel, "/Processed/Maps/gmia_5min_share_", iso3c_sel, ".tif")), overwrite = T)
+writeRaster(gmia_5min_share, file.path(dataPath, paste0("Data\\", iso3c_sel, "/Processed/Maps/gmia/gmia_5min_share_", iso3c_sel, ".tif")), overwrite = T)
 
 
 # Specify input and output files
-gmia_5min_share_file <- file.path(dataPath, paste0("Data\\", iso3c_sel, "/Processed/Maps/gmia_5min_share_", iso3c_sel, ".tif"))
-gmia_30sec_share_file <- file.path(dataPath, paste0("Data\\", iso3c_sel, "/Processed/Maps/gmia_30sec_share_", iso3c_sel, ".tif"))
-grid_file <- file.path(dataPath, paste0("Data\\", iso3c_sel, "/Processed/Maps/grid_30sec_r_", iso3c_sel, ".tif"))
+gmia_5min_share_file <- file.path(dataPath, paste0("Data\\", iso3c_sel, "/Processed/Maps/gmia/gmia_5min_share_", iso3c_sel, ".tif"))
+gmia_30sec_share_file <- file.path(dataPath, paste0("Data\\", iso3c_sel, "/Processed/Maps/gmia/gmia_30sec_share_", iso3c_sel, ".tif"))
+grid_file <- file.path(dataPath, paste0("Data\\", iso3c_sel, "/Processed/Maps/grid/grid_30sec_r_", iso3c_sel, ".tif"))
 
 # Resample
 gmia_30sec_share <- align_raster_f(gmia_5min_share_file, grid_file, gmia_30sec_share_file, nThreads = "ALL_CPUS", verbose = T, 
@@ -121,30 +125,18 @@ cellStats(gmia_30sec, sum)
 cellStats(gmia_5min, sum)
 
 # Save
-writeRaster(gmia_30sec, file.path(dataPath, paste0("Data\\", iso3c_sel, "/Processed/Maps/gmia_30sec_", iso3c_sel, ".tif")), overwrite = T)
+writeRaster(gmia_30sec, file.path(dataPath, paste0("Data\\", iso3c_sel, "/Processed/Maps/gmia/gmia_30sec_", iso3c_sel, ".tif")), overwrite = T)
 
 
-### COMBINE WITH AREA AND ADM DATA
-# Rasterize adm
-adm_r <- rasterize(adm1, grid_30sec)
-names(adm_r) <- "ID"
-
-# Stack 
-ir_grid_30sec <- stack(grid_30sec, adm_r, area_30sec, gmia_30sec)
-plot(ir_grid_30sec)
-
-# Get adm info
-adm1_df <- levels(adm_r)[[1]] %>%
-  transmute(adm1_GAUL = toupper(ADM1_NAME), ID) %>%
-  left_join(.,adm1_map) %>%
-  dplyr::select(-adm1_GAUL)
-
-# Create data.frame
-ir_grid_30sec_df <- as.data.frame(rasterToPoints(ir_grid_30sec)) %>%
-  left_join(adm1_df) %>%
-  filter(gmia > 1) %>% # filter out all cells with < 1 ha of irrigated area
-  dplyr::select(gridID, value = gmia)
+### REMOVE GMIA GRID CELLS WITH OUTSIDE LAND COVER 
+ir_grid_30sec_df <- as.data.frame(rasterToPoints(gmia_30sec)) %>%
+  left_join(lc,.) %>%
+  filter(gmia > 1) %>%
+  dplyr::select(-lc_class, -type)
 summary(ir_grid_30sec_df)
 
 # save
 saveRDS(ir_grid_30sec_df, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/GAMS/ir_2000_", iso3c_sel, ".rds")))
+
+
+

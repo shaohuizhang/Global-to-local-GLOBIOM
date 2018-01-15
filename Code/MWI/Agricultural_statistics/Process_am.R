@@ -32,40 +32,45 @@ options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e
 options(digits=4)
 
 
+### SET COUNTRY
+source("Code/MWI/Set_country.R")
+
+
 # OBTAIN ADM AND CROP_LVST LIST
 # Load data
-am_raw <- read_csv(file.path(dataPath, "Data/MWI/Raw/Agricultural_statistics/Agro-maps/mwi_all_data.csv")) 
+am_raw <- read_csv(file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Agricultural_statistics/Agro-maps/", iso3c_sel, "_all_data.csv"))) 
 
 # Save adm1 list
-am_MWI_adm1_list <- am_raw %>%
+am_adm1_list <- am_raw %>%
   filter(ADMIN_LEVEL == 1) %>%
   dplyr::transmute(adm1_am = toupper(AREA_NAME)) %>%
   unique %>%
   arrange(adm1_am)
 
-write_csv(am_MWI_adm1_list, file.path(dataPath, "Data/MWI/Processed/Mappings/am_MWI_adm1_list.csv"))
+write_csv(am_adm1_list, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Mappings/am_", iso3c_sel, "_adm1_list.csv")))
 
 # Save adm2 list
-am_MWI_adm2_list <- am_raw %>%
+am_adm2_list <- am_raw %>%
   filter(ADMIN_LEVEL == 2) %>%
   dplyr::transmute(adm2_am = toupper(AREA_NAME)) %>%
   unique %>%
   arrange(adm2_am)
   
-write_csv(am_MWI_adm2_list, file.path(dataPath, "Data/MWI/Processed/Mappings/am_MWI_adm2_list.csv"))
+write_csv(am_adm2_list, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Mappings/am_", iso3c_sel, "_adm2_list.csv")))
+
 
 # Save crop_lvst list
-am_MWI_crop_lvst_list <- am_raw %>%
+am_crop_lvst_list <- am_raw %>%
   dplyr::transmute(crop_lvst_am = ITEM_NAME, FCL_item_code = ITEM_CODE) %>%
   unique %>%
   arrange(crop_lvst_am)
 
-write_csv(am_MWI_crop_lvst_list, file.path(dataPath, "Data/MWI/Processed/Mappings/am_MWI_crop_lvst_list.csv"))
+write_csv(am_crop_lvst_list, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Mappings/am_", iso3c_sel, "_crop_lvst_list.csv")))
 
 
 ### PROCESS AGRO-MAPS
 # Read adm1 mappping
-MWI2adm1 <- read_excel(file.path(dataPath, "Data\\MWI\\Processed/Mappings/Mappings_MWI.xlsx"), sheet = "MWI2adm") %>%
+MWI2adm1 <- read_excel(file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed/Mappings/Mappings_", iso3c_sel, ".xlsx")), sheet = paste0(iso3c_sel, "2adm")) %>%
   filter(year == 2000) %>%
   dplyr::select(adm1, adm1_am) %>%
   na.omit %>%

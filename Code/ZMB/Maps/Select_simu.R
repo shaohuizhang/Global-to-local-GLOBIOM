@@ -43,7 +43,7 @@ simu <- simu_5min_poly[simu_5min_poly$COUNTRY == iso3n_sel,]
 plot(simu)
 
 # Load GAUL ADM map
-adm1 <- readRDS(file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps/GAUL_", iso3c_sel, "_adm1_2000.rds")))
+adm1 <- readRDS(file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps/gaul/GAUL_", iso3c_sel, "_adm1_2000.rds")))
 
 # Compare and inspect maps
 plot(adm1)
@@ -51,5 +51,9 @@ plot(simu, add = T, border = "red")
 plotKML(simu)
 
 # Save map
-saveRDS(simu, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/simu_", iso3c_sel, ".rds")))
+simuPath <- file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\simu"))
+dir.create(simuPath)
+
+saveRDS(simu, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/simu/simu_", iso3c_sel, ".rds")))
+
 

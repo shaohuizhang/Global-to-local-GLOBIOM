@@ -30,6 +30,11 @@ options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e
 options(digits=4)
 
 
+
+### SET COUNTRY
+source("Code/MWI/Set_country.R")
+
+
 ### LOAD GAUL
 # GAUL adm0
 ogrListLayers(file.path(dataPath, "Data\\Global\\GAUL\\g2015_2000_0\\g2015_2000_0.shp"))
@@ -49,16 +54,17 @@ GAUL_adm2_2000 <- readOGR(file.path(dataPath, "Data\\Global\\GAUL\\g2015_2000_2\
 GAUL_adm2_2000_df <- GAUL_adm2_2000@data
 
 # Gaul adm0
-GAUL_MWI_adm0_2000 <- GAUL_adm0_2000[GAUL_adm0_2000$ADM0_NAME == "Malawi",]
-plot(GAUL_MWI_adm0_2000)
+GAUL_adm0_2000 <- GAUL_adm0_2000[GAUL_adm0_2000$ADM0_NAME == country_sel,]
+plot(GAUL_adm0_2000)
 
 # Gaul adm1
-GAUL_MWI_adm1_2000 <- GAUL_adm1_2000[GAUL_adm1_2000$ADM0_NAME == "Malawi",]
-plot(GAUL_MWI_adm1_2000)
+GAUL_adm1_2000 <- GAUL_adm1_2000[GAUL_adm1_2000$ADM0_NAME == country_sel,]
+plot(GAUL_adm1_2000)
 
 # Gaul adm2
-GAUL_MWI_adm2_2000 <- GAUL_adm2_2000[GAUL_adm2_2000$ADM0_NAME == "Malawi",]
-plot(GAUL_MWI_adm2_2000)
+GAUL_adm2_2000 <- GAUL_adm2_2000[GAUL_adm2_2000$ADM0_NAME == country_sel,]
+plot(GAUL_adm2_2000)
+
 
 
 ### ANALYSE MAPS, SAVE ADM INFO, COMPARE WITH SECONDARY ADM INFORMATION AND CORRECT WHERE NECESSARY 
@@ -66,44 +72,43 @@ plot(GAUL_MWI_adm2_2000)
 # For example in case of Malawi, simus are located in so-called 'Area under National Administration', which is Lake Malawi. These need to be removed.
 
 # Analyse areas that potentially need to be removed
-GAUL_MWI_adm0_2000_df <- GAUL_MWI_adm0_2000@data
-GAUL_MWI_adm1_2000_df <- GAUL_MWI_adm1_2000@data
-GAUL_MWI_adm2_2000_df <- GAUL_MWI_adm2_2000@data
+GAUL_adm0_2000_df <- GAUL_adm0_2000@data
+GAUL_adm1_2000_df <- GAUL_adm1_2000@data
+GAUL_adm2_2000_df <- GAUL_adm2_2000@data
 area_remove <- c("Area under National Administration")
 
 # Save adm info
-GAUL_MWI_adm_2000_list <- GAUL_MWI_adm2_2000_df %>%
+GAUL_adm_2000_list <- GAUL_adm2_2000_df %>%
   transmute(adm2_GAUL = toupper(ADM2_NAME), adm1_GAUL = toupper(ADM1_NAME)) %>%
   arrange(adm2_GAUL)
-write_csv(GAUL_MWI_adm_2000_list, file.path(dataPath, "Data/MWI/Processed/Mappings/gaul_MWI_adm_2000_list.csv"))
-
-# Gaul adm0
-plot(GAUL_MWI_adm0_2000)
+write_csv(GAUL_adm_2000_list, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Mappings/gaul_", iso3c_sel, "_adm_2000_list.csv")))
 
 # Gaul adm1
-plot(GAUL_MWI_adm1_2000)
-plot(GAUL_MWI_adm1_2000[GAUL_MWI_adm1_2000$ADM1_NAME == area_remove,], add = T, border = "red")
-GAUL_MWI_adm1_2000_adj <- GAUL_MWI_adm1_2000[GAUL_MWI_adm1_2000$ADM1_NAME != area_remove,]
-plot(GAUL_MWI_adm1_2000_adj)
+plot(GAUL_adm1_2000)
+plot(GAUL_adm1_2000[GAUL_adm1_2000$ADM1_NAME == area_remove,], add = T, border = "red")
+GAUL_adm1_2000_adj <- GAUL_adm1_2000[GAUL_adm1_2000$ADM1_NAME != area_remove,]
+plot(GAUL_adm1_2000_adj)
 
 # GAUL adm0 adj
-GAUL_MWI_adm0_2000_adj <- unionSpatialPolygons(GAUL_MWI_adm1_2000_adj, GAUL_MWI_adm1_2000_adj$ADM0_NAME)
-plot(GAUL_MWI_adm0_2000_adj)
+GAUL_adm0_2000_adj <- unionSpatialPolygons(GAUL_adm1_2000_adj, GAUL_adm1_2000_adj$ADM0_NAME)
+plot(GAUL_adm0_2000_adj)
 
 # Gaul adm2
-plot(GAUL_MWI_adm2_2000)
-plot(GAUL_MWI_adm2_2000[GAUL_MWI_adm2_2000$ADM1_NAME == area_remove,], add = T, border = "red")
-GAUL_MWI_adm2_2000_adj <- GAUL_MWI_adm2_2000[GAUL_MWI_adm2_2000$ADM2_NAME != area_remove,]
-plot(GAUL_MWI_adm2_2000_adj)
+plot(GAUL_adm2_2000)
+plot(GAUL_adm2_2000[GAUL_adm2_2000$ADM1_NAME == area_remove,], add = T, border = "red")
+GAUL_adm2_2000_adj <- GAUL_adm2_2000[GAUL_adm2_2000$ADM2_NAME != area_remove,]
+plot(GAUL_adm2_2000_adj)
 
 
 ### SAVE
-# Maps
-saveRDS(GAUL_MWI_adm0_2000_adj, file.path(dataPath, "Data\\MWI\\Processed\\Maps\\GAUL_MWI_adm0_2000_adj.rds"))
-saveRDS(GAUL_MWI_adm1_2000_adj, file.path(dataPath, "Data\\MWI\\Processed\\Maps\\GAUL_MWI_adm1_2000_adj.rds"))
-saveRDS(GAUL_MWI_adm2_2000_adj, file.path(dataPath, "Data\\MWI\\Processed\\Maps\\GAUL_MWI_adm2_2000_adj.rds"))
-saveRDS(GAUL_MWI_adm0_2000, file.path(dataPath, "Data\\MWI\\Processed\\Maps\\GAUL_MWI_adm0_2000.rds"))
-saveRDS(GAUL_MWI_adm1_2000, file.path(dataPath, "Data\\MWI\\Processed\\Maps\\GAUL_MWI_adm1_2000.rds"))
-saveRDS(GAUL_MWI_adm2_2000, file.path(dataPath, "Data\\MWI\\Processed\\Maps\\GAUL_MWI_adm2_2000.rds"))
+gaulPath <- file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\gaul"))
+dir.create(gaulPath)
+
+saveRDS(GAUL_adm0_2000_adj, file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\gaul/GAUL_", iso3c_sel, "_adm0_2000_adj.rds")))
+saveRDS(GAUL_adm1_2000_adj, file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\gaul/GAUL_", iso3c_sel, "_adm1_2000_adj.rds")))
+saveRDS(GAUL_adm2_2000_adj, file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\gaul/GAUL_", iso3c_sel, "_adm2_2000_adj.rds")))
+saveRDS(GAUL_adm0_2000, file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\gaul/GAUL_", iso3c_sel, "_adm0_2000.rds")))
+saveRDS(GAUL_adm1_2000, file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\gaul/GAUL_", iso3c_sel, "_adm1_2000.rds")))
+saveRDS(GAUL_adm2_2000, file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\gaul/GAUL_", iso3c_sel, "_adm2_2000.rds")))
 
 

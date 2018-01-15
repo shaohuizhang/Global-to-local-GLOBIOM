@@ -27,9 +27,13 @@ options(scipen=999) # surpress scientific notation
 options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e.g. csv) is not turned into factors
 options(digits=4)
 
-### LOAD GAUL MAPS
-adm2_map <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm2_2000.rds"))
-plot(adm2_map)
+### SET COUNTRY
+source("Code/MWI/Set_country.R")
+
+### LOAD DATA
+# Adm
+adm0 <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gaul/GAUL_", iso3c_sel, "_adm0_2000_adj.rds")))
+plot(adm0)
 
 
 ### URBAN MASK
@@ -37,7 +41,6 @@ plot(adm2_map)
 urban_mask_raw <- readOGR(file.path(dataPath, "Data/Global/GRUMPv1/global_urban_extent_polygons_v1.01.shp"))
 
 # Select country information
-iso3c_sel <- "MWI"
 urban_mask <- urban_mask_raw[urban_mask_raw$ISO3 == iso3c_sel,]                 
 
 # City information
@@ -47,14 +50,12 @@ cities <- world.cities %>%
   filter(iso3c == iso3c_sel)
 
 # Plot
-adm2_map_sf <- st_as_sf(adm2_map)
-urban_mask_sf <- st_as_sf(urban_mask)
-
 ggplot() + 
-  geom_sf(data = adm2_map_sf) +
-  geom_sf(data = urban_mask_sf, fill = "red") +
-  geom_point(data = cities, aes(x = long, y = lat), colour = "green") 
+  geom_polygon(data = adm2, aes(x = long, y = lat, group = group), fill = "white", colour = "black") +
+  geom_polygon(data = urban_mask, aes(x = long, y = lat, group = group), fill = "red") +
+  coord_map() +
+  geom_point(data = cities, aes(x = long, y = lat), colour = "green", alpha = 0.5)
 
 
 # Save data
-saveRDS(urban_mask, file.path(dataPath, "Data/MWI/Processed/Spatial_data/urban_mask_MWI.rds"))
+saveRDS(urban_mask, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/maps/urban_mask/urban_mask_", iso3c_sel, ".rds")))

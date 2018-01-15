@@ -40,7 +40,7 @@ removeTmpFiles()
 
 
 ### LOAD GAUL MAPS
-adm1 <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/GAUL_", iso3c_sel, "_adm1_2000.rds")))
+adm1 <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gaul/GAUL_", iso3c_sel, "_adm1_2000.rds")))
 plot(adm1)
 
 
@@ -56,7 +56,7 @@ grid
 plot(grid)
 
 # Write raster
-writeRaster(grid, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid_5min_r_", iso3c_sel, ".tif")))
+writeRaster(grid, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid/grid_5min_r_", iso3c_sel, ".tif")), overwrite = T)
 
 # Create polygon
 grid_p <- rasterToPolygons(grid)
@@ -67,5 +67,5 @@ grid_p
 plot(grid_p) # Plot (with capital) from quickPlot package works faster but might still take time!
 
 # Write polygon
-saveRDS(grid_p, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid_5min_p_", iso3c_sel, ".rds")))
+saveRDS(grid_p, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid/grid_5min_p_", iso3c_sel, ".rds")))
 

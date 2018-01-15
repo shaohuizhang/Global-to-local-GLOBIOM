@@ -20,7 +20,7 @@ root <- find_root(is_rstudio_project)
 setwd(root)
 
 ### SET DATAPATH
-dataPath <- "H:\\MyDocuments\\Projects\\Global-to-local-GLOBIOM"
+source(file.path(root, "Code/get_dataPath.r"))
 
 
 ### R SETTINGS
@@ -29,29 +29,30 @@ options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e
 options(digits=4)
 
 
+### SET COUNTRY
+source("Code/MWI/Set_country.R")
+
+
 ### LOAD SIMU MAPS
 ogrListLayers(file.path(dataPath, "Data/GLOBIOM/Simu/Simu_poly/SimU_all.shp"))
 simu_5min_poly <- readOGR(file.path(dataPath, "Data/GLOBIOM/Simu/Simu_poly/SimU_all.shp"), layer = "SimU_all")
 
 
-### SELECT COUNTRY SIMU MAP USING ISO3 NUMBERING
-# set country code
-# 454 = Malawi
-iso3n <- 454
-simu2country_poly <- simu_5min_poly[simu_5min_poly$COUNTRY == iso3n,]
-plot(simu2country_poly)
+### SELECT COUNTRY SIMU MAP USING ISO3c
+simu <- simu_5min_poly[simu_5min_poly$COUNTRY == iso3n_sel,]
+plot(simu)
 
 # Load GAUL ADM map
-country_map <- readRDS(file.path(dataPath, "Data\\MWI\\Processed\\Maps/GAUL_MWI_adm2_2000.rds"))
+adm1 <- readRDS(file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps/gaul/GAUL_", iso3c_sel, "_adm1_2000_adj.rds")))
 
 # Compare and inspect maps
-# Comparison with Google Earth shows that a number of simus are located in Lake Malawi and therefore should not be considered
-plot(country_map)
-plot(simu2country_poly, add = T, border = "red")
-plotKML(simu2country_poly)
-
-# Remove simu
+plot(adm1)
+plot(simu, add = T, border = "red")
+plotKML(simu)
 
 # Save map
-saveRDS(simu2country_poly, file.path(dataPath, "Data/MWI/Processed/Maps/simu_MWI.rds"))
+simuPath <- file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\simu"))
+dir.create(simuPath)
+
+saveRDS(simu, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/simu/simu_", iso3c_sel, ".rds")))
 

@@ -32,7 +32,7 @@ options(digits=4)
 source("Code/ZMB/Set_country.R")
 
 ### LOAD GAUL MAPS
-adm0 <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/GAUL_",iso3c_sel, "_adm0_2000.rds")))
+adm0 <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gaul/GAUL_",iso3c_sel, "_adm0_2000.rds")))
 plot(adm0)
 
 ### LOAD LAND COVER MAP 
@@ -43,5 +43,5 @@ ESA <- mask(ESA, adm0)
 plot(ESA)
 
 # Save map
-saveRDS(ESA, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/ESA_", iso3c_sel, "_2000.rds")))
+writeRaster(ESA, file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Land_cover/ESA/ESA_", iso3c_sel, "_raw_2000.tif")))
 

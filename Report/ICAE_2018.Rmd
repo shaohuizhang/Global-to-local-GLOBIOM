@@ -1,0 +1,158 @@
+---
+title: "Generating high-resolution national crop distribution maps: Combining statistics, gridded data and surveys using an optimization approach"
+author: ""
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+abstract: "Detailed information on the location and size of crop area is essential for the assessment of agricultural production, food security and emissions resulting from land use change. Although, there exist several initiatives to produced spatially explicit crop distribution maps, these are generally too coarse for detailed country assessments, which require high resolution spatial maps. Using Malawi as a case-study and building on the Spatial Production Allocation Model (You et al. 2014), this paper presents an approach to produce high resolution crop distribution maps that incorporate all available information, including sub-national agricultural statistics, crop specific land use information and national irrigation surveys."
+#output: pdf_document
+output:
+  pdf_document:
+    #reference_docx: ../Common/word_styles_01.docx
+bibliography: ../common/Global-to-local-GLOBIOM-MWI.bib    
+---
+
+```{r setup, include=FALSE}
+library(pacman)
+p_load(rprojroot)
+root <- find_root(is_rstudio_project)
+
+p_load(knitr)
+knitr::opts_chunk$set(
+  fig.width=16, fig.height=12,
+  dpi = 300,
+  echo=FALSE, warning=FALSE, message=FALSE,
+  fig.path = file.path(root,"FigTabMap/out-"))
+
+p_load(pander)
+panderOptions('table.alignment.default', function(df)
+    ifelse(sapply(df, is.numeric), 'right', 'left'))
+panderOptions('table.split.table', Inf)
+panderOptions('big.mark', ",")
+panderOptions('keep.trailing.zeros', TRUE)
+
+#source(file.path(root, "Code/Fig.R"))
+#source(file.path(root, "Code/Tab.R"))
+source(file.path(root, "Code/Paper/validation.R"))
+source(file.path(root, "Code/Paper/Map.R"))
+```
+
+JEL: Q15, C61, Q13
+
+# Introduction
+Information on the location and size of crop area is essential to assess future agricultural growth, biodiversity loss, food security and emissions from land use change. Not surprisingly, land cover and land use maps are key input for global and national agricultural models that address these issues. Unfortunately, for most countries and in particular for developing countries, detailed agricultural statistics, such as crop-specific area, output and yield are often not available or only presented at highly aggregate levels (e.g country, district or province). Only in very rare cases, data is available in some sort of spatial format and, if so, it is nearly always very coarse, which makes it unsuitable for land use modelling. 
+
+There have been several initiatives to produce global and spatially explicit land use maps for a large number of crops [@Monfreda2008, @Portmann2010, @You2014a]. Most these products use spatial information on land cover, suitability and irrigation to downscale (sub)national agricultural statistics to the grid level. A comparison revealed that crop-specific harvested area and yield can differ considerably and mostly result from variation in input data, in particular crop masks and downscaling methodologies [@Anderson2015]. 
+
+A major advantage of the above mentioned datasets is that they have global coverage and therefore are often used by global integrated assessment models as base year input to model future land use change [@Leclere2014]. On the other hand, due to their broad coverage, the global downscaling approaches mainly rely on coarse land cover masks and are restricted in their use of country specific data and expert input.[^1] Although most initiatives use subnational statistics, none of them incorporate other types of country specific agricultural information that can improve the crop allocation process. Particularly interesting  are (nationally representative) household and farm surveys that contain geo-coded information on the location of crop production. These surveys are increasingly available for a number of African countries [@Carletto2015]. 
+
+Due to the lack of detail, global land use maps are useful, or can serve at best, as a starting point for national or more detailed land use assessments. This type of studies zoom in on subnational regions and often involve a process of participatory scenario development in which stakeholders are asked to validate land use input data [@Rutten2014]. For this type of assessments a flexible approach is needed that creates crop distribution maps at high resolution and is able to incorporate new information from expert, such as the location of plantations, updated land cover and land use maps and the location of irrigated areas. 
+
+An interesting new approach to create high resolution crop distribution maps are machine learning techniques, which can be used to identify crops on satellite imagery. Although promising, these techniques are still under development and at the moment it is only possible to create land use maps for crops such as soy bean, corn and palm oil, which can be relatively easily identified from satellite data by means of machine learning classification approaches [@Zhong2016]. Moreover, to train the models and increase the accuracy of the land classification, training data is needed that is often not easily available, in particular for developing countries.
+
+In this paper, we present a flexible model to create high resolution crop distribution maps, which is able to incorporate all available and relevant information, including subnational agricultural statistics, high resolution land use information and detailed irrigation information. The model builds on the Spatial Production Allocation Model (SPAM) presented in You et al. [-@You2006; -@You2009; -@You2014a], which uses a cross entropy framework to allocate subnational land use information to 5 arcmin (~10x10 km) grid cells. We extent the model by increasing the resolution to 30 arc sec (~1x1 km) and add constraints that manage the allocation of additional spatially explicit information on crop area from satellite imagery as well as new irrigation map based on irrigation surveys and information from Open Street Map. Finally, similar to @You2006, we use additional statistics (in our case from household survey) to validate the results from the allocation procedure. The model is implemented and tested for Malawi using data for around 2000.[1^]   
+
+The structure of the paper is as follows. Section 2 describes the spatial allocation model that is used to create the crop distribution maps. Section 3 summarizes the various data sources that are used in the process. Section 4 presents the results, zooming in on key crops. In Section 5, the crop distribution maps are validated using a nationally representative household survey for Malawi. Finally, Section 5 concludes. 
+
+
+[^1]: The aim is to create the crop distributions maps for 2 periods: 2000 and 2010. This paper presents preliminary results for 2000 only.  
+
+
+# The spatial allocation model
+Our spatial allocation model refines the most recent version of SPAM [@You2014a, @Wood-Sichra2016]. SPAM uses an optimization approach to spatially allocate national and subnational agricultural statistics. To do this a cross-entropy objective function is minimized subject to a set of constraints that capture the available information on location of certain crops and crop systems (e.g. crop cover and irrigation maps) or the likelihood a crop is grown in a certain area (e.g. suitability maps and subnational land use statistics). Although previous work uses country specific data sources for subnational land use statistics, they mainly rely on global sources to define the land allocation constraints. In this study, we were able to collect more detailed information, which allows us to refine the allocation procedure. In particular, we obtained a recent high resolution land cover map for Malawi, which reveals the location of four crop groups. In addition, we created new crop specific irrigation map for Malawi. In this Section we present the adjusted SPAM model and describe the calculation of priors, which are needed to start the cross entropy optimization. To remain comparability with @You2014a, we use the same variable names, crop classification and crop systems (high-input irrigated, high-input rainfed, low-input rainfed and subsistence rainfed).
+
+## Cross entropy framework and constraints
+Before the cross entropy framework can be implemented, the allocated crop area needs to be converted into a probability with value between 0 and 1. This is done as follows:
+
+$$ s_{ijl} = \frac{A_{ijl}} {CropArea_{jl}}$$
+where, $s_{ijl}$ is the area share allocated to grid cell identifier $i = 1,2,3,...$ and crop identifier $j = maize, cassave, rice,...$ at input level $l=irrigated, rainfed-high input, rainfed-low input and subsistence$. $A_{ijl}$ is the area allocated to grid cell $i$ for crop $j$ at input level $l$. $CropArea_{jl}$ is the total physical crop area in Malawi for crop $j$ at input level $l$.
+
+The spatial allocation model can then be defined as a non-linear optimization problem in which the error between prior information area shares ({$\pi_{ij}$) and allocated area shares ($s_{ijl}$) is minimized, subject to a set of constraints. The objective function is defined as follows:
+
+$$\min_{s_{ijl}} \quad CE(s_{ijl}, \pi_{ijl})= \sum_{i} \sum_{j} \sum_{l}s_{ijl} \ lns_{ijl}- \sum_{i} \sum_{j} \sum_{l}s_{ijl} \ ln\pi_{ijl}  $$
+subject to:
+
+(i) A constraint defining the range of permitted physical area shares:
+
+$$0 \leq s_{ijl} \leq 1$$
+
+(ii) A constraint, which ensures  ensures that the sum of allocated physical area shares within grid cells sum to one. This ensures all physical crop area is allocated to grid cells. 
+
+$$\sum_{i}s_{ij}=1 \qquad \forall j \quad \forall l$$
+
+(iii) A constraint, which specifies that the sum of allocated physical area for each crop group, $c=rice, sugar \, cane,...,$ and production systems is lower or equal than the actual crop area ($Avail_{ij}$) that is available for each crop group $c$ in grid cell $i$. This equation extends the one in @You2014a, by adding spatially explicit information on the location of specific crops in the country.    
+
+$$\sum_{j \in c} \sum_{l}CropArea_{jl} \times s_{ijl} \leq Avail_{ic} \qquad \forall i$$
+
+(iv) A constraint, which ensures that the sum of allocated physical area over all production systems within a  sub-national geopolitical unit,$k=1,2,3,...$ (in this case administrative zone 2 level) is equal to the  physical area information ($SubCropArea_{jk}$) for commodities $J$ for which information is available from sub-national land use statistics. Crops for which only national level information is available are not affected by this constraint. 
+
+
+$$\sum_{i\in k} \sum_{l}CropArea_{jl} \times s_{ijl} = SubCropArea_{jk} \qquad \forall k \quad \forall j \in J$$
+
+(v) A constraint, which allocates spatially explicit information on irrigated areas ($IrrArea_{ijl}$) for  irrigated crops ($J$) that belong to the irrigated crop system in grid cells $I$. In contrast to @You2014a, who do not have crop specific irrigation area, we have collected detailed and crop specific information on the location of irrigated areas, which we incorporate in the spatial allocation model. 
+
+$$CropArea_{jl} \times s_{ijl} = IrrArea_{ijl} \qquad \forall i \in I \quad \forall l = irrigated \quad \forall j \in N$$
+
+## Calculation of priors
+To guide the optimization procedure, prior information on the location of crops is essential. The location of crop areas is determined by the combination of economic (e.g. market access and population density) and bio-physical factors (e.g suitability conditions). We broadly follow @You2014a and calculate the priors in the following manner. For the High input-irrigated system, the priors can directly be derived from the new irrigation map we created for Malawi. For the High input-rainfed system, we assume that market access, approximated by travel time to the nearest town and population density as well as suitability drive the location decision. For the low input-rainfed and subsistence systems, we assume that farmers mainly grow crops for their own consumption and therefore the prior allocation is mainly determined by rural population density and suitability. 
+
+# Data
+We combine information from a number of different sources to run the model described above (see Table 1 for an overview). A key input for the analysis is a high resolution land cover map that provides detailed information on the location of agricultural production. Recently, several new land use and land cover maps have been produced for Malawi that cover the period 1990-2010 [see @Haack2015 for a comparison]. We decided to use the maps produced by the FAO [-@FAO2013] that is available for 2010. The advantage of this map in comparison to others is the very high resolution of 30x30 meter as well as spatially explicit information on the location of four crop groups (rice, sugar cane, tea & coffee and other crops) in Malawi. We aggregated the map to a resolution of 30 sec and calculated the physical area share for each crop group per grid cell $i$.
+
+Statistics on actual land use at the national level were taken from FAOSTAT and extended with data from Agro-maps, CountryStat and national statistics for the 26 regions at the administrative zone two level. We followed the approach of @Wood-Sichra2016 and aggregate all crop statistics to a set of standardised crop classes. We compared and harmonized all agricultural statistics to create a consistent dataset in which subnational totals add up to the national total from FAOSTAT. We were able to collect subnational data for 12 out of the 30 crops that are cultivated in Malawi.  
+
+Similar to @You2014a, we use Global Agro-Ecological Zones (GAEZ) suitability maps, which can be mapped to the standardised crops (see @Wood-Sichra2016). Finally, we created a new irrigation map using detailed information from the National irrigation master plan and investment framework, which presents a geo-referenced inventory of irrigation systems in Malawi, including the size of the irrigated area and crop type, for the period around 2000-2010. Where needed we compared and extended the inventory with data from @WorldBank2010, which provides similar but less detailed information, as well as data from Google Earth and Open Street Map. A comparison showed that the  resulting area is similar to @Siebert2013, which is used by @You2014a as input layer. To create the final irrigation map, we compared the FAO land cover map with spatial irrigation data and, where possible, allocated the irrigation point data to grid cells with matching crops (i.e. coordinates of sugar cane areas to sugar cane grid cells). Finally, we combined the agricultural statistics data and irrigation data to estimate total crop area for each of the production systems. We decided to classify all data to three systems only and not to use the low input-rainfed system, for which we did not find any statistical information. 
+
+__Table 1: Data sources__
+
+```{r Tab_data}
+table_1 <- read_excel(file.path(root, "FigTabMap/Tables.xlsx"), sheet = "table_1")
+pander(table_1)
+```
+
+
+# Results
+In total 34 crop distribution maps are generated using the spatial allocation model: 28 Subsistence, 4 High input-irrigated and 2 High input-rainfed maps. Here we show only the maps for 3 crops as an illustration (Figure 1). Maize, which is only grown under subsistence conditions, is the largest food crop in Malawi and produced by the majority of smallholders. As depicted in the map, it is cultivated throughout the country. Rice is a much less important food crop but we include it here as we have detailed spatial information on its location. It is predominantly produced under subsistence conditions but we also found information that a small area can be considered as High input-irrigated production system. For convenience we pooled both results. Rice is mainly grown at the shore of lake Malawi and in the South of the country. Finally, the map for sugar cane is presented. Sugar cane is predominantly produced on plantations by large corporations under irrigated conditions (i.e High input-irrigated system). The map shows two key locations where sugar cane is grown, one in the centre of the Malawi and one in the South.
+
+__Figure 1: model results for selected crops__
+
+```{r Map_crop_example}
+plot_crop_raster2_f(c("maiz", "rice", "sugc"))
+
+```
+
+
+# Validation
+To assess the quality of spatial allocation procedure it is important to compare the results with information that is not used in the model. A number of approaches and data sources have been used to validate crop land maps in the literature. @You2006 use municipality level agricultural statistics to validate a land use map for Brazil, while @Fritz2011 use high-resolution imagery from Google Earth to assess results. @Pekkarinen2009 combine both approaches to validate a European forest map. As it is difficult to derive information on crop specific land use from Google Earth, we use the 2010 Living Standards Measurement Study - Integrated Surveys on Agriculture (LSMS-ISA) to evaluate our model results. The LSMS-ISA is a nationally and regionally (administrative zone 2) representative household survey for Malawi. It specifically focuses on agriculture and contains information on the number of plots owned by farmers and the specific crops that are grown. A drawback of the LSMS-ISA is that it only presents the coordinates of the enumeration areas (e.g. communities) to which the farmers belong, not those of the fields itself where the crops are grown. Moreover, for privacy reasons, the locations of the enumeration areas have an offset of 2-10 km. To account for this, we aggregated the crop distribution maps to 5 arcmin before comparison. Finally, to make the data from both sources comparable, we mapped all the crop types listed in the LSMS-ISA to the SPAM crop classes.
+
+Figure 2 compares the results of our model to the LSMS-ISA information on crop location for maize and rice. We also included information on the number of household per crop, which serves as a proxy for the importance of the crop. The figures show reasonable  overlap between the model results and the survey for both rice and maize. For maize almost all LSMS-ISA locations are placed on the maize map, while for rice a substantial number of survey locations are located outside the rice map. The mismatch is particularly strong in the South of the country. This shows that the land cover map, which includes spatial information on the location of rice farmers is not completely accurate and introduces a bias in the crop distribution map.
+
+__Figure 2: Comparison between land use allocation and LSMS-ISA__
+
+```{r Map_validation}
+plot_crop_val_f(c("maiz", "rice"))
+```
+
+Table 2 provides information on the number of grid cells per crop from the crop allocation model. Note that in most areas, more than one crop is cultivated. It also shows similar information based on the LSMS-ISA. In order to compare both sources, the analysis is restricted to 460 out of 1,163 5 arcmin grid cells for which LSMS-ISA data is available. On the basis of this, we can calculate the share of cells per crop that are (in)correctly classified in comparison to the LSMS-ISA data, which can be considered as ground-truth information. The number of crops that are produced by farmers in a grid cell ranges from 2 to 15 different crops. This results in a total of 3,453 crop-gridcell combinations from the LSMS-ISA. 
+
+Table 2 shows that the overlap is surprisingly large, with a misclassification of only 4% on average. This is particularly striking taking into account that both sources cover different time periods (2000 for the crop distribution map and 2010 for the LSMS-ISA). Nonetheless, for some crops the overlap between the crop distribution maps and the LSMS-ISA is low, in particular for tea/coffee and sugar cane. We assumed that all  production of these two cash crops can be regarded as High-input or High-irrigated production systems and allocated the crop area using information on the location of large plantations in Malawi from secondary sources. This finding indicates that at least some of the production of tea, coffee and sugar cane is undertaken by smallholders and our assumptions are not 100% accurate. In line with Figure 1, with 72% the misclassification for rice is substantial. 
+
+As mentioned above, the validation results suffers from a number of problems, most importantly the biased location of the survey data, which forces us to aggregate the crop distribution maps to a lower resolution. It is therefore not surprisingly to find a very high correspondence between the two sources of data. The result of the aggregation is that many crops occur in a large number of grid cells, while in reality production is much more location specific. This holds both for the data from the crop distribution maps and for the crop location from the LSMS-ISA survey. Hence, the results of the validation exercise are indicative only and have to be interpreted with care. 
+
+__Table 2: Share of (in)correctly classified crops in comparison to the LSMS-ISA__
+
+```{r Tab_val}
+pander(tab_val)
+```
+
+
+# Conclusions
+This paper demonstrated an optimization approach to create high-resolution crop distribution maps at the national level. It extends the Spatial Allocation Model (SPAM) developed by @You2014a by increasing the resolution of the maps and added flexibility to  incorporate all relevant and available data that provides information on the location of crops in a country or region, including sub-national agricultural statistics, irrigation surveys and detailed spatially explicit information on the location of crops. The model was applied and tested for Malawi. In total 34 crop distribution maps were created, covering 28 crops and 3 production systems.
+
+To validate the model spatially explicit data on the production of crops from a recent nationally representative household survey was compared with the crop distribution maps. Apart from a few crops, in particular rice, the results were surprisingly similar. Although, this is an encouraging outcome, the results have to be interpreted with care. Crop location coordinates in the LSMS-ISA are provided with a bias, which means the validation can only be done at a lower resolution. As many crops are grown throughout the country, this creates an upward bias in the overlap between the two sources of data. A proper validation demands detailed ground truth information for which the location is accurately known. One way forward  to collect such data and improve the validation is to use information from a crowd-sourcing exercise [@Lesiv2017].
+
+The crop distribution maps presented in this paper can only be as good as the input data that goes into the spatial allocation model. Although, an effort has been made to clean and harmonise subnational agricultural statistics and create a new detailed irrigation map, there still might be a bias as a consequence of input data inaccuracies. Ultimately, the location of the crops is determined by the crop cover mask. Several papers have shown that land cover maps, even at high resolution, are still characterised by substantial inaccuracies [@Lesiv2017] and may differ considerably, depending on the source and methodology used [@Haack2015]. One approach we aim to explore in the future to deal with this issue is to use the synergistic approach of @Fritz2011 to create a new land cover map for Malawi that combines and harmonizes different sources. 
+
+Finally, to further test the model described in this paper, it would be interesting to create crop distribution maps for other Sub Saharan countries. In particularly interesting are countries like Zambia, Tanzania and Ethiopia for which similar nationally representative households surveys exists, which can be used for validation. 
+
+# References
+
+

@@ -1,6 +1,6 @@
 #'========================================================================================================================================
 #' Project:  Global-to-local-GLOBIOM
-#' Subject:  Code to select GMIA information
+#' Subject:  Code to select travel time information
 #' Author:   Michiel van Dijk
 #' Contact:  michiel.vandijk@wur.nl
 #'========================================================================================================================================
@@ -30,28 +30,26 @@ options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e
 options(digits=4)
 
 
-### LOAD SIMU MAPS
-GMIA_r_raw <- raster(file.path(dataPath, "Data/Global/GMIA/gmia_v5_aei_ha_asc/gmia_v5_aei_ha.asc"))
-GMIA_poly_raw <- readOGR(file.path(dataPath, "Data/Global/GMIA/gmia_v5_shp/gmia_v5_aai_pct_aei.shp"))
-crs(GMIA_r_raw) <- "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"
+### SET COUNTRY
+source("Code/MWI/Set_country.R")
+
+
+### LOAD TRAVEL TIME MAP
+tt_raw <- "P:\\d4ca\\Data Resources\\ACCESS_50K\\access_50k/acc_50k"
+tt_raw <- raster(file.path(dataPath, "Data\\Global\\ACCESS_50K\\access_50k/acc_50k"))
 
 ### LLOAD ADM
-adm2_map <- readRDS(file.path(dataPath, "Data\\MWI\\Processed\\Maps/GAUL_MWI_adm2_2000.rds"))
-adm0_map <- readRDS(file.path(dataPath, "Data\\MWI\\Processed\\Maps/GAUL_MWI_adm0_2000.rds"))
+adm0 <- readRDS(file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps/gaul/GAUL_", iso3c_sel, "_adm0_2000_adj.rds")))
 
 ### SELECT COUNTRY GMIA RASTER MAP
-GMIA <- crop(GMIA_r_raw, adm2_map)
-GMIA <- mask(GMIA, adm2_map)
-plot(GMIA)
-hist(GMIA, breaks = 50)
-cellStats(GMIA,sum)
-
-### SELECT COUNTRY GMIA POLYGON MAP
-GMIA_poly_df <- GMIA_poly@data
-
-GMIA_poly <- gIntersection(adm1_map, GMIA_poly_raw, byid = F, drop_lower_td = TRUE)
-plot(GMIA_poly)
+tt <- crop(tt_raw, adm0)
+tt <- mask(tt, adm0)
+plot(tt)
+plot(adm0, add = T)
 
 # Save map
-saveRDS(GMIA, file.path(dataPath, "Data/MWI/Processed/Maps/GMIA_MWI.rds"))
+travel_timePath <- file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\travel_time"))
+dir.create(travel_timePath)
+
+writeRaster(tt, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/travel_time/travel_time_", iso3c_sel, ".tif")), overwrite = T)
 

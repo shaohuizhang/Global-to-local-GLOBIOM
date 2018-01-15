@@ -1,6 +1,6 @@
 #'========================================================================================================================================
 #' Project:  Global-to-local GLOBIOM
-#' Subject:  Script to create GAMS data fils
+#' Subject:  Script to create GAMS data files
 #' Author:   Michiel van Dijk
 #' Contact:  michiel.vandijk@wur.nl
 #'========================================================================================================================================
@@ -54,16 +54,19 @@ lu_adm <- readRDS(file.path(paste0(dataPath, "/Data/", iso3c_sel, "/Processed/GA
 # Lc  
 lc <- readRDS(file.path(paste0(dataPath, "/Data/", iso3c_sel, "/Processed/GAMS/lc_2000_", iso3c_sel, ".rds"))) 
 
-# lu_grid
-# add grid specific lu values
+# Ir
+ir <- readRDS(file.path(paste0(dataPath, "/Data/", iso3c_sel, "/Processed/GAMS/ir_2000_", iso3c_sel, ".rds"))) 
+
+# ir_grid
+# add grid specific ir values
 # Kafue flats on wikipedia for location of sugar plantations
 
-# Pop per grid cell
-pop <- readRDS(file.path(paste0(dataPath, "/Data/", iso3c_sel, "/Processed/GAMS/pop_2000_", iso3c_sel, ".rds"))) 
+# Priors
 
 
 ### CREATE GAMS PARAMETERS 
 # deptots(k,s)
+# Land use for (selected) crops and all subnational regions (adm1 or adm2). 
 deptots <- lu_adm %>%
   filter(adm_level == 1) %>%
   dplyr::select(adm, short_name, value)
@@ -73,16 +76,31 @@ deptots_gdx <- para_gdx(deptots, c("adm", "short_name"), "deptots", "Ratio per m
 
 # avail(i,c)
 avail <- lc %>%
-  dplyr::select(gridID, value)
+  dplyr::select(gridID, value = lc_area)
 
 avail_gdx <- para_gdx(avail, c("gridID"), "avail", "Available area per grid cell")
 
 
 # produ(j)
 produ <- lu_sy %>%
-  dplyr::select(system, value)
+  dplyr::select(sy, value)
 
-produ_gdx <- para_gdx(produ, c("system"), "produ", "Production of crops")
+produ_gdx <- para_gdx(produ, c("sy"), "produ", "Production of crops")
+
+
+# irrarea(i)
+irrarea <- ir %>%
+  dplyr::select(gridID, value = gmia)
+
+irrarea_gdx <- para_gdx(irrarea, c("gridID"), "irrarea", "Irrigrated area per grid cell")
+
+
+# irrcrops(j)
+irrcrops <- lu_sy %>%
+  filter(system == "I") %>%
+  dplyr::select(sy, value)
+
+irrcrops_gdx <- para_gdx(irrcrops, c("sy"), "irrcrops", "Area of irrigrated crops")
 
 
 ### CREATE GAMS SETS
@@ -95,10 +113,10 @@ i_set_gdx <- set_gdx(i_set, c("gridID"), "i", "Pixels")
 
 # j: Crops with technology identifier
 j_set <- lu_sy %>%
-  dplyr::select(system) %>%
+  dplyr::select(sy) %>%
   unique() 
 
-j_set_gdx <- set_gdx(j_set, c("system"), "j", "Crops with technology identifier")
+j_set_gdx <- set_gdx(j_set, c("sy"), "j", "Crops with technology identifier")
 
 
 # s: Main crops
@@ -120,7 +138,7 @@ k_set_gdx <- set_gdx(k_set, c("adm"), "k", "Subnat names wich have statistics")
 
 # n(s,j)  Main crops with corresponding sub-crops 
 n_set <- lu_sy %>%
-  dplyr::select(short_name, system) %>%
+  dplyr::select(short_name, sy) %>%
   unique() %>%
   setNames(c("s", "j"))
 
@@ -128,8 +146,9 @@ n_set_gdx <- set_gdx(n_set, c("s","j"), "n", ts="Main crops with corresponding s
 
 
 # l(k,i)  Pixels in subnat with statistics   
+# NB RENAME adm1 into adm
 l_set <- lc %>%
-  dplyr::select(adm, gridID) %>%
+  dplyr::select(adm1, gridID) %>%
   unique() %>%
   setNames(c("k", "i"))
 
@@ -150,66 +169,15 @@ m_set_gdx <- set_gdx(m_set, c("k", "s"), "m", ts="Main crop names in Subnat with
 scalelp <- nrow(i_set)
 scalelp_gdx <- scalar_gdx(scalelp, "scalelp", "Scalar for lp")
 
-
-### CREATE GAMS PRIORS
-# Calculate prior for crop area by using share of rural population. 
-# If we have information on crop area at adm2 level, we calculate the prior at adm2 level.
-
-# Create gridID and system combinations
-priors_base <- expand.grid(gridID = i_set$gridID, system = j_set$system)
-
-# Merge pop and crop cover data
-priors <- priors_base %>%
-  left_join(.,tot_pop_grid) %>%
-  mutate(prior = value/sum(value)) %>%
-  dplyr::select(gridID, system, prior)
-
-# 
-# # Calculate crop area prior for crops at adm2 level
-# crop_area_prior_adm2 <- grid_sel %>%
-#   group_by(adm2) %>%
-#   mutate(pop_share = value/sum(value)) %>%
-#   dplyr::select(gridID, adm = adm2, pop_share) %>%
-#   left_join(.,lu_adm) %>%
-#   mutate(crop_area_prior = pop_share * value) %>%
-#   dplyr::select(gridID, adm, short_name, crop_area_prior)
-# 
-# # Calculate crop area prior for crops at adm0 level
-# # Need to filter out crops for which adm2 data is available
-# crops_adm2 <- unique(crop_area_prior_adm2$short_name)
-# lu_adm0 <- filter(lu_adm, !(short_name %in% crops_adm2))
-# 
-# crop_area_prior_adm0 <- grid_sel %>%
-#   group_by(adm0) %>%
-#   mutate(pop_share = value/sum(value)) %>%
-#   dplyr::select(gridID, adm = adm0, pop_share) %>%
-#   left_join(., lu_adm0) %>%
-#   mutate(crop_area_prior = pop_share * value) %>%
-#   dplyr::select(gridID, adm, short_name, crop_area_prior)
-# 
-# # Calculate prior as share of total
-# # Apply crop_cover
-# prior <- bind_rows(crop_area_prior_adm0, crop_area_prior_adm2) %>%
-#   ungroup() %>%
-#   group_by(short_name) %>%
-#   mutate(prior = crop_area_prior/sum(crop_area_prior)) %>%
-#   dplyr::select(-crop_area_prior, -adm) %>%
-#   rename(i = gridID, j = short_name, rev = prior)
+### CREATE PRIORS
+# For now we assume prior of 1
+priors <- expand.grid(i = unique(i_set$gridID), j = unique(j_set$sy), stringsAsFactors = F)
+priors$value <- 1
+priors_gdx <- para_gdx(priors, c("i", "j"), "rev", "Priors for cross-entropy")
 
 
-# Check if total area adds to sum as in ag_stat
-#sum(prior$crop_area_prior)
-#sum(ag_stat_2000$value)
-
-# save
-# NB: data is only read correctly by GAMS if GRID_ID numbers are manually formated to number, zero digits
-# Perhaps save as txt?
-priors_gdx <- para_gdx(priors, c("gridID", "system"), "rev", "Priors for cross-entropy")
-
-
-scalelp_gdx <- scalar_gdx(scalelp, "scalelp", "Scalar for lp")
-# Write gdx file
-wgdx(file.path(dataPath, "Model/Data/spam_data.gdx"), 
-     avail_gdx, deptots_gdx, icrops_gdx, produ_gdx, priors_gdx,
-     c_set_gdx, i_set_gdx, j_set_gdx, k_set_gdx, n_set_gdx, l_set_gdx, m_set_gdx, cg_set_gdx, s_set_gdx, 
+### WRITE
+wgdx(file.path(dataPath, paste0("Model/", iso3c_sel, "/Data/input_data.gdx")),
+     avail_gdx, deptots_gdx, irrcrops_gdx, irrarea_gdx, produ_gdx, priors_gdx,
+     i_set_gdx, j_set_gdx, k_set_gdx, n_set_gdx, l_set_gdx, m_set_gdx, s_set_gdx, 
      scalelp_gdx)

@@ -35,17 +35,21 @@ source("Code/ZMB/Set_country.R")
 
 
 ### LOAD TRAVEL TIME MAP
-access_raw <- "P:\\d4ca\\Data Resources\\ACCESS_50K\\access_50k/acc_50k"
-access_raw <- raster(file.path(dataPath, "Data\\Global\\ACCESS_50K\\access_50k/acc_50k"))
+tt_raw <- "P:\\d4ca\\Data Resources\\ACCESS_50K\\access_50k/acc_50k"
+tt_raw <- raster(file.path(dataPath, "Data\\Global\\ACCESS_50K\\access_50k/acc_50k"))
 
 ### LLOAD ADM
-adm0 <- readRDS(file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps/GAUL_", iso3c_sel, "_adm0_2000.rds")))
+adm0 <- readRDS(file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps/gaul/GAUL_", iso3c_sel, "_adm0_2000.rds")))
 
 ### SELECT COUNTRY GMIA RASTER MAP
-access <- crop(access_raw, adm0)
-access <- mask(access, adm0)
-plot(access)
+tt <- crop(tt_raw, adm0)
+tt <- mask(tt, adm0)
+plot(tt)
+plot(adm0, add = T)
 
 # Save map
-saveRDS(access, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/access_", iso3c_sel, ".rds")))
+travel_timePath <- file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\travel_time"))
+dir.create(travel_timePath)
+
+writeRaster(tt, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/travel_time_", iso3c_sel, ".tif")), overwrite = T)
 

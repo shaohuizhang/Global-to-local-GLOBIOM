@@ -1,0 +1,109 @@
+---
+title: "Key agricultural statistics Zambia"
+author: "Michiel van Dijk"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+header-includes:
+- \usepackage{pdflscape}
+- \newcommand{\blandscape}{\begin{landscape}}
+- \newcommand{\elandscape}{\end{landscape}}
+output: pdf_document
+bibliography: ../../Common/Global-to-local-GLOBIOM-ZMB.bib
+---
+
+```{r setup, include=FALSE}
+library(rprojroot)
+root <- find_root(is_rstudio_project)
+
+library(knitr)
+knitr::opts_chunk$set(
+  fig.width=12, fig.height=8,
+  dpi = 300,
+  echo=FALSE, warning=FALSE, message=FALSE,
+  fig.path = file.path(root,"FigTabMap/out-"),
+  dev = "CairoPNG",
+  dev.args = list(CairoPNG = list(bg = "transparent"))
+  )
+
+library(pander)
+panderOptions('table.alignment.default', function(df)
+    ifelse(sapply(df, is.numeric), 'right', 'left'))
+panderOptions('table.split.table', Inf)
+panderOptions('big.mark', ",")
+panderOptions('keep.trailing.zeros', TRUE)
+
+source(file.path(root, "Code/ZMB/Maps/Key_maps_MWI.R"))
+source(file.path(root, "Code/ZMB/Agricultural_statistics/Analyse_ag_stat_MWI.R"))
+#source(file.path(root, "Code/MWI/Agricultural_statistics/Analyse_land_MWI.R"))
+```
+
+# Agricultural statistics
+
+\blandscape
+```{r area_rank}
+pander(tab_area_rank_FAOSTAT, caption = "Area and area share per crop using FAOSTAT (2000)")
+```
+
+\pagebreak
+```{r tab_area_rank_as}
+pander(tab_area_rank_as, caption = "Area and area share per crop using national agricultural statistics (2007)")
+```
+
+\pagebreak
+```{r tab_area_rank_ma}
+pander(tab_area_rank_as, caption = "Area and area share per crop using Agro-maps (2000)")
+```
+
+\pagebreak
+```{r fig_area_compare}
+fig_area_compare
+```
+
+\pagebreak
+```{r fig_prod_compare}
+fig_prod_compare
+```
+
+\pagebreak
+```{r fig_yld_compare}
+fig_yld_compare
+```
+
+\pagebreak
+```{r fig_heads_compare}
+fig_heads_compare
+```
+
+\pagebreak
+\footnotesize
+```{r tab_area_share_within_reg_as}
+pander(tab_area_share_within_reg_as, caption = "Area share per crop within adm using national agricultural statistics")
+```
+\normalsize
+
+\pagebreak
+```{r fig_area_share}
+fig_area_share
+```
+
+\pagebreak
+```{r fig_yld_outlier}
+fig_yld_outlier
+```
+
+\pagebreak
+```{r fig_yld_winsor}
+fig_yld_winsor
+```
+
+\pagebreak
+```{r fig_yld_winsor_2000}
+#fig_yld_winsor_2000
+```
+
+\elandscape
+
+# Administrative zones
+
+
+
+# References

@@ -34,28 +34,40 @@ options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e
 options(digits=4)
 
 
+### SET COUNTRY
+source("Code/MWI/Set_country.R")
+
 ### SOURCE
 source(file.path(root, "Code/Support/distribute_irrigation.R"))
 
 
 ### LOAD MAPS AND DATA
+# adm2
+adm2 <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gaul/GAUL_", iso3c_sel, "_adm2_2000_adj.rds")))
+
+# Adm_map
+adm2_map <- read_excel(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Mappings/Mappings_",iso3c_sel, ".xlsx")), sheet = paste0(iso3c_sel, "2adm")) %>%
+  filter(year == 2000) %>%
+  dplyr::select(adm2, adm2_GAUL) %>%
+  na.omit %>%
+  unique()
+
 # Grid
-grid <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/grid_MWI.rds"))
+grid <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/grid/grid_30sec_p_MWI.rds"))
+grid_r <- raster(file.path(dataPath, "Data/MWI/Processed/Maps/grid/grid_30sec_r_MWI.tif"))
+names(grid_r) <- "gridID"
 
 # Irrigation
 ir_raw <- read_excel(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/Irrigation_MWI_combined.xlsx"), sheet = "ir_2000")
 
 # land_cover
-lc_raw <- readRDS(file.path(dataPath, "Data/MWI/processed/Spatial_data/land_cover_FAO_2000_MWI.rds"))
-
-# Load adm grid info
-adm_grid <- read_csv(file.path(dataPath, "Data/MWI/Processed/Spatial_data/adm_grid_2000_MWI.csv"))
+lc_raw <- readRDS(file.path(dataPath, "Data/MWI/processed/Agricultural_statistics/lc_FAO_2000_MWI.rds"))
 
 
 ### TRANSFORM MAPS
-crs <- "+init=EPSG:4326" # WSG84
+# crs <- "+init=EPSG:4326" # WSG84
 crs_ir <- "+init=EPSG:21036" 
-grid <- spTransform(grid, CRS(crs_ir)) 
+# grid <- spTransform(grid, CRS(crs_ir)) 
 
 
 ### PREPARE IRRIGATED MAP
@@ -68,16 +80,17 @@ ir <- ir_raw %>%
 
 ir_geo <- ir
 coordinates(ir_geo) <- c("lon", "lat")
-proj4string(ir_geo) <- crs
-ir_geo <- spTransform(ir_geo, CRS(crs_ir)) 
+proj4string(ir_geo) <- crs(grid)
+#ir_geo <- spTransform(ir_geo, CRS(crs_ir)) 
+plot(ir_geo)
 
 # Compare grid with irrigation points
 # Note that several irrigation points are located in a grid cell that is not part of the MWI grid
 # Irrigated area of these points wil be located at closest grid cell. 
 # Potentially, the available crop land can be too small for the allocation process to work.
 # The chance for this is very small.
-#ir_in_MWI <- as.data.frame(ir_geo[grid, ])
-#ir_out_MWI <- filter(ir, !(ID %in% ir_in_MWI$ID))
+ir_in_MWI <- as.data.frame(ir_geo[grid, ])
+ir_out_MWI <- filter(ir, !(ID %in% ir_in_MWI$ID))
 
 # Plot
 #mapview(grid, col.regions = NA) + mapview(ir_geo[ir_geo$ID %in% ir_out_MWI$ID,]) 
@@ -89,7 +102,7 @@ ir_geo <- spTransform(ir_geo, CRS(crs_ir))
 lc <- lc_raw %>%
   filter(suitability_level == 1) %>% # We only include pure agric land cover classes
   group_by(gridID, lc) %>%
-  summarize(area = sum(area, na.rm = T))
+  summarize(area = sum(lc_area, na.rm = T))
 
 # Tea and coff grid
 teas_coff_grid <- prep_f(c("teas_coff"))
@@ -112,19 +125,38 @@ rice_grid <- prep_f(c("rice"))
 # Distribute
 rice_ir_area <- distribute_f(rice_grid, c("rice"))
 
-
 # crops grid
 crops_grid <- prep_f(c("crops"))
 
 # Distribute
 crops_ir_area <- distribute_f(crops_grid, c("crops"))
 
+### COMBINE DATA, ADD ADM INFO
+# Rasterize adm
+adm_r <- rasterize(adm2, grid_r)
+names(adm_r) <- "ID"
+
+# Get adm info
+adm2_df <- levels(adm_r)[[1]] %>%
+  transmute(adm2_GAUL = toupper(ADM2_NAME), ID) %>%
+  left_join(.,adm2_map) %>%
+  dplyr::select(-adm2_GAUL) 
+
+# Add gridID
+adm_r <- stack(grid_r, adm_r)
+
+# Create data.frame, remove cells outside border and add adm names
+adm_grid <- as.data.frame(rasterToPoints(adm_r)) %>%
+  left_join(.,adm2_df) %>%
+  na.omit %>%
+  dplyr::select(gridID, adm2)
+
 # Combine, add adm info and remove checking variables
 ir_grid <- bind_rows(teas_coff_ir_area, sugc_ir_area, rice_ir_area, crops_ir_area) %>%
   filter(ir_area >0) %>%
   mutate(system = "I") %>%
   left_join(., adm_grid) %>%
-  dplyr::select(-area, -total_area, -grid_size, -ID)
+  dplyr::select(-area, -total_area, -ID)
 
 # Clean up
 rm(adm_grid, crops_grid, crops_ir_area, rice_grid, rice_ir_area, sugc_grid, sugc_ir_area, teas_coff_grid, 
