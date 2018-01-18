@@ -37,7 +37,6 @@ plot(adm2)
 urban_mask_raw <- readOGR(file.path(dataPath, "Data/Global/GRUMPv1/global_urban_extent_polygons_v1.01.shp"))
 
 # Select country information
-iso3c_sel <- "ZMB"
 urban_mask <- urban_mask_raw[urban_mask_raw$ISO3 == iso3c_sel,]                 
 
 # City information
@@ -53,4 +52,7 @@ ggplot() +
   geom_point(data = cities, aes(x = long, y = lat), colour = "green") 
 
 # Save data
-saveRDS(urban_mask, file.path(dataPath, "Data/ZMB/Processed/Spatial_data/urban_mask_ZMB.rds"))
+urban_maskPath <- file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\urban_mask"))
+dir.create(urban_maskPath)
+
+saveRDS(urban_mask, file.path(dataPath, "Data/ZMB/Processed/Maps/urban_mask/urban_mask_ZMB.rds"))

@@ -57,11 +57,8 @@ lc <- readRDS(file.path(paste0(dataPath, "/Data/", iso3c_sel, "/Processed/GAMS/l
 # Ir
 ir <- readRDS(file.path(paste0(dataPath, "/Data/", iso3c_sel, "/Processed/GAMS/ir_2000_", iso3c_sel, ".rds"))) 
 
-# ir_grid
-# add grid specific ir values
-# Kafue flats on wikipedia for location of sugar plantations
-
 # Priors
+priors_raw <- readRDS(file.path(paste0(dataPath, "/Data/", iso3c_sel, "/Processed/GAMS/priors_2000_", iso3c_sel, ".rds"))) 
 
 
 ### CREATE GAMS PARAMETERS 
@@ -169,15 +166,16 @@ m_set_gdx <- set_gdx(m_set, c("k", "s"), "m", ts="Main crop names in Subnat with
 scalelp <- nrow(i_set)
 scalelp_gdx <- scalar_gdx(scalelp, "scalelp", "Scalar for lp")
 
-### CREATE PRIORS
-# For now we assume prior of 1
-priors <- expand.grid(i = unique(i_set$gridID), j = unique(j_set$sy), stringsAsFactors = F)
-priors$value <- 1
-priors_gdx <- para_gdx(priors, c("i", "j"), "rev", "Priors for cross-entropy")
+# Priors
+priors <- priors_raw %>%
+  mutate(value = priors_norm * scalelp) %>%
+  dplyr::select(gridID, sy, value) %>%
+  mutate(value = ifelse(value == 0, value+0.000001, value))
+priors_gdx <- para_gdx(priors, c("gridID", "sy"), "rev", "Priors for cross-entropy")
 
 
 ### WRITE
-wgdx(file.path(dataPath, paste0("Model/", iso3c_sel, "/Data/input_data.gdx")),
+wgdx(file.path(dataPath, paste0("Model/", iso3c_sel, "/Data/input_data_", iso3c_sel, "_2000.gdx")),
      avail_gdx, deptots_gdx, irrcrops_gdx, irrarea_gdx, produ_gdx, priors_gdx,
      i_set_gdx, j_set_gdx, k_set_gdx, n_set_gdx, l_set_gdx, m_set_gdx, s_set_gdx, 
      scalelp_gdx)

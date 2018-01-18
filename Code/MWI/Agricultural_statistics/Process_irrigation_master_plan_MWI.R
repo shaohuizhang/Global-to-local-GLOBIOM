@@ -249,5 +249,17 @@ leaflet(adm2) %>%
             title = "irrigated area") %>%
   addMarkers(data = ir_add, lat = ~ lat, lng = ~ lon) 
 
+ggplot() +
+  geom_polygon(data = adm, aes (x = long, y = lat, group = group), colour = "black", fill = "light grey") +
+  geom_point(data = ir_df, aes(x = lon, y = lat, colour = type, size = actual_ha, shape = type)) +
+  coord_quickmap() +
+  labs(x="", y="", size = "Area (ha)", colour = "Type", shape = "Type") +
+  theme_classic() +
+  theme(line = element_blank(),
+          axis.text = element_blank(),
+          strip.background = element_rect(colour = NA, fill = NA))
+  
+  
+
 # save
 write_csv(ir_df, file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/irrigation_MWI.csv"), na = "")

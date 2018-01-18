@@ -37,6 +37,8 @@ source(file.path(root, "Code/Paper/Map.R"))
 
 JEL: Q15, C61, Q13
 
+# ADD land cover map + bar chart with stacked info: one bar per adm + crop info and perhaps totals for all crops: key input for model
+
 # Introduction
 Information on the location and size of crop area is essential to assess future agricultural growth, biodiversity loss, food security and emissions from land use change. Not surprisingly, land cover and land use maps are key input for global and national agricultural models that address these issues. Unfortunately, for most countries and in particular for developing countries, detailed agricultural statistics, such as crop-specific area, output and yield are often not available or only presented at highly aggregate levels (e.g country, district or province). Only in very rare cases, data is available in some sort of spatial format and, if so, it is nearly always very coarse, which makes it unsuitable for land use modelling. 
 

@@ -5,6 +5,7 @@
 #' Contact:  michiel.vandijk@wur.nl
 #'========================================================================================================================================
 
+# NB BETTER TO INCORPORATE FIXED SHARES FROM IRR MAP AS PRIOR!
 
 ### PACKAGES
 if(!require(pacman)) install.packages("pacman")
@@ -39,13 +40,13 @@ grid_30sec <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/
 names(grid_30sec) <- "gridID"
 
 # Adm
-adm1 <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gaul/GAUL_", iso3c_sel, "_adm1_2000.rds")))
-plot(adm1)
+adm2 <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gaul/GAUL_", iso3c_sel, "_adm2_2000.rds")))
+plot(adm2)
 
 # Urban mask
-urban_mask <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Spatial_data/urban_mask_", iso3c_sel, ".rds")))
+urban_mask <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/maps/urban_mask/urban_mask_", iso3c_sel, ".rds")))
 plot(urban_mask, col = "red")
-plot(adm1, add = T)
+plot(adm2, add = T)
 
 # Sy
 lu_sy <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/GAMS/lu_sy_2000_", iso3c_sel, ".rds")))
@@ -61,111 +62,82 @@ names(pop) <- "pop"
 tt <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/travel_time/travel_time_", iso3c_sel, ".tif")))
 names(tt) <- "travel_time"
 
+# GAEZ 
+gaez_files <- list.files(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gaez/30sec")), full.names = T)
+gaez <- stack(gaez_files)
 
+# remove country and grid info in names
+names(gaez) <- gsub(paste0("_30sec_", iso3c_sel), "", names(gaez))
+sort(unique(lu_sy$sy))
 ### CALCULATE RURAL POPULATION PER GRID CELL
 pop_rural <- mask(pop, urban_mask, inverse = T)
 
 levelplot(pop_rural, par.settings = BTCTheme, margin = F) +
-  layer(sp.polygons(adm1, col = "black"))+
+  layer(sp.polygons(adm2, col = "black"))+
   layer(sp.polygons(urban_mask, col = "red"))
 
-
-### PROCESS SUITABILITY DATA
 
 
 ### CREATE PRIOR DATABASE
 # Create gridID and system combinations
 priors_base <- expand.grid(gridID = unique(lc$gridID), sy = unique(lu_sy$sy))
 
-# Stack maps with prior information and create database
-prior_stack <- stack(pop_rural, tt, grid_30sec, gaez_stack)
-plot(prior_stack)
-prior_df <- as.data.frame(rasterToPoints(prior_stack)) %>% 
-  filter(gridID %in% lc$gridID)
+# Check gaez
+check_gaez <- as.data.frame(rasterToPoints(gaez))
+summary(check_gaez)
 
+# Stack maps with prior information and create database
+prior_stack <- stack(pop_rural, grid_30sec, gaez)
+prior_df <- as.data.frame(rasterToPoints(prior_stack)) %>% 
+  filter(gridID %in% lc$gridID) %>%
+  gather(sy, suit, -gridID, -pop, -x, -y)
+  #dplyr::select(-x, -y) %>%
 
 ### FIX NA VALUES
 # It appears that for some of the priors data is missing.
 summary(prior_df)
+check <- filter(prior_df, is.na(suit)) 
+unique(check$gridID)
 
 # POP
 # Cells in the country for which, probably no pop data was available
 check_pop <- filter(prior_df, is.na(pop))
 ggplot() +
-  geom_polygon(data = adm1, aes(x = long, y = lat, group = group), fill = "white") +
+  geom_polygon(data = adm2, aes(x = long, y = lat, group = group), fill = "white") +
   geom_raster(data = check_pop, aes(x = x, y = y), fill = "red") +
   coord_equal()
 
 # GAEZ
 # Cells at the border which are set to NA because of 30min grid
-check_gaez <- filter(prior_df, is.na(maiz_S))
+check_gaez <- filter(prior_df, is.na(suit))
 ggplot() +
-  geom_polygon(data = adm1, aes(x = long, y = lat, group = group), fill = "white") +
+  geom_polygon(data = adm2, aes(x = long, y = lat, group = group), fill = "white") +
   geom_raster(data = check_gaez, aes(x = x, y = y), fill = "red") +
   coord_equal()
 
 # Fix by setting NA to 0
-prior_dfx <- prior_df %>%
-  gather(variable, value, -x, -y, -gridID) %>%
-  mutate(value = ifelse(is.na(value), 0, value),
-         value = value )
-
-
-### CREATE GAMS PRIORS
-# Subsistence system: S
-# Priors defined by suitability index and rural population density
-
-
-
-
-# Merge pop and crop cover data
-priors <- priors_base %>%
-  left_join(., prior_df)
-  dplyr::select(gridID, system, prior)
-
-
-popx <- as.data.frame(rasterToPoints(pop)) %>%
-  filter
-plot(pop)
-
-# 
-# # Calculate crop area prior for crops at adm2 level
-# crop_area_prior_adm2 <- grid_sel %>%
-#   group_by(adm2) %>%
-#   mutate(pop_share = value/sum(value)) %>%
-#   dplyr::select(gridID, adm = adm2, pop_share) %>%
-#   left_join(.,lu_adm) %>%
-#   mutate(crop_area_prior = pop_share * value) %>%
-#   dplyr::select(gridID, adm, short_name, crop_area_prior)
-# 
-# # Calculate crop area prior for crops at adm0 level
-# # Need to filter out crops for which adm2 data is available
-# crops_adm2 <- unique(crop_area_prior_adm2$short_name)
-# lu_adm0 <- filter(lu_adm, !(short_name %in% crops_adm2))
-# 
-# crop_area_prior_adm0 <- grid_sel %>%
-#   group_by(adm0) %>%
-#   mutate(pop_share = value/sum(value)) %>%
-#   dplyr::select(gridID, adm = adm0, pop_share) %>%
-#   left_join(., lu_adm0) %>%
-#   mutate(crop_area_prior = pop_share * value) %>%
-#   dplyr::select(gridID, adm, short_name, crop_area_prior)
-# 
-# # Calculate prior as share of total
-# # Apply crop_cover
-# prior <- bind_rows(crop_area_prior_adm0, crop_area_prior_adm2) %>%
-#   ungroup() %>%
-#   group_by(short_name) %>%
-#   mutate(prior = crop_area_prior/sum(crop_area_prior)) %>%
-#   dplyr::select(-crop_area_prior, -adm) %>%
-#   rename(i = gridID, j = short_name, rev = prior)
-
-
-# Check if total area adds to sum as in ag_stat
-#sum(prior$crop_area_prior)
-#sum(ag_stat_2000$value)
-
-
+prior_df <- prior_df %>%
+  mutate(suit = ifelse(is.na(suit), 0, suit),
+         pop = ifelse(is.na(pop), 0, pop))
+  
+# Normalize pop using minimax approach
+# Divide suitability by 10000
+# Calculate priors by geometric average of pop and suit
+# NOTE that for some crops suit = 0 all the way.CHECK
+prior_df <- prior_df %>%
+  group_by(sy) %>%
+  mutate(pop_norm = (pop- min(pop))/(max(pop)-min(pop))) %>%
+  ungroup() %>%
+  mutate(suit = suit/10000,
+         priors = sqrt(pop_norm*suit)) %>%
+  group_by(sy) %>%
+  mutate(priors_norm = priors/sum(priors),
+         priors_norm = ifelse(is.nan(priors_norm), 0, priors_norm)) %>%
+  ungroup() %>%
+  dplyr::select(gridID, sy, priors_norm)
+  
+sum(prior_df$priors_norm)
+summary(prior_df)
 
 # Save data
-saveRDS(prior_df, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/GAMS/priors_", iso3c_sel, ".rds")))
+saveRDS(prior_df, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/GAMS/priors_2000_", iso3c_sel, ".rds")))
