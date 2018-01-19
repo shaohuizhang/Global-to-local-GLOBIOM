@@ -80,32 +80,16 @@ GAUL_adm_2000_list <- GAUL_adm2_2000_df %>%
   arrange(adm2_GAUL)
 write_csv(GAUL_adm_2000_list, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Mappings/gaul_", iso3c_sel, "_adm_2000_list.csv")))
 
-# # Gaul adm0
-# plot(GAUL_ZMB_adm0_2000)
-# 
-# # Gaul adm1
-# plot(GAUL_ZMB_adm1_2000)
-# plot(GAUL_ZMB_adm1_2000[GAUL_ZMB_adm1_2000$ADM1_ZMBE == area_remove,], add = T, border = "red")
-# GAUL_ZMB_adm1_2000_adj <- GAUL_ZMB_adm1_2000[GAUL_ZMB_adm1_2000$ADM1_ZMBE != area_remove,]
-# plot(GAUL_ZMB_adm1_2000_adj)
-# 
-# # GAUL adm0 adj
-# GAUL_ZMB_adm0_2000_adj <- unionSpatialPolygons(GAUL_ZMB_adm1_2000_adj, GAUL_ZMB_adm1_2000_adj$ADM0_ZMBE)
-# plot(GAUL_ZMB_adm0_2000_adj)
-# 
-# # Gaul adm2
-# plot(GAUL_ZMB_adm2_2000)
-# plot(GAUL_ZMB_adm2_2000[GAUL_ZMB_adm2_2000$ADM1_ZMBE == area_remove,], add = T, border = "red")
-# GAUL_ZMB_adm2_2000_adj <- GAUL_ZMB_adm2_2000[GAUL_ZMB_adm2_2000$ADM2_ZMBE != area_remove,]
-# plot(GAUL_ZMB_adm2_2000_adj)
-
-
 ### SAVE
+gaulPath <- file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\gaul"))
+dir.create(gaulPath)
+
 # Maps
-# saveRDS(GAUL_ZMB_adm0_2000_adj, file.path(dataPath, "Data\\ZMB\\Processed\\Maps\\GAUL_ZMB_adm0_2000_adj.rds"))
-# saveRDS(GAUL_ZMB_adm1_2000_adj, file.path(dataPath, "Data\\ZMB\\Processed\\Maps\\GAUL_ZMB_adm1_2000_adj.rds"))
-# saveRDS(GAUL_ZMB_adm2_2000_adj, file.path(dataPath, "Data\\ZMB\\Processed\\Maps\\GAUL_ZMB_adm2_2000_adj.rds"))
-saveRDS(GAUL_adm0_2000, file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\GAUL_", iso3c_sel, "_adm0_2000.rds")))
-saveRDS(GAUL_adm1_2000, file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\GAUL_", iso3c_sel, "_adm1_2000.rds")))
-saveRDS(GAUL_adm2_2000, file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\GAUL_", iso3c_sel, "_adm2_2000.rds")))
+saveRDS(GAUL_adm0_2000, file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\gaul\\GAUL_", iso3c_sel, "_adm0_2000.rds")))
+saveRDS(GAUL_adm1_2000, file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\gaul\\GAUL_", iso3c_sel, "_adm1_2000.rds")))
+saveRDS(GAUL_adm2_2000, file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\gaul\\GAUL_", iso3c_sel, "_adm2_2000.rds")))
+
+# Core map corresponding to level of subnational statistics: adm1
+saveRDS(GAUL_adm1_2000, file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\gaul\\GAUL_", iso3c_sel, "_adm_2000.rds")))
+writeOGR(GAUL_adm1_2000, dsn = file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\gaul")), paste0("GAUL_", iso3c_sel, "_adm_2000"), driver="ESRI Shapefile")
 

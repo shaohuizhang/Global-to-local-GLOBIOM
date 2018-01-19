@@ -55,11 +55,11 @@ adm1_map <- read_excel(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processe
   unique()
 
 # Land cover
-lc_raw <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Land_cover/ESA/ESA_", iso3c_sel, "_raw_2000.tif")))
+lc_raw <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Land_cover/Zambia_LandCover_2000_Scheme_II/Zambia_Landcover2_2000_Scheme_II.tif")))
 
 # Load land cover classes
-lc_class <- read_csv(file.path(dataPath, "Data/Global/ESA/ESACCI-LC-Legend.csv")) %>%
-   dplyr::select(lc_code, lc)
+lc_class <- read_csv(file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Land_cover/Zambia_landcover_2000_Scheme_II/Zambia_landcover_2000_Scheme_II_legend.csv"))) %>%
+  dplyr::select(lc_code, lc_class)
 
 # Grid
 grid_30sec <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid/grid_30sec_r_", iso3c_sel, ".tif")))
@@ -67,18 +67,21 @@ names(grid_30sec) <- "gridID"
 
 
 ### RESAMPLE 30 SEC GRID TO LC RESOLUTION
+https://gist.github.com/alfcrisci/0fb27d9a46d3ee2b600f
+
 # Specify input and output files
-lc_raw_file <- file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Land_cover/ESA/ESA_", iso3c_sel, "_raw_2000.tif"))
-grid_lc_res_file <- file.path(dataPath, paste0("Data\\", iso3c_sel, "/Processed/Maps/grid/grid_ESA_", iso3c_sel, "_raw_2000.tif"))
+lc_raw_file <- file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Land_cover/Zambia_LandCover_2000_Scheme_II/Zambia_Landcover2_2000_Scheme_II.tif"))
+grid_lc_res_file <- file.path(dataPath, paste0("Data\\", iso3c_sel, "/Processed/Maps/grid/grid_RCMRD_", iso3c_sel, "_raw_2000.tif"))
 grid_30sec_file <- file.path(dataPath, paste0("Data\\", iso3c_sel, "/Processed/Maps/grid/grid_30sec_r_", iso3c_sel, ".tif"))
 
 # Resample
 # No need to mask grid (slow) as the grid_30sec is already masked => use align_raster2_f
 grid_lc_res <- align_raster2_f(grid_30sec_file, lc_raw_file, grid_lc_res_file, nThreads = "ALL_CPUS", verbose = T, 
-                         output_Raster = T, overwrite = TRUE, r = "near", border = adm1)
+                         output_Raster = T, overwrite = TRUE, r = "near")
 names(grid_lc_res) <- "gridID"
 grid_lc_res
 levelplot(grid_lc_res)
+
 
 ### COMBINE LC AND GRID AND CALCULATE SHARES
 # Combine and calculate shares
