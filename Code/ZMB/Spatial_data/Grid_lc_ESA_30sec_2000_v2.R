@@ -55,7 +55,7 @@ adm1_map <- read_excel(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processe
   unique()
 
 # Land cover
-lc_raw <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Land_cover/ESA/ESA_", iso3c_sel, "_raw_2000.tif")))
+lc_raw <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Land_cover/ESA/ESA_raw_2000_", iso3c_sel, ".tif")))
 
 # Load land cover classes
 lc_class <- read_csv(file.path(dataPath, "Data/Global/ESA/ESACCI-LC-Legend.csv")) %>%
@@ -68,24 +68,24 @@ names(grid_30sec) <- "gridID"
 
 ### RESAMPLE 30 SEC GRID TO LC RESOLUTION
 # Specify input and output files
-lc_raw_file <- file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Land_cover/ESA/ESA_", iso3c_sel, "_raw_2000.tif"))
-grid_lc_res_file <- file.path(dataPath, paste0("Data\\", iso3c_sel, "/Processed/Maps/grid/grid_ESA_", iso3c_sel, "_raw_2000.tif"))
-grid_30sec_file <- file.path(dataPath, paste0("Data\\", iso3c_sel, "/Processed/Maps/grid/grid_30sec_r_", iso3c_sel, ".tif"))
+lc_raw_file <- file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Land_cover/ESA/ESA_raw_2000_", iso3c_sel, ".tif"))
+grid_lc_res_file <- file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid/grid_ESA_raw_2000_", iso3c_sel, ".tif"))
+grid_30sec_file <- file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid/grid_30sec_r_", iso3c_sel, ".tif"))
 
 # Resample
 # No need to mask grid (slow) as the grid_30sec is already masked => use align_raster2_f
 grid_lc_res <- align_raster2_f(grid_30sec_file, lc_raw_file, grid_lc_res_file, nThreads = "ALL_CPUS", verbose = T, 
-                         output_Raster = T, overwrite = TRUE, r = "near", border = adm1)
+                         output_Raster = T, overwrite = TRUE, r = "near")
 names(grid_lc_res) <- "gridID"
-grid_lc_res
-levelplot(grid_lc_res)
+
 
 ### COMBINE LC AND GRID AND CALCULATE SHARES
 # Combine and calculate shares
+# NB ONLY is.na(griID should be removed)
 lc_stack <- stack(grid_lc_res, lc_raw)
 lc <- as.data.frame(rasterToPoints(lc_stack)) %>%
   set_names(c("x", "y", "gridID", "lc_code")) %>%
-  na.omit() %>%
+  filter(!is.na(gridID)) %>%
   unique() %>%
   group_by(gridID, lc_code) %>%
   summarize(n = n())  %>%
@@ -110,21 +110,5 @@ crop_class <- lc_class %>%
 lc <- lc %>%
   filter(lc_code %in% crop_class$lc_code)
 
-table(lc$lc_code)
-
 # Save
 saveRDS(lc, file.path(dataPath, paste0("Data/", iso3c_sel, "/processed/Agricultural_statistics/lc_ESA_sh_2000_", iso3c_sel, ".rds")))
-
-
-
-adm_sel <- adm1[adm1$ADM1_NAME== "Central",]
-plot(adm_sel)
-adm_sel_p <- crop(grid_5min_r, adm_sel)
-adm_sel_p <- mask(adm_sel_p, adm_sel)
-adm_sel_p <- rasterToPolygons(adm_sel_p)
-plot(adm_sel_p[c(1:500),], col = "pink", add = T)
-plot(adm_sel_p[c(500:1142),], col = "green", add = T)
-plot(adm_sel_p, add = T)
-plot(adm_sel_p)
-polist <- list(adm_sel_p[c(1:500),], adm_sel_p[c(501:1142),])
-polist <- list(adm_sel_p[c(1:10),], adm_sel_p[c(11:20),])

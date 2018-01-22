@@ -37,11 +37,11 @@ plot(adm0)
 
 ### LOAD LAND COVER MAP 
 # Load global ESA map
-ESA_raw <- raster(file.path(dataPath, "Data\\Global\\ESA\\Annual_maps\\ESACCI-LC-L4-LCCS-Map-300m-P1Y-2000-v2.0.7.tif"))
+ESA_raw <- raster(file.path(dataPath, "Data/Global/ESA/Annual_maps/ESACCI-LC-L4-LCCS-Map-300m-P1Y-2000-v2.0.7.tif"))
 ESA <- crop(ESA_raw, adm0)
 ESA <- mask(ESA, adm0)
 plot(ESA)
 
 # Save map
-writeRaster(ESA, file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Land_cover/ESA/ESA_", iso3c_sel, "_raw_2000.tif")))
+writeRaster(ESA, file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Land_cover/ESA/ESA_raw_2000_", iso3c_sel, ".tif")), overwrite = T)
 

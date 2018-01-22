@@ -1,6 +1,6 @@
 #'========================================================================================================================================
 #' Project:  Global-to-local GLOBIOM
-#' Subject:  Script to grid ESA 2000 land cover data to 30 arc-sec and calculate shares per land cover class
+#' Subject:  Script to grid IWMI 2000 land cover data to 30 arc-sec and calculate shares per land cover class
 #' Author:   Michiel van Dijk
 #' Contact:  michiel.vandijk@wur.nl
 #'========================================================================================================================================
@@ -55,43 +55,37 @@ adm1_map <- read_excel(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processe
   unique()
 
 # Land cover
-lc_raw <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Land_cover/Zambia_LandCover_2000_Scheme_II/Zambia_Landcover2_2000_Scheme_II.tif")))
+lc_raw <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Irrigation/IWMI_2010", iso3c_sel, ".tif")))
 
 # Load land cover classes
-lc_class <- read_csv(file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Land_cover/Zambia_landcover_2000_Scheme_II/Zambia_landcover_2000_Scheme_II_legend.csv"))) %>%
-  dplyr::select(lc_code, lc)
+lc_class <- read_csv(file.path(dataPath, "Data/Global/ESA/ESACCI-LC-Legend.csv")) %>%
+   dplyr::select(lc_code, lc)
 
 # Grid
 grid_30sec <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid/grid_30sec_r_", iso3c_sel, ".tif")))
 names(grid_30sec) <- "gridID"
 
-# grid_ESA
-grid_ESA <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid/grid_ESA_raw_2000_", iso3c_sel, ".tif")))
-
 
 ### RESAMPLE 30 SEC GRID TO LC RESOLUTION
-# We first resample the map to 300x300m resolution of ESA because it is otherwise too large to process - still to solve this
-#https://gist.github.com/alfcrisci/0fb27d9a46d3ee2b600f
-
 # Specify input and output files
-lc_raw_file <- file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Land_cover/Zambia_LandCover_2000_Scheme_II/Zambia_Landcover2_2000_Scheme_II.tif"))
-lc_lr_file <- file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Land_cover/Zambia_LandCover_2000_Scheme_II/Zambia_Landcover2_2000_Scheme_II_lr.tif"))
-lc_esa_file <- file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Land_cover/ESA/ESA_raw_2000_", iso3c_sel, ".tif"))
+lc_raw_file <- file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Land_cover/ESA/ESA_", iso3c_sel, "_raw_2000.tif"))
+grid_lc_res_file <- file.path(dataPath, paste0("Data\\", iso3c_sel, "/Processed/Maps/grid/grid_ESA_", iso3c_sel, "_raw_2000.tif"))
+grid_30sec_file <- file.path(dataPath, paste0("Data\\", iso3c_sel, "/Processed/Maps/grid/grid_30sec_r_", iso3c_sel, ".tif"))
 
 # Resample
 # No need to mask grid (slow) as the grid_30sec is already masked => use align_raster2_f
-lc_lr <- align_raster2_f(lc_raw_file, lc_esa_file, lc_lr_file, nThreads = "ALL_CPUS", verbose = T, 
-                         output_Raster = T, overwrite = TRUE, r = "near")
-lc_lr
-levelplot(lc_lr)
-
+grid_lc_res <- align_raster2_f(grid_30sec_file, lc_raw_file, grid_lc_res_file, nThreads = "ALL_CPUS", verbose = T, 
+                         output_Raster = T, overwrite = TRUE, r = "near", border = adm1)
+names(grid_lc_res) <- "gridID"
+grid_lc_res
+levelplot(grid_lc_res)
 
 ### COMBINE LC AND GRID AND CALCULATE SHARES
 # Combine and calculate shares
-lc_stack <- stack(grid_ESA, lc_lr)
+lc_stack <- stack(grid_lc_res, lc_raw)
 lc <- as.data.frame(rasterToPoints(lc_stack)) %>%
   set_names(c("x", "y", "gridID", "lc_code")) %>%
-  filter(!is.na(gridID)) %>%
+  na.omit() %>%
   unique() %>%
   group_by(gridID, lc_code) %>%
   summarize(n = n())  %>%
@@ -116,26 +110,21 @@ crop_class <- lc_class %>%
 lc <- lc %>%
   filter(lc_code %in% crop_class$lc_code)
 
+table(lc$lc_code)
+
 # Save
-saveRDS(lc, file.path(dataPath, paste0("Data/", iso3c_sel, "/processed/Agricultural_statistics/lc_RCMRD_sh_2000_", iso3c_sel, ".rds")))
+saveRDS(lc, file.path(dataPath, paste0("Data/", iso3c_sel, "/processed/Agricultural_statistics/lc_ESA_sh_2000_", iso3c_sel, ".rds")))
 
 
-## Possible approach to process large raster using SpaDES => split raster and then process
-grid_lc_res <- as.raster(grid_lc_res)
-hist(grid_lc_res)
-lc_raw
-# SPLIT RASTER INTO 4
-?splitRaster
-if (interactive()) {
-  n <- pmin(parallel::detectCores(), 8) # use up to 4 cores
-  beginCluster(n)
-  y3 <- splitRaster(lc_raw, 4, 4, path = file.path("c:/tmp"))
-  endCluster()
-}
 
-lc <- as.data.frame(rasterToPoints(lc_raw))
-grid_lc_res_x <- as.data.frame(rasterToPoints(grid_lc_res))
-summary(grid_lc_res_x)
-summary(lc)
-check <- left_join(lc, grid_lc_res_x)
-summary(check)
+adm_sel <- adm1[adm1$ADM1_NAME== "Central",]
+plot(adm_sel)
+adm_sel_p <- crop(grid_5min_r, adm_sel)
+adm_sel_p <- mask(adm_sel_p, adm_sel)
+adm_sel_p <- rasterToPolygons(adm_sel_p)
+plot(adm_sel_p[c(1:500),], col = "pink", add = T)
+plot(adm_sel_p[c(500:1142),], col = "green", add = T)
+plot(adm_sel_p, add = T)
+plot(adm_sel_p)
+polist <- list(adm_sel_p[c(1:500),], adm_sel_p[c(501:1142),])
+polist <- list(adm_sel_p[c(1:10),], adm_sel_p[c(11:20),])
