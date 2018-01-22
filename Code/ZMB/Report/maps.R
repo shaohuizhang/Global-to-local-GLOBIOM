@@ -31,46 +31,40 @@ source("Code/ZMB/Set_country.R")
 
 ### LOAD DATA
 # Simu
-simu <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/simu_", iso3c_sel, ".rds")))
+simu <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/simu/simu_", iso3c_sel, ".rds")))
 
 # GAUL
-adm1 <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/GAUL_", iso3c_sel, "_adm1_2000.rds")))
-adm1_df <- adm1@data %>%
-  mutate(id = row.names(.))
+adm <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gaul/adm_2000_", iso3c_sel, ".rds")))
 
 # land cover
-esa <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/ESA_", iso3c_sel, "_2000.rds")))
 
 # Irrigation
-gmia <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gmia_", iso3c_sel, ".rds")))
+gmia <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gmia/gmia_5min_", iso3c_sel, ".tif")))
 
 # world map
 wld <- map_data("world") 
 
-### ADM MAP
 # Capital
 data(world.cities)
 capital <- filter(world.cities, country.etc == country_sel, capital == 1)
 
-# Fortify polygon
-adm1_for <- fortify(adm1) %>%
-  left_join(adm1_df)
-
+### ADM MAP
 # Set colours
 cols <- colorRampPalette(brewer.pal(9,"RdYlGn"))
 
-# Set distric labels
-districts <- as.data.frame(coordinates(adm1)) %>%
-  mutate(name = adm1_df$ADM1_NAME) %>%
+# Set district labels
+adm_df <- adm@data
+districts <- as.data.frame(coordinates(adm)) %>%
+  mutate(name = adm_df$adm) %>%
   set_names(c("long", "lat", "name")) 
 
 # Draw map
-fig_adm1 <- ggplot() +
+fig_adm <- ggplot() +
   geom_polygon(data = wld, aes(x=long, y=lat, group=group), colour = "black", fill = "grey", alpha = 0.5) +
   theme(panel.border = element_rect(colour = "black", fill=NA, size=2)) +
-  geom_polygon(data = adm1_for, aes(x = long, y = lat, fill = ADM1_NAME, group = group), colour = "black") +
+  geom_polygon(data = adm, aes(x = long, y = lat, fill = factor(group)), colour = "black") +
   geom_text(data = districts, aes(x = long, y = lat, label = name), size = 2) +
-  scale_fill_manual(values = cols(length(adm1_df$ADM1_NAME))) +
+  scale_fill_manual(values = cols(length(adm_df$adm))) +
   coord_equal() +
   labs(x="", y="") +
   theme_classic() +
@@ -98,7 +92,7 @@ fig_simu <- ggplot() +
 ### ESA LAND COVER MAP VERSION 1
 # Load ESA legend
 ESA_legend <- read_csv(file.path(dataPath, "Data\\Global\\ESA\\ESACCI-LC-Legend.csv")) %>%
-  mutate(ID = land_cover_code)
+  mutate(ID = lc_code)
 
 # Add attributes
 # http://stackoverflow.com/questions/19586945/how-to-legend-a-raster-using-directly-the-raster-attribute-table-and-displaying
@@ -155,8 +149,6 @@ fig_esa = ggplot()+
 
 ### GMIA 
 # Load GMIA
-gmia <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/GMIA_", iso3c_sel, ".rds")))
-
 gmia_df <- as.data.frame(rasterToPoints(gmia)) %>%
   setNames(c("x", "y", "gmia")) %>%
   mutate(gmia_class = cut(gmia, breaks = c(5000, 1000, 10, -1), labels = c("L", "M", "H")))
@@ -166,7 +158,7 @@ summary(gmia_df)
 ggplot() + 
   geom_raster(data = gmia_df, aes(x = x, y = y, fill = as.factor(gmia))) +
   #scale_fill_viridismanual(values = c("H" = "blue", "M" = "red", "L" = "green", na.value = "white")) +
-  geom_path(data = adm1, aes(x = long, y = lat, group = group)) +
+  geom_path(data = adm, aes(x = long, y = lat, group = group)) +
   scale_fill_viridis(discrete = T) +
   coord_equal() +
   labs(x="", y="") +
@@ -178,7 +170,7 @@ ggplot() +
 
 # POPULATION
 # Load population map
-pop <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/pop_", iso3c_sel, ".rds")))
+pop <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/pop/pop_", iso3c_sel, ".tif")))
 
 pop_df <- as.data.frame(rasterToPoints(pop)) %>%
   setNames(c("x", "y", "pop")) %>%
@@ -189,7 +181,7 @@ summary(pop_df)
 ggplot() + 
   geom_raster(data = pop_df, aes(x = x, y = y, fill = pop_class)) +
   #scale_fill_viridismanual(values = c("H" = "blue", "M" = "red", "L" = "green", na.value = "white")) +
-  geom_path(data = adm1, aes(x = long, y = lat, group = group)) +
+  geom_path(data = adm, aes(x = long, y = lat, group = group)) +
   scale_fill_viridis(discrete=TRUE) +
   coord_equal() +
   labs(x="", y="") +
@@ -200,15 +192,15 @@ ggplot() +
 
 
 # Travel time
-access <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/access_", iso3c_sel, ".rds")))
+access <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/travel_time/travel_time_", iso3c_sel, ".tif")))
 access_df <- as.data.frame(rasterToPoints(access)) %>%
-  setNames(c("x", "y", "access"))
+  setNames(c("x", "y", "travel_time"))
 
 # Map
 rev(heat.colors(5))
 ggplot() + 
-  geom_raster(data = access_df, aes(x = x, y = y, fill = access)) +
-  geom_path(data = adm1, aes(x = long, y = lat, group = group)) +
+  geom_raster(data = access_df, aes(x = x, y = y, fill = travel_time)) +
+  geom_path(data = adm, aes(x = long, y = lat, group = group)) +
   #scale_fill_viridis(direction = -1) +
   #scale_fill_gradient(low = "orange", high = "red4") +
   scale_fill_gradientn(colors = c("#FFFF00FF", "#FFAA00FF", "#FF5500FF", "#FF0000FF")) +
