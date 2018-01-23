@@ -26,8 +26,6 @@ options(scipen=999) # surpress scientific notation
 options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e.g. csv) is not turned into factors
 options(digits=4)
 
-### SET COUNTRY
-source("Code/ZMB/Set_country.R")
 
 ### LOAD DATA
 # Simu
@@ -89,62 +87,62 @@ fig_simu <- ggplot() +
   theme(panel.border = element_rect(colour = "black", fill = NA, size = 1.5))
 
 
-### ESA LAND COVER MAP VERSION 1
-# Load ESA legend
-ESA_legend <- read_csv(file.path(dataPath, "Data\\Global\\ESA\\ESACCI-LC-Legend.csv")) %>%
-  mutate(ID = lc_code)
-
-# Add attributes
-# http://stackoverflow.com/questions/19586945/how-to-legend-a-raster-using-directly-the-raster-attribute-table-and-displaying
-esa <- ratify(esa)
-rat <- levels(esa)[[1]] #get the values of the unique cell frot the attribute table
-rat <- left_join(rat, ESA_legend)
-
-# Create colours for legend and sort in right order
-ESA_colour <- rat
-ESA_colour <- ESA_colour %>%
-  filter(ID %in% seq(0, 220, 10)) %>%
-  mutate(colour= rgb(R, G, B, max = 255)) %>%
-  unique()
-ESA_colour <- ESA_colour[order(ESA_colour$class, decreasing = F),]
-
-# Links levels
-levels(esa) <- rat
-levels(esa)
-rm(rat)
-
-# Visualise 
-fig_land_cover <- levelplot(esa, att='class', col.regions = ESA_colour$colour, margin = F) +
-    layer(sp.polygons(adm1, col = "black", lwd = 2))
-
-
-### ESA LAND COVER MAP VERSION 2
-# Load ESA legend and add colours
-ESA_legend <- read_csv(file.path(dataPath, "Data\\Global\\ESA\\ESACCI-LC-Legend.csv")) %>%
-  mutate(ID = land_cover_code, 
-         colour= rgb(R, G, B, max = 255)) %>%
-  unique()
-
-# Create named vector for colours 
-lc_colors <- ESA_legend$colour
-names(lc_colors) <- ESA_legend$land_cover_code
-
-# Create dataframe
-lc_df <- as.data.frame(rasterToPoints(esa)) %>%
-  setNames(c("x", "y","land_cover_code")) %>% 
-  left_join(ESA_legend)
-
-# Plot
-fig_esa = ggplot()+
-  geom_raster(data = lc_df, aes(x = x, y = y, fill = as.factor(land_cover_code))) +
-  geom_path(data = adm1, aes(x = long, y = lat, group = group)) +
-  scale_fill_manual(values = lc_colors) +
-  coord_equal() +
-  labs(x="", y="") +
-  theme_classic() +
-  theme(legend.position="none",
-        line = element_blank(),
-        axis.text = element_blank())
+# ### ESA LAND COVER MAP VERSION 1
+# # Load ESA legend
+# ESA_legend <- read_csv(file.path(dataPath, "Data\\Global\\ESA\\ESACCI-LC-Legend.csv")) %>%
+#   mutate(ID = lc_code)
+# 
+# # Add attributes
+# # http://stackoverflow.com/questions/19586945/how-to-legend-a-raster-using-directly-the-raster-attribute-table-and-displaying
+# esa <- ratify(esa)
+# rat <- levels(esa)[[1]] #get the values of the unique cell frot the attribute table
+# rat <- left_join(rat, ESA_legend)
+# 
+# # Create colours for legend and sort in right order
+# ESA_colour <- rat
+# ESA_colour <- ESA_colour %>%
+#   filter(ID %in% seq(0, 220, 10)) %>%
+#   mutate(colour= rgb(R, G, B, max = 255)) %>%
+#   unique()
+# ESA_colour <- ESA_colour[order(ESA_colour$class, decreasing = F),]
+# 
+# # Links levels
+# levels(esa) <- rat
+# levels(esa)
+# rm(rat)
+# 
+# # Visualise 
+# fig_land_cover <- levelplot(esa, att='class', col.regions = ESA_colour$colour, margin = F) +
+#     layer(sp.polygons(adm1, col = "black", lwd = 2))
+# 
+# 
+# ### ESA LAND COVER MAP VERSION 2
+# # Load ESA legend and add colours
+# ESA_legend <- read_csv(file.path(dataPath, "Data\\Global\\ESA\\ESACCI-LC-Legend.csv")) %>%
+#   mutate(ID = land_cover_code, 
+#          colour= rgb(R, G, B, max = 255)) %>%
+#   unique()
+# 
+# # Create named vector for colours 
+# lc_colors <- ESA_legend$colour
+# names(lc_colors) <- ESA_legend$land_cover_code
+# 
+# # Create dataframe
+# lc_df <- as.data.frame(rasterToPoints(esa)) %>%
+#   setNames(c("x", "y","land_cover_code")) %>% 
+#   left_join(ESA_legend)
+# 
+# # Plot
+# fig_esa = ggplot()+
+#   geom_raster(data = lc_df, aes(x = x, y = y, fill = as.factor(land_cover_code))) +
+#   geom_path(data = adm1, aes(x = long, y = lat, group = group)) +
+#   scale_fill_manual(values = lc_colors) +
+#   coord_equal() +
+#   labs(x="", y="") +
+#   theme_classic() +
+#   theme(legend.position="none",
+#         line = element_blank(),
+#         axis.text = element_blank())
 
 
 ### GMIA 
@@ -155,7 +153,7 @@ gmia_df <- as.data.frame(rasterToPoints(gmia)) %>%
 summary(gmia_df)  
 
 # Map
-ggplot() + 
+fig_gmia <- ggplot() + 
   geom_raster(data = gmia_df, aes(x = x, y = y, fill = as.factor(gmia))) +
   #scale_fill_viridismanual(values = c("H" = "blue", "M" = "red", "L" = "green", na.value = "white")) +
   geom_path(data = adm, aes(x = long, y = lat, group = group)) +
@@ -178,7 +176,7 @@ pop_df <- as.data.frame(rasterToPoints(pop)) %>%
 summary(pop_df)  
 
 # Map
-ggplot() + 
+fig_pop <- ggplot() + 
   geom_raster(data = pop_df, aes(x = x, y = y, fill = pop_class)) +
   #scale_fill_viridismanual(values = c("H" = "blue", "M" = "red", "L" = "green", na.value = "white")) +
   geom_path(data = adm, aes(x = long, y = lat, group = group)) +
@@ -197,8 +195,7 @@ access_df <- as.data.frame(rasterToPoints(access)) %>%
   setNames(c("x", "y", "travel_time"))
 
 # Map
-rev(heat.colors(5))
-ggplot() + 
+fig_travel_time <- ggplot() + 
   geom_raster(data = access_df, aes(x = x, y = y, fill = travel_time)) +
   geom_path(data = adm, aes(x = long, y = lat, group = group)) +
   #scale_fill_viridis(direction = -1) +
@@ -239,35 +236,35 @@ ggplot() +
 # 
 # 
 # #ggsave("FigTabMap/fig_LSMS.png")
-
-# Create random enumeration areas
-ZMB_ext <- extent(adm1)
-x_range <- seq(ZMB_ext@xmin, ZMB_ext@xmax, 0.1)
-y_range <- seq(ZMB_ext@ymin, ZMB_ext@ymax, 0.1)
-
-x_sample <- sample(x_range, 250, replace = T)
-y_sample <- sample(y_range, 250, replace = T)
-
-lsms_sample <- data.frame(x = x_sample, y = y_sample)
-coordinates(lsms_sample) <- ~x+y
-crs(lsms_sample) <- crs(adm1)
-lsms_sample <- gIntersection(lsms_sample, adm1, byid=TRUE)
-lsms_sample <- data.frame(lsms_sample)
-
-fig_lsms <- ggplot() +
-  geom_polygon(data = wld, aes(x=long, y=lat, group=group), colour = "black", fill = "grey", alpha = 0.5) +
-  theme(panel.border = element_rect(colour = "black", fill=NA, size=2)) +
-  geom_polygon(data = adm1_for, aes(x = long, y = lat, fill = ADM1_NAME, group = group), colour = "black") +
-  geom_text(data = districts, aes(x = long, y = lat, label = name), size = 2) +
-  geom_point(data = lsms_sample, aes(x = x, y = y), colour = "black") +
-  scale_fill_manual(values = cols(length(adm1_df$ADM1_NAME))) +
-  coord_equal() +
-  labs(x="", y="") +
-  theme_classic() +
-  theme(legend.position="none",
-        line = element_blank(),
-        axis.text = element_blank()) +
-  coord_map(xlim = c(21, 34), ylim = c(-18.5, -7.5)) +
-  theme(panel.border = element_rect(colour = "black", fill=NA, size=2))
-
-fig_lsms
+# 
+# # Create random enumeration areas
+# ZMB_ext <- extent(adm1)
+# x_range <- seq(ZMB_ext@xmin, ZMB_ext@xmax, 0.1)
+# y_range <- seq(ZMB_ext@ymin, ZMB_ext@ymax, 0.1)
+# 
+# x_sample <- sample(x_range, 250, replace = T)
+# y_sample <- sample(y_range, 250, replace = T)
+# 
+# lsms_sample <- data.frame(x = x_sample, y = y_sample)
+# coordinates(lsms_sample) <- ~x+y
+# crs(lsms_sample) <- crs(adm1)
+# lsms_sample <- gIntersection(lsms_sample, adm1, byid=TRUE)
+# lsms_sample <- data.frame(lsms_sample)
+# 
+# fig_lsms <- ggplot() +
+#   geom_polygon(data = wld, aes(x=long, y=lat, group=group), colour = "black", fill = "grey", alpha = 0.5) +
+#   theme(panel.border = element_rect(colour = "black", fill=NA, size=2)) +
+#   geom_polygon(data = adm1_for, aes(x = long, y = lat, fill = ADM1_NAME, group = group), colour = "black") +
+#   geom_text(data = districts, aes(x = long, y = lat, label = name), size = 2) +
+#   geom_point(data = lsms_sample, aes(x = x, y = y), colour = "black") +
+#   scale_fill_manual(values = cols(length(adm1_df$ADM1_NAME))) +
+#   coord_equal() +
+#   labs(x="", y="") +
+#   theme_classic() +
+#   theme(legend.position="none",
+#         line = element_blank(),
+#         axis.text = element_blank()) +
+#   coord_map(xlim = c(21, 34), ylim = c(-18.5, -7.5)) +
+#   theme(panel.border = element_rect(colour = "black", fill=NA, size=2))
+# 
+# fig_lsms
