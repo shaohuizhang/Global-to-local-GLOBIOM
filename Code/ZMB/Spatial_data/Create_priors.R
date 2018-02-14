@@ -6,6 +6,7 @@
 #'========================================================================================================================================
 
 # NB BETTER TO INCORPORATE FIXED SHARES FROM IRR MAP AS PRIOR!
+# Meaning priors should be overwritten by shares for which we have information. 
 
 ### PACKAGES
 if(!require(pacman)) install.packages("pacman")
@@ -40,13 +41,13 @@ grid_30sec <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/
 names(grid_30sec) <- "gridID"
 
 # Adm
-adm2 <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gaul/GAUL_", iso3c_sel, "_adm2_2000.rds")))
-plot(adm2)
+adm <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gaul/adm_2000_", iso3c_sel, ".rds")))
+plot(adm)
 
 # Urban mask
 urban_mask <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/maps/urban_mask/urban_mask_", iso3c_sel, ".rds")))
 plot(urban_mask, col = "red")
-plot(adm2, add = T)
+plot(adm, add = T)
 
 # Sy
 lu_sy <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/GAMS/lu_sy_2000_", iso3c_sel, ".rds")))
@@ -69,13 +70,14 @@ gaez <- stack(gaez_files)
 # remove country and grid info in names
 names(gaez) <- gsub(paste0("_30sec_", iso3c_sel), "", names(gaez))
 sort(unique(lu_sy$sy))
+
+
 ### CALCULATE RURAL POPULATION PER GRID CELL
 pop_rural <- mask(pop, urban_mask, inverse = T)
 
 levelplot(pop_rural, par.settings = BTCTheme, margin = F) +
-  layer(sp.polygons(adm2, col = "black"))+
+  layer(sp.polygons(adm, col = "black"))+
   layer(sp.polygons(urban_mask, col = "red"))
-
 
 
 ### CREATE PRIOR DATABASE
@@ -93,6 +95,7 @@ prior_df <- as.data.frame(rasterToPoints(prior_stack)) %>%
   gather(sy, suit, -gridID, -pop, -x, -y)
   #dplyr::select(-x, -y) %>%
 
+
 ### FIX NA VALUES
 # It appears that for some of the priors data is missing.
 summary(prior_df)
@@ -103,7 +106,7 @@ unique(check$gridID)
 # Cells in the country for which, probably no pop data was available
 check_pop <- filter(prior_df, is.na(pop))
 ggplot() +
-  geom_polygon(data = adm2, aes(x = long, y = lat, group = group), fill = "white") +
+  geom_polygon(data = adm, aes(x = long, y = lat, group = group), fill = "white") +
   geom_raster(data = check_pop, aes(x = x, y = y), fill = "red") +
   coord_equal()
 
@@ -111,7 +114,7 @@ ggplot() +
 # Cells at the border which are set to NA because of 30min grid
 check_gaez <- filter(prior_df, is.na(suit))
 ggplot() +
-  geom_polygon(data = adm2, aes(x = long, y = lat, group = group), fill = "white") +
+  geom_polygon(data = adm, aes(x = long, y = lat, group = group), fill = "white") +
   geom_raster(data = check_gaez, aes(x = x, y = y), fill = "red") +
   coord_equal()
 

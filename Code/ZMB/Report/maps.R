@@ -27,6 +27,10 @@ options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e
 options(digits=4)
 
 
+### SET COUNTRY
+source("Code/ZMB/Set_country.R")
+
+
 ### LOAD DATA
 # Simu
 simu <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/simu/simu_", iso3c_sel, ".rds")))
@@ -45,6 +49,7 @@ wld <- map_data("world")
 # Capital
 data(world.cities)
 capital <- filter(world.cities, country.etc == country_sel, capital == 1)
+
 
 ### ADM MAP
 # Set colours

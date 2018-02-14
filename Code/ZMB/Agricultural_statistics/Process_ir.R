@@ -42,21 +42,13 @@ source("Code/ZMB/Set_country.R")
 
 ### LOAD DATA
 # Aquastat
-ir_crop_raw <- read_csv(file.path(dataPath, "Data/Global/AQUASTAT/Irrigated_area_by_crop.csv")) %>%
-  filter(iso3c == iso3c_sel)
+ir_crop_raw <- read_csv(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Agricultural_statistics/aquastat_ir_crops_", iso3c_sel, ".csv"))) 
 
 # GMIA
 gmia_5min <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gmia/GMIA_5min_", iso3c_sel, ".tif")))
 
 # Adm
-adm1 <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gaul/GAUL_", iso3c_sel, "_adm1_2000.rds")))
-
-# Adm_map
-adm1_map <- read_excel(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Mappings/Mappings_",iso3c_sel, ".xlsx")), sheet = paste0(iso3c_sel, "2adm")) %>%
-  filter(year == 2000) %>%
-  dplyr::select(adm1, adm1_GAUL) %>%
-  na.omit %>%
-  unique()
+adm <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gaul/adm_2000_", iso3c_sel, ".rds")))
 
 # Grid
 grid_5min <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid/grid_5min_r_", iso3c_sel, ".tif")))
@@ -88,9 +80,8 @@ ir_crop_2000 <- filter(ir_crop_raw, short_name != "total", year == 2002) %>%
   dplyr::select(-variable) %>%
   dplyr::rename(adm = iso3c) %>%
     mutate(system = "I", 
-           ir_area = ir_area*1000, # in ha
            adm_level = 0)
-sum(ir_crop_2000$ir_area)
+sum(ir_crop_2000$value)
 
 # Save
 write_csv(ir_crop_2000, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Agricultural_statistics/ir_2000_", iso3c_sel, ".csv")))
@@ -111,7 +102,7 @@ grid_file <- file.path(dataPath, paste0("Data\\", iso3c_sel, "/Processed/Maps/gr
 
 # Resample
 gmia_30sec_share <- align_raster_f(gmia_5min_share_file, grid_file, gmia_30sec_share_file, nThreads = "ALL_CPUS", verbose = T, 
-                     output_Raster = T, overwrite = TRUE, r = "bilinear", border = adm1)
+                     output_Raster = T, overwrite = TRUE, r = "bilinear", border = adm)
 names(gmia_30sec_share) <- "gmia"
 
 # Calculate area

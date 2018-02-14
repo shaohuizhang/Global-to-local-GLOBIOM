@@ -1,6 +1,6 @@
 #'========================================================================================================================================
 #' Project:  Global-to-local-GLOBIOM
-#' Subject:  Code to select GMIA information
+#' Subject:  Code to select road map per country
 #' Author:   Michiel van Dijk
 #' Contact:  michiel.vandijk@wur.nl
 #'========================================================================================================================================
@@ -10,7 +10,7 @@ if(!require(pacman)) install.packages("pacman")
 # Key packages
 p_load("tidyverse", "readxl", "stringr", "scales", "RColorBrewer", "rprojroot")
 # Spatial packages
-p_load("rgdal", "ggmap", "raster", "rasterVis", "rgeos", "sp", "mapproj", "maptools", "proj4", "gdalUtils", "sf")
+p_load("rgdal", "ggmap", "raster", "rasterVis", "rgeos", "sp", "mapproj", "maptools", "proj4", "gdalUtils")
 # Additional packages
 p_load("WDI", "countrycode", "plotKML")
 
@@ -30,28 +30,13 @@ options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e
 options(digits=4)
 
 
+
 ### SET COUNTRY
 source("Code/ZMB/Set_country.R")
 
+### LOAD ROADS DATA
+roads_raw <- readOGR(file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/roads/zambia_roads")))
 
-### LOAD GMIA MAPS
-gmia_r_raw <- raster(file.path(dataPath, "Data/Global/gmia/gmia_v5_aei_ha_asc/gmia_v5_aei_ha.asc")) # hectares per cell
-#gmia_r_raw2 <- raster(file.path(dataPath, "Data/Global/gmia/gmia_v5_aeigw_pct_aei_asc/gmia_v5_aeigw_pct_aei.asc")) # hectares per cell
-crs(gmia_r_raw) <- "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"
-
-
-### LOAD ADM
-adm <- readRDS(file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps/GAUL/adm_2000_", iso3c_sel, ".rds")))
-
-
-### SELECT COUNTRY GMIA MAP
-gmia <- crop(gmia_r_raw, adm)
-gmia <- mask(gmia, adm)
-names(gmia) <- "gmia"
-levelplot(gmia)
-hist(gmia, breaks = 50)
-cellStats(gmia,sum)
-
-# Save map
-writeRaster(gmia, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gmia/gmia_5min_", iso3c_sel, ".tif")), overwrite = T)
+### SAVE
+saveRDS(roads_raw, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/roads/roads_", iso3c_sel, ".rds")))
 

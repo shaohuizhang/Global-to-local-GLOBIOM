@@ -1,18 +1,18 @@
 #'========================================================================================================================================
 #' Project:  Global-to-local-GLOBIOM
-#' Subject:  Code to select GMIA information
+#' Subject:  Code to select Global Irrigated Areas data
 #' Author:   Michiel van Dijk
 #' Contact:  michiel.vandijk@wur.nl
 #'========================================================================================================================================
 
 ### PACKAGES
-if(!require(pacman)) install.packages("pacman")
+if (!require(pacman)) install.packages("pacman")
 # Key packages
 p_load("tidyverse", "readxl", "stringr", "scales", "RColorBrewer", "rprojroot")
 # Spatial packages
-p_load("rgdal", "ggmap", "raster", "rasterVis", "rgeos", "sp", "mapproj", "maptools", "proj4", "gdalUtils", "sf")
+p_load("rgdal", "ggmap", "raster", "rasterVis", "rgeos", "sp", "mapproj", "maptools", "proj4", "gdalUtils")
 # Additional packages
-p_load("WDI", "countrycode", "plotKML")
+p_load("quickPlot")
 
 
 ### SET ROOT AND WORKING DIRECTORY
@@ -34,24 +34,33 @@ options(digits=4)
 source("Code/ZMB/Set_country.R")
 
 
-### LOAD GMIA MAPS
-gmia_r_raw <- raster(file.path(dataPath, "Data/Global/gmia/gmia_v5_aei_ha_asc/gmia_v5_aei_ha.asc")) # hectares per cell
-#gmia_r_raw2 <- raster(file.path(dataPath, "Data/Global/gmia/gmia_v5_aeigw_pct_aei_asc/gmia_v5_aeigw_pct_aei.asc")) # hectares per cell
-crs(gmia_r_raw) <- "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"
+### CHECK IF THEIR ARE TEMPORARY FILES (CREATED BY RASTER PACKAGE) AND REMOVE
+showTmpFiles()
+removeTmpFiles()
 
 
-### LOAD ADM
+### LOAD DATA
+# adm
 adm <- readRDS(file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps/GAUL/adm_2000_", iso3c_sel, ".rds")))
 
+# gia
+gia_raw <- raster(file.path(dataPath, "Data/global/gia/global_irrigated_areas.tif"))
+crs(gia_raw) <- crs(adm)
 
-### SELECT COUNTRY GMIA MAP
-gmia <- crop(gmia_r_raw, adm)
-gmia <- mask(gmia, adm)
-names(gmia) <- "gmia"
-levelplot(gmia)
-hist(gmia, breaks = 50)
-cellStats(gmia,sum)
+
+### SELECT COUNTRY GIA MAP
+gia <- crop(gia_raw, adm)
+gia <- mask(gia, adm)
+names(gia) <- "gia"
+gia[gia == 0] <- NA # set non-irrigated areas to NA
+levelplot(gia) +
+  layer(sp.polygons(adm, col = "black"))
+freq(gia)
+
 
 # Save map
-writeRaster(gmia, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gmia/gmia_5min_", iso3c_sel, ".tif")), overwrite = T)
+giaPath <- file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\gia"))
+dir.create(giaPath)
+writeRaster(gia, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gia/gia_", iso3c_sel, ".tif")), overwrite = T)
+
 

@@ -47,6 +47,9 @@ gaul_adm1_2000 <- readOGR(file.path(dataPath, "Data\\Global\\GAUL\\g2015_2000_1\
 ogrListLayers(file.path(dataPath, "Data\\Global\\GAUL\\g2015_2000_2\\g2015_2000_2.shp"))
 gaul_adm2_2000 <- readOGR(file.path(dataPath, "Data\\Global\\GAUL\\g2015_2000_2\\g2015_2000_2.shp"), layer = "g2015_2000_2")
 
+# Grid
+grid <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid/grid_30sec_r_", iso3c_sel, ".tif")))
+names(grid) <- "gridID"
 
 ### SELECT TARGET COUNTRIES
 #http://www.fao.org/countryprofiles/iso3list/en/
@@ -80,8 +83,8 @@ gaul_adm_2000_list <- gaul_adm2_2000_df %>%
   arrange(adm2_gaul)
 write_csv(gaul_adm_2000_list, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Mappings/gaul_adm_2000_list_", iso3c_sel, ".csv")))
 
-### SAVE FINAL MAPS
-# Select final map
+### SAVE MAPS
+# Select final map: Adm1 for ZMB
 adm <- gaul_adm1_2000
 
 # Read names
@@ -98,10 +101,36 @@ adm_df <- adm@data %>%
 
 adm@data <- adm_df
 
-# save
+# Save main map for crop allocation model
 gaulPath <- file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\gaul"))
 dir.create(gaulPath)
 
 saveRDS(adm, file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\gaul\\adm_2000_", iso3c_sel, ".rds")))
 writeOGR(adm, dsn = file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\gaul")), paste0("adm_2000_", iso3c_sel), driver="ESRI Shapefile")
 
+# Save all adm maps for reference
+saveRDS(gaul_adm0_2000, file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\gaul\\adm0_2000_", iso3c_sel, ".rds")))
+saveRDS(gaul_adm1_2000, file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\gaul\\adm1_2000_", iso3c_sel, ".rds")))
+saveRDS(gaul_adm2_2000, file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\gaul\\adm2_2000_", iso3c_sel, ".rds")))
+
+
+### CREATE RASTER OF ADM WITH GRIDID
+# Rasterize adm
+adm_r <- rasterize(adm, grid)
+names(adm_r) <- "ID"
+
+# Get adm info
+adm1_df <- levels(adm_r)[[1]] %>%
+  dplyr::select(ID, adm)
+
+# Stack 
+adm_r <- stack(grid, adm_r)
+
+# Create data.frame, remove cells outside border and add adm names
+adm_r <- as.data.frame(rasterToPoints(adm_r)) %>%
+  left_join(adm1_df) %>%
+  na.omit %>%
+  dplyr::select(-ID)
+
+# Save
+saveRDS(adm_r, file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\gaul\\adm_r_2000_", iso3c_sel, ".rds")))

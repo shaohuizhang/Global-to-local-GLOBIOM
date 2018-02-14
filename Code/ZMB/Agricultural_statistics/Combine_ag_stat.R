@@ -42,7 +42,7 @@ source("Code/ZMB/Set_country.R")
 
 ### LOAD DATA
 # FAOSTAT
-faostat <- read_csv(file.path(dataPath, paste0("Data/", iso3c_sel, "/processed/Agricultural_statistics/FAOSTAT_", iso3c_sel, ".csv")))
+faostat <- read_csv(file.path(dataPath, paste0("Data/", iso3c_sel, "/processed/Agricultural_statistics/faostat_crops_", iso3c_sel, ".csv")))
 
 # Agro-Maps
 am <- read_csv(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Agricultural_statistics/am_", iso3c_sel, ".csv")))
@@ -253,6 +253,24 @@ adm_2000 <- adm_2000 %>%
 ag_stat_2000 <- bind_rows(FAOSTAT_2000, adm_2000) %>%
   rename(area = value) %>%
   dplyr::select(-variable)
+
+### SHARE OF SUBNATIONAL CROPS IN TOTAL
+# Crops covered by adm statistics
+unique(ag_stat_2000$short_name[ag_stat_2000$adm != iso3c_sel])
+
+# Crops not covered by adm statistics
+setdiff(
+  unique(ag_stat_2000$short_name[ag_stat_2000$adm == iso3c_sel]),
+  unique(ag_stat_2000$short_name[ag_stat_2000$adm != iso3c_sel]))
+
+# Share of crops covered by adm statistics
+sum(ag_stat_2000$area[ag_stat_2000$adm != iso3c_sel])/
+      sum(ag_stat_2000$area[ag_stat_2000$adm == iso3c_sel]) *100
+
+# Area not allocated to adm
+sum(ag_stat_2000$area[ag_stat_2000$adm == iso3c_sel]) - 
+  sum(ag_stat_2000$area[ag_stat_2000$adm != iso3c_sel])
+
 
 ### SAVE
 # Agricultural statistics

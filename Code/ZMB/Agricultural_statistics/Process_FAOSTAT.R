@@ -36,46 +36,45 @@ options(digits=4)
 source("Code/ZMB/Set_country.R")
 
 
-### DOWNLOAD AND PROCESS FAOSTAT DATA
+### DOWNLOAD
+faostat_version <- "FAOSTAT_20170117"
+
 # Load crop_lvst2FCL
 crop_lvst2FCL <- read_excel(file.path(dataPath, "Data\\Mappings\\Mappings.xlsx"), sheet = "crop_lvst2FCL") %>%
   dplyr::select(short_name, FCL_item_code) %>%
   na.omit()
 
-# Download
-faostat_prod_raw <- read_csv(file.path(FAOSTATPath, "Production_Crops_E_All_Data_(Normalized).csv"))
-faostat_lvst_raw <- read_csv(file.path(FAOSTATPath, "Production_Livestock_E_All_Data_(Normalized).csv"))
+# Trade
+trade_raw <- read_csv(file.path(dataPath, paste0("Data/global/", faostat_version, "/Trade_Crops_Livestock_E_All_Data_(Norm).csv")))
 
-# Process 
-faostat_crop <- faostat_prod_raw %>%
+# Crop production
+prod_raw <- read_csv(file.path(dataPath, paste0("Data/global/", faostat_version, "/Production_Crops_E_All_Data_(Normalized).csv")))
+
+# Livestock production
+lvst_raw <- read_csv(file.path(dataPath, paste0("Data/global/", faostat_version, "/Production_Livestock_E_All_Data_(Normalized).csv")))
+
+# Land use
+land_raw <- read_csv(file.path(dataPath, paste0("Data/global/", faostat_version, "/Inputs_Land_E_All_Data_(Normalized).csv")))
+
+
+### PROCESS CROPS 
+# Extract country data
+crops_raw <- prod_raw %>%
+  filter(`Area Code` == fao_sel) %>%
   mutate(variable = dplyr::recode(Element, "Area harvested" = "area", "Yield" = "yield", "Production" = "production"),
-         iso3c = countrycode(`Area Code`, "fao", "iso3c")) %>%
+         iso3c = iso3c_sel) %>%
   dplyr::select(iso3c, FCL_item_code = `Item Code`, variable, year = Year, unit = Unit, value = Value) %>%
-  filter(iso3c == iso3c_sel) %>%
   left_join(., crop_lvst2FCL) %>%
   filter(!is.na(value))
 
-# faostat_lvst <- faostat_lvst_raw %>%
-#   mutate(variable = dplyr::recode(Element, "Area harvested" = "area", "Yield" = "yield", "Production" = "production"),
-#          iso3c = countrycode(`Area Code`, "fao", "iso3c")) %>%
-#   dplyr::select(iso3c, FCL_item_code = `Item Code`, variable, year = Year, unit = Unit, value = Value) %>%
-#   filter(iso3c == "ZMB") %>%
-#   left_join(., FCL) %>%
-#   mutate(value = ifelse(FCL_title %in% c("Poultry Birds", "Chickens"), value*1000, value),
-#          unit = "Head") %>%
-#   filter(!is.na(value), !(class == "total")) %>%
-#   dplyr::select(-class)
-
-
-### CREATE FAOSTAT DATABASE
 # Create files for relevant variables
-area_faostat <- faostat_crop %>%
+area <- crops_raw %>%
   filter(unit == "ha", variable == "area") %>%
   na.omit() %>%# remove rows with na values for value
   group_by(short_name, unit, year, variable) %>%
   summarize(value = sum(value, na.rm = T))
 
-prod_faostat <- faostat_crop %>%
+prod <- crops_raw %>%
   filter(unit == "tonnes", 1990, variable == "production") %>%
   mutate(unit = replace(unit, unit=="tonnes", "tons")) %>%
   na.omit() %>%# remove rows with na values for value
@@ -84,7 +83,7 @@ prod_faostat <- faostat_crop %>%
   
 
 # Note that for some crops area or prodution is not available resulting in NA for yield
-yld_faostat <- bind_rows(area_faostat, prod_faostat) %>%
+yld <- bind_rows(area, prod) %>%
   ungroup() %>%
   dplyr::select(-unit) %>%
   spread(variable, value) %>%
@@ -97,14 +96,61 @@ yld_faostat <- bind_rows(area_faostat, prod_faostat) %>%
 #   filter(year >1990) 
 
 # Bind area, production and yield
-faostat_comb <- bind_rows(area_faostat, prod_faostat, yld_faostat) %>%
+crops <- bind_rows(area, prod, yld) %>%
   ungroup() %>%
   mutate(source = "FAOSTAT",
          adm_level = 0,
          adm = iso3c_sel) %>%
   na.omit()
-summary(faostat_comb)
-str(faostat_comb)
+summary(crops)
+str(crops)
 
 # save files
-write_csv(faostat_comb, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Agricultural_statistics/faostat_", iso3c_sel, ".csv")))
+write_csv(crops, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Agricultural_statistics/faostat_crops_", iso3c_sel, ".csv")))
+
+
+### LIVESTOCK
+# faostat_lvst <- faostat_lvst_raw %>%
+#   mutate(variable = dplyr::recode(Element, "Area harvested" = "area", "Yield" = "yield", "Production" = "production"),
+#          iso3c = countrycode(`Area Code`, "fao", "iso3c")) %>%
+#   dplyr::select(iso3c, FCL_item_code = `Item Code`, variable, year = Year, unit = Unit, value = Value) %>%
+#   filter(iso3c == "ZMB") %>%
+#   left_join(., FCL) %>%
+#   mutate(value = ifelse(FCL_title %in% c("Poultry Birds", "Chickens"), value*1000, value),
+#          unit = "Head") %>%
+#   filter(!is.na(value), !(class == "total")) %>%
+#   dplyr::select(-class)
+
+
+### TRADE
+# Extract country data
+trade <- trade_raw %>%
+  filter(`Country Code` == fao_sel) %>% 
+  mutate(variable = dplyr::recode(Element, "Import Quantity" = "impo_q", "Export Quantity" = "expo_q",
+                                  "Import Value" = "impo_v", "Export Value" = "expo_v"),
+         iso3c = iso3c_sel) %>%
+  dplyr::select(iso3c, FCL_item_code = `Item Code`, variable, year = Year, unit = Unit, value = Value, Item) %>%
+  left_join(., crop_lvst2FCL) %>%
+  filter(!is.na(value)) %>%
+  na.omit %>%
+  group_by(iso3c, short_name, year, variable, unit) %>%
+  summarize(value = sum(value, na.rm = T)) 
+i# Filter out unmatched aggregate and processed products, such as meat, pellets, etc. 
+
+# save files
+write_csv(trade, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Agricultural_statistics/faostat_trade_", iso3c_sel, ".csv")))
+
+
+### LAND
+# Extract country data
+land <- land_raw %>%
+  filter(`Area Code` == fao_sel) %>%
+  dplyr::select(variable = Element, year = Year, unit = Unit, value = Value, item = Item) %>%
+  mutate(iso3c = iso3c_sel,
+         variable = tolower(variable),
+         item = tolower(item)) %>%
+  filter(!is.na(value)) %>%
+  na.omit # Filter out unmatched aggregate and processed products, such as meat, pellets, etc. 
+
+# save files
+write_csv(land, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Agricultural_statistics/faostat_land_", iso3c_sel, ".csv")))

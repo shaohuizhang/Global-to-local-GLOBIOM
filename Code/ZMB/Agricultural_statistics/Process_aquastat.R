@@ -1,6 +1,6 @@
 #'========================================================================================================================================
 #' Project:  Global-to-local-GLOBIOM
-#' Subject:  Code to process aquastat irrigation data
+#' Subject:  Script to process aquastat irrigation data
 #' Author:   Michiel van Dijk
 #' Contact:  michiel.vandijk@wur.nl
 #'========================================================================================================================================
@@ -30,20 +30,26 @@ options("stringsAsFactors"=FALSE) # ensures that characterdata that is loaded (e
 options(digits=4)
 
 
+### SET COUNTRY
+source("Code/ZMB/Set_country.R")
+
+
 ### LOAD DATA
-# Aquastat raw
-aquastat_raw <- read_excel(file.path(dataPath, "Data/Global/Aquastat/20171113_aquastat_irrigation.xlsx"), sheet = "data")
+aquastat_version <- "AQUASTAT_20171113"
 
 # Crop mapping
 aquastat2crop_lvst <- read_excel(file.path(dataPath, "Data/Mappings/Mappings.xlsx"), sheet = "aquastat2crop_lvst")
 
+# Aquastat raw
+aquastat_raw <- read_excel(file.path(dataPath, paste0("Data/Global/", aquastat_version, "/aquastat_irrigation.xlsx")), sheet = "data")
 
-### PROCESS DATA
+
+### PROCESS IRRIGATED AREA PER CROP
 # Clean up database
 aquastat <- aquastat_raw %>%
-  mutate(iso3c = countrycode(`Area Id`, "fao", "iso3c")) %>%
-  filter(!is.na(iso3c)) %>%
-  transmute(iso3c, variable = `Variable Name`, variable_code = `Variable Id`, year = Year, ir_area = Value)
+  filter(`Area Id` == fao_sel) %>%
+  mutate(iso3c = iso3c_sel) %>%
+  transmute(iso3c, variable = `Variable Name`, variable_code = `Variable Id`, year = Year, value = Value)
 
 # Create irrigated area df
 # Note that "Total harvested irrigated crop area (full control irrigation)" (4379) is only presented if all crops are included
@@ -54,7 +60,8 @@ ir_area <- aquastat %>%
   separate(variable, c("variable", "aquastat_crop"), sep = ":") %>%
   mutate(aquastat_crop = trimws(aquastat_crop),
          aquastat_crop = ifelse(is.na(aquastat_crop), "Total", aquastat_crop),
-         aquastat_crop = ifelse(aquastat_crop == "total", "Total", aquastat_crop))
+         aquastat_crop = ifelse(aquastat_crop == "total", "Total", aquastat_crop),
+         value = value * 1000) # to ha
 
 # Map to crop_lvst crops
 # NB: Depending on country select tropical (trof) or temperate fruits for "Other fruits" category if available
@@ -63,11 +70,11 @@ ir_area <- aquastat %>%
 ir_area <- ir_area %>%
   left_join(aquastat2crop_lvst) %>%
   group_by(iso3c, variable, year, short_name) %>%
-  summarize(ir_area = sum(ir_area, na.rm = T))
+  summarize(value = sum(value, na.rm = T))
 
 # Save
-write_csv(ir_area, file.path(dataPath, "Data/Global/AQUASTAT/Irrigated_area_by_crop.csv"))
+write_csv(ir_area, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Agricultural_statistics/aquastat_ir_crops_", iso3c_sel, ".csv")))
          
- 
 
-         
+### PROCESS IRRIGATED AREA PER TYPE
+# To add if needed
