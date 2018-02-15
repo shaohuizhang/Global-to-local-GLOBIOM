@@ -53,11 +53,11 @@ sy_raw <- read_excel(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/
 lu <- lu_raw %>%
   filter(adm_level == 0) 
 
+
 ### IRRIGATED AREA
 # Combine and plot
 adm0_comp <- bind_rows(
-  ir_raw %>%
-    rename(value = ir_area),
+  ir_raw,
   lu %>%
     filter(short_name %in% ir_raw$short_name) %>%
     mutate(system = "Total") %>%
@@ -74,7 +74,8 @@ ggplot(data = adm0_comp, aes(x = system, y = value, fill = system)) +
 #theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 # Correct
-ir <- left_join(ir_raw, lu) %>%
+ir <- rename(ir_raw, ir_area = value) %>%
+  left_join(lu) %>%
   mutate(value = ifelse(ir_area > area, area, ir_area)) %>%
   dplyr::select(-area, -ir_area)
 

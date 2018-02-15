@@ -47,6 +47,10 @@ adm <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/g
 adm_r <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gaul/adm_r_2000_", iso3c_sel, ".rds"))) %>%
   dplyr::select(-x, -y)
 
+# gia
+ir_raw <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/maps/gia/gia_", iso3c_sel, ".tif"))) 
+names(ir_raw) <- "value"
+
 
 # lc data
 esa_raw <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/processed/Spatial_data/lc_ESA_sh_2000_", iso3c_sel, ".rds"))) %>%
@@ -56,24 +60,20 @@ rcmrd_raw <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/processed/
 glc_raw <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/processed/Spatial_data/lc_glc2000_2000_", iso3c_sel, ".rds"))) %>%
   mutate(source = "glc2000")
 
-# # gia
-# gia_raw <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gia/gia_", iso3c_sel, ".tif")))
-# names(gia_raw) <- "gia"
-
 # Grid
 grid <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid/grid_30sec_r_", iso3c_sel, ".tif")))
 names(grid) <- "gridID"
 
 # Agricultural statistics
-lu_adm_raw <- read_csv(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Agricultural_statistics/ag_stat_2000_", iso3c_sel, ".csv"))) 
+lu_adm_raw <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/GAMS/lu_adm_2000_", iso3c_sel, ".rds"))) 
 
 # Population map
 pop <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/pop/pop_30sec_", iso3c_sel, ".tif")))
 names(pop) <- "pop"
 
 # Travel time map
-tt <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/travel_time/travel_time_", iso3c_sel, ".tif")))
-names(tt) <- "travel_time"
+tt_raw <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/travel_time/travel_time_", iso3c_sel, ".tif")))
+names(tt_raw) <- "travel_time"
 
 # Roads
 roads <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/roads/roads_", iso3c_sel, ".rds")))
@@ -95,8 +95,19 @@ glc <- glc_raw %>%
 
 lc_comb <- bind_rows(esa, rcmrd, glc)
 
+### ADD IRRIGATION DATA
+# Prepare irrigation data
+ir <- stack(ir_raw, grid)
+ir <- as.data.frame(rasterToPoints(ir)) %>%
+  dplyr::select(-x, -y) %>%
+  filter(value >0) %>%
+  mutate(source = "gia")
 
-### RANK GRIDID
+# Add
+lc_comb <- bind_rows(lc_comb, ir)
+
+  
+  ### RANK GRIDID
 # CODE NEED TO be replaced by a piece of code where a ranking table is loaded to make it more general. 
 # Data for different land cover maps are combined to create a synergistic land cover map (Fritz et al. 2011)
 # We use the following ranking:
@@ -109,23 +120,27 @@ lc_comb <- bind_rows(esa, rcmrd, glc)
 # Function to rank cells
 rank_f <- function(df){
   cov = sum(!is.na(df$value))  
-  if(cov == 3){
+  if(cov == 4){
     rnk <- 1  
-  } else if (all(c("rcmrd", "esa") %in% df$source)){
+  } else if (all(c("rcmrd", "esa", "gia") %in% df$source)){
     rnk <- 2
-  } else if (all(c("rcmrd", "glc2000") %in% df$source)){
+  } else if (all(c("rcmrd", "gia") %in% df$source)){
     rnk <- 3
-  } else if (c("rcmrd") %in% df$source){
+  } else if (all(c("gia") %in% df$source)){
     rnk <- 4
-  } else 
+  } else if (all(c("rcmrd", "glc2000") %in% df$source)){
     rnk <- 5
+  } else if (c("rcmrd") %in% df$source){
+    rnk <- 6
+  } else 
+    rnk <- 7
   ranking <- data.frame(coverage = cov, rank = rnk)
   return(ranking)
 }
 
 # Rank
 ranking <- lc_comb %>%
-  group_by(gridID, x, y) %>%
+  group_by(gridID) %>%
   do(rank_f(.))
 
 # Rank statistics
@@ -136,12 +151,16 @@ rank_stat <- lc_comb %>%
 table(rank_stat$rank)
 
 # Plot ranking
-ggplot() +
-  geom_raster(data = rank_stat, aes(x = x, y = y, fill = factor(rank))) +
-  geom_path(data = adm, aes(x = long, y = lat, group = group), colour = "black") +
-  geom_path(data = roads, aes(x = long, y = lat, group = group), colour = "grey50") +
-  coord_equal() +
-  theme_bw()
+grid_df <- as.data.frame(rasterToPoints(grid))
+
+left_join(rank_stat, grid_df) %>%
+  filter(rank %in% c(1,2,3,4)) %>%
+  ggplot(.) +
+    geom_raster(aes(x = x, y = y, fill = factor(rank))) +
+    geom_path(data = adm, aes(x = long, y = lat, group = group), colour = "black") +
+    geom_path(data = roads, aes(x = long, y = lat, group = group), colour = "grey50") +
+    coord_equal() +
+    theme_bw()
 
 # Area by rank and source
 lc_comb %>%
@@ -159,7 +178,7 @@ lc_sel <- "rcmrd"
 adm0_comp <- bind_rows(
   lu_adm_raw %>%
     filter(adm_level == 0) %>%
-    summarise(value = sum(area, na.rm = T)) %>%
+    summarise(value = sum(value, na.rm = T)) %>%
     mutate(rank = 0,
            type = "lu"),
   left_join(lc_comb, ranking) %>%
@@ -185,7 +204,7 @@ adm_comp <- bind_rows(
   lu_adm_raw %>%
     filter(adm_level == 1) %>%
     group_by(adm) %>%
-    summarise(value = sum(area, na.rm = T)) %>%
+    summarise(value = sum(value, na.rm = T)) %>%
     mutate(rank = 0,
            type = "lu"),
   left_join(lc_comb, ranking) %>%
@@ -208,18 +227,18 @@ ggplot(data = adm_comp, aes(x = type, y = value, fill = rank)) +
 
 ### PREPARE FINAL LC MAP BY RANKING CELLS PER ADM
 # Prepare travel time
-tt <- stack(grid, tt)
+tt <- stack(grid, tt_raw)
 tt <- as.data.frame(rasterToPoints(tt)) %>%
   dplyr::select(-x, -y)
 
 # Prepare table with required lc based on lu statistics
 # We distribute lu not covered by adm stat using relative lu area
-area_not_adm <- sum(lu_adm_raw$area[lu_adm_raw$adm == iso3c_sel])-sum(lu_adm_raw$area[lu_adm_raw$adm != iso3c_sel])
+area_not_adm <- sum(lu_adm_raw$value[lu_adm_raw$adm == iso3c_sel])-sum(lu_adm_raw$value[lu_adm_raw$adm != iso3c_sel])
 
 target_lu <- lu_adm_raw %>%
   filter(adm_level == 1) %>%
   group_by(adm) %>%
-  summarise(value = sum(area, na.rm = T)) %>%
+  summarise(value = sum(value, na.rm = T)) %>%
   ungroup() %>%
   mutate(share = value/sum(value),
          target_lu = value + (share * area_not_adm)) %>%
@@ -239,10 +258,11 @@ lc <- left_join(lc_comb, ranking) %>%
   mutate(tot_area = cumsum(value)) %>%
   left_join(target_lu) %>%
   filter(tot_area <= target_lu*lc_slack) %>%
+  left_join(grid_df) %>%
   ungroup() %>%
-  dplyr::select(x, y, value, gridID)
+  dplyr::select(x, y, value, gridID, adm)
 
-lc_r <- dplyr::select(lc, -gridID)
+lc_r <- dplyr::select(lc, -gridID, -adm)
 lc_r <- rasterFromXYZ(lc_r)
 crs(lc_r) <- crs(grid)
 
@@ -256,13 +276,16 @@ ggplot() +
   theme_bw()
 
 
-# x <- rasterFromXYZ(lc)
+#x <- rasterFromXYZ(lc)
 # x
 # levelplot(x)
-# levelplot(x, margin = F) +
-#   layer(sp.polygons(adm, col = "grey")) +
-#   layer(sp.polygons(roads, col = "black"))
+#levelplot(x, margin = F) +
+#  layer(sp.polygons(adm, col = "grey")) +
+#  layer(sp.polygons(roads, col = "black"))
 
 # Save
-saveRDS(lc, file.path(dataPath, paste0("Data/", iso3c_sel, "/processed/maps/lc/lc_syn_30_sec_2000_", iso3c_sel, ".rds")))
-writeRaster(lc_r, file.path(dataPath, paste0("Data/", iso3c_sel, "/processed/maps/lc/lc_syn_30_sec_2000_", iso3c_sel, ".tif")))
+saveRDS(lc, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/GAMS/lc_2000_", iso3c_sel, ".rds"))) 
+writeRaster(lc_r, file.path(dataPath, paste0("Data/", iso3c_sel, "/processed/maps/lc/lc_syn_30_sec_2000_", iso3c_sel, ".tif")), overwrite = T)
+
+
+

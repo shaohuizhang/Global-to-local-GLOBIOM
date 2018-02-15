@@ -1,6 +1,6 @@
 #'========================================================================================================================================
 #' Project:  Global-to-local GLOBIOM
-#' Subject:  Script to compare land use and land cover data
+#' Subject:  Script to compare and harmonise land use, land cover and irrigation data
 #' Author:   Michiel van Dijk
 #' Contact:  michiel.vandijk@wur.nl
 #'========================================================================================================================================
@@ -38,26 +38,36 @@ source("Code/ZMB/Set_country.R")
 
 # LOAD DATA
 # Crop cover data
-lc_raw <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Agricultural_statistics/lc_ESA_2000_", iso3c_sel, ".rds"))) %>%
-  mutate(type = "lc")
+lc_raw <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/GAMS/lc_2000_", iso3c_sel, ".rds"))) 
 
 # Agricultural statistics
-lu_adm_raw <- read_csv(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Agricultural_statistics/ag_stat_2000_", iso3c_sel, ".csv"))) %>%
-  mutate(type = "lu")
+lu_adm_raw <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/GAMS/lu_adm_2000_", iso3c_sel, ".rds"))) 
+
+# Irrigation
+ir_raw <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/maps/gmia/gmia_30sec_", iso3c_sel, ".tif")))
+names(ir_raw) <- "ir_area"
+ir_raw2 <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/maps/gia/gia_", iso3c_sel, ".tif"))) 
+names(ir_raw2) <- "ir_area"
+
+# lu_sy 
+lu_sy_raw <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/GAMS/lu_sy_2000_", iso3c_sel, ".rds")))
+
+# Grid
+grid <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid/grid_30sec_r_", iso3c_sel, ".tif")))
+names(grid) <- "gridID"
 
 
-### COMPARE LC and LU AT ADM2
+
+### COMPARE LC and LU ADM
 # Combine
 adm0_comp <- bind_rows(
   lu_adm_raw %>%
     filter(adm_level == 0) %>%
-    group_by(type) %>%
-    summarise(value = sum(area, na.rm = T)),
+    summarise(value = sum(value, na.rm = T)) %>%
+    mutate(type = "lu"),
   lc_raw %>%
-    #filter(lc_class == "Cropland") %>%
-    filter(lc_class %in% c("Mosaic cropland", "Cropland irrigated / post-flooding", "Cropland, rainfed")) %>%
-    group_by(type) %>%
-    summarise(value = sum(lc_area, na.rm = T)))
+    summarise(value = sum(value, na.rm = T)) %>%
+    mutate(type = "lc"))
 
 ggplot(data = adm0_comp, aes(x = type, y = value, fill = type)) +
   geom_bar(stat="identity", position = "dodge") +
@@ -70,19 +80,18 @@ ggplot(data = adm0_comp, aes(x = type, y = value, fill = type)) +
 
 ### COMPARE ADM2
 # Combine
-adm2_comp <- bind_rows(
+adm_comp <- bind_rows(
   lu_adm_raw %>%
     filter(adm_level == 1) %>%
-    group_by(type, adm) %>%
-    summarise(value = sum(area, na.rm = T)),
+    group_by(adm) %>%
+    summarise(value = sum(value, na.rm = T)) %>%
+    mutate(type = "lu"),
   lc_raw %>%
-#    filter(lc_class == "Cropland") %>%
-  filter(lc_class %in% c("Mosaic cropland", "Cropland irrigated / post-flooding", "Cropland, rainfed")) %>%
-    rename(adm = adm1) %>%
-    group_by(type, adm) %>%
-    summarise(value = sum(lc_area, na.rm = T)))
+    group_by(adm) %>%
+    summarise(value = sum(value, na.rm = T)) %>%
+    mutate(type = "lc"))
 
-ggplot(data = adm2_comp, aes(x = adm, y = value, fill = type)) +
+ggplot(data = adm_comp, aes(x = adm, y = value, fill = type)) +
   geom_bar(stat="identity", position = "dodge") +
   labs(title = "Crop cover and land use comparison",
        y = "ha",
@@ -92,27 +101,31 @@ ggplot(data = adm2_comp, aes(x = adm, y = value, fill = type)) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) 
 
 # Identify adms with not enough crop cover
-check_adm2 <- adm2_comp %>%
+check_adm <- adm_comp %>%
   spread(type, value) %>%
   mutate(check_lu = lc - lu) %>%
   filter(check_lu <0)
 
 
-### CORRECT DISCREPANCY LAND COVER AND LAND USE AND PREPARE GRID FILES
-# lc
-lc <- lc_raw %>%
-  #filter(lc_class == "Cropland")
-  filter(lc_class %in% c("Mosaic cropland", "Cropland irrigated / post-flooding", "Cropland, rainfed")) 
-  
+### COMPARE IRRIGATION
+# Link gmia with gridid
+ir_grid <- stack(grid, ir_raw2)
+ir_grid_df <- as.data.frame(rasterToPoints(ir_grid)) %>%
+  dplyr::select(-x, -y) %>%
+  filter(ir_area >0)
+sum(ir_grid_df$ir_area, na.rm = T)
 
-# lu_adm
-lu_adm <- lu_adm_raw %>%
-  dplyr::select(adm, adm_level, short_name, value = area)
+# Link to lc
+ir_grid <- left_join(lc_raw, ir_grid_df) 
+sum(ir_grid$value[!is.na(ir_grid$ir_area)])
+sum(lu_sy_raw$value[lu_sy_raw$system == "I"])
+summary(ir_grid)
+
+ir_grid_30sec_df <- dplyr::select(ir_grid, gridID, value = ir_area) %>%
+  filter(value >0)
+
+# save
+saveRDS(ir_grid_30sec_df, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/GAMS/ir_2000_", iso3c_sel, ".rds")))
 
 
-### SAVE MODEL INPUT DATA
-# lc
-saveRDS(lc, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/GAMS/lc_2000_", iso3c_sel, ".rds"))) 
 
-# lu_adm
-saveRDS(lu_adm, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/GAMS/lu_adm_2000_", iso3c_sel, ".rds"))) 

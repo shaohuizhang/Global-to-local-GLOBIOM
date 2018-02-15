@@ -251,7 +251,6 @@ adm_2000 <- adm_2000 %>%
 
 # Combine
 ag_stat_2000 <- bind_rows(FAOSTAT_2000, adm_2000) %>%
-  rename(area = value) %>%
   dplyr::select(-variable)
 
 ### SHARE OF SUBNATIONAL CROPS IN TOTAL
@@ -264,17 +263,17 @@ setdiff(
   unique(ag_stat_2000$short_name[ag_stat_2000$adm != iso3c_sel]))
 
 # Share of crops covered by adm statistics
-sum(ag_stat_2000$area[ag_stat_2000$adm != iso3c_sel])/
-      sum(ag_stat_2000$area[ag_stat_2000$adm == iso3c_sel]) *100
+sum(ag_stat_2000$value[ag_stat_2000$adm != iso3c_sel])/
+      sum(ag_stat_2000$value[ag_stat_2000$adm == iso3c_sel]) *100
 
 # Area not allocated to adm
-sum(ag_stat_2000$area[ag_stat_2000$adm == iso3c_sel]) - 
-  sum(ag_stat_2000$area[ag_stat_2000$adm != iso3c_sel])
+sum(ag_stat_2000$value[ag_stat_2000$adm == iso3c_sel]) - 
+  sum(ag_stat_2000$value[ag_stat_2000$adm != iso3c_sel])
 
 
 ### SAVE
-# Agricultural statistics
-write_csv(ag_stat_2000, file.path(paste0(dataPath, "/Data/", iso3c_sel, "/Processed/Agricultural_statistics/ag_stat_2000_", iso3c_sel, ".csv")))
+# lu_adm
+saveRDS(ag_stat_2000, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/GAMS/lu_adm_2000_", iso3c_sel, ".rds"))) 
 
 # Crop list
 crop_list <- ag_stat_2000 %>%

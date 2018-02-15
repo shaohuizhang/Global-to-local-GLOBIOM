@@ -22,7 +22,7 @@ if(Sys.info()["user"] == "vandijkm") {
   modelPath <- "P:\\globiom\\Projects\\Water\\AP_side_calculations"}
 
 if(Sys.info()["user"] == "vandijkm") {
-  GAMSPath <- "C:\\GAMS\\win64\\24.4"}
+  GAMSPath <- "C:\\GAMS\\win64\\24.9"}
 
 # Anybody else:
 if(Sys.info()["user"] == "") {

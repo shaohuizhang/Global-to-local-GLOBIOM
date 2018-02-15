@@ -73,7 +73,7 @@ deptots_gdx <- para_gdx(deptots, c("adm", "short_name"), "deptots", "Ratio per m
 
 # avail(i,c)
 avail <- lc %>%
-  dplyr::select(gridID, value = lc_area)
+  dplyr::select(gridID, value)
 
 avail_gdx <- para_gdx(avail, c("gridID"), "avail", "Available area per grid cell")
 
@@ -87,7 +87,7 @@ produ_gdx <- para_gdx(produ, c("sy"), "produ", "Production of crops")
 
 # irrarea(i)
 irrarea <- ir %>%
-  dplyr::select(gridID, value = gmia)
+  dplyr::select(gridID, value)
 
 irrarea_gdx <- para_gdx(irrarea, c("gridID"), "irrarea", "Irrigrated area per grid cell")
 
@@ -145,7 +145,7 @@ n_set_gdx <- set_gdx(n_set, c("s","j"), "n", ts="Main crops with corresponding s
 # l(k,i)  Pixels in subnat with statistics   
 # NB RENAME adm1 into adm
 l_set <- lc %>%
-  dplyr::select(adm1, gridID) %>%
+  dplyr::select(adm, gridID) %>%
   unique() %>%
   setNames(c("k", "i"))
 
