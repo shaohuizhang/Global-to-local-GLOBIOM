@@ -271,6 +271,10 @@ sum(ag_stat_2000$value[ag_stat_2000$adm == iso3c_sel]) -
   sum(ag_stat_2000$value[ag_stat_2000$adm != iso3c_sel])
 
 
+### ESTIMATE PLANTED AREA, MULTI-CROPPING AND FALLOWED LAND
+
+
+
 ### SAVE
 # lu_adm
 saveRDS(ag_stat_2000, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/GAMS/lu_adm_2000_", iso3c_sel, ".rds"))) 

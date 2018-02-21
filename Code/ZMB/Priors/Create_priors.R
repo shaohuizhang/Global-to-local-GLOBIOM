@@ -142,5 +142,14 @@ prior_df <- prior_df %>%
 sum(prior_df$priors_norm)
 summary(prior_df)
 
+# Scale priors and eps
+scalelp <- NROW(lc)
+
+prior_df <- prior_df %>%
+  mutate(value = priors_norm * scalelp) %>%
+  dplyr::select(gridID, sy, value) %>%
+  mutate(value = ifelse(value == 0, value+0.000001, value))
+
+
 # Save data
 saveRDS(prior_df, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/GAMS/priors_2000_", iso3c_sel, ".rds")))

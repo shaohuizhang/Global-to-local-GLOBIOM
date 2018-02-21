@@ -55,49 +55,58 @@ lu_adm <- readRDS(file.path(paste0(dataPath, "/Data/", iso3c_sel, "/Processed/GA
 lc <- readRDS(file.path(paste0(dataPath, "/Data/", iso3c_sel, "/Processed/GAMS/lc_2000_", iso3c_sel, ".rds"))) 
 
 # Ir
-ir <- readRDS(file.path(paste0(dataPath, "/Data/", iso3c_sel, "/Processed/GAMS/ir_2000_", iso3c_sel, ".rds"))) 
+lc_ir <- readRDS(file.path(paste0(dataPath, "/Data/", iso3c_sel, "/Processed/GAMS/lc_ir_2000_", iso3c_sel, ".rds"))) 
+
+# lc_det
+lc_det <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/GAMS/lu_detail_2000_", iso3c_sel, ".rds")))
 
 # Priors
-priors_raw <- readRDS(file.path(paste0(dataPath, "/Data/", iso3c_sel, "/Processed/GAMS/priors_2000_", iso3c_sel, ".rds"))) 
+priors <- readRDS(file.path(paste0(dataPath, "/Data/", iso3c_sel, "/Processed/GAMS/priors_2000_", iso3c_sel, ".rds"))) 
 
 
 ### CREATE GAMS PARAMETERS 
 # deptots(k,s)
 # Land use for (selected) crops and all subnational regions (adm1 or adm2). 
-deptots <- lu_adm %>%
+adm_area <- lu_adm %>%
   filter(adm_level == 1) %>%
   dplyr::select(adm, short_name, value)
 
-deptots_gdx <- para_gdx(deptots, c("adm", "short_name"), "deptots", "Ratio per main crops")
+adm_area_gdx <- para_gdx(adm_area, c("adm", "short_name"), "adm_area", "Crop area per adm")
 
 
-# avail(i,c)
-avail <- lc %>%
+# lc(i)
+lc_m <- lc %>%
   dplyr::select(gridID, value)
 
-avail_gdx <- para_gdx(avail, c("gridID"), "avail", "Available area per grid cell")
+lc_gdx <- para_gdx(lc_m, c("gridID"), "lc", "Crop cover per grid cell")
 
 
 # produ(j)
-produ <- lu_sy %>%
+crop_area <- lu_sy %>%
   dplyr::select(sy, value)
 
-produ_gdx <- para_gdx(produ, c("sy"), "produ", "Production of crops")
+crop_area_gdx <- para_gdx(crop_area, c("sy"), "crop_area", "Total area per crop")
 
 
 # irrarea(i)
-irrarea <- ir %>%
+ir_area <-lc_ir %>%
   dplyr::select(gridID, value)
 
-irrarea_gdx <- para_gdx(irrarea, c("gridID"), "irrarea", "Irrigrated area per grid cell")
+ir_area_gdx <- para_gdx(ir_area, c("gridID"), "ir_area", "Irrigated area per grid cell")
 
 
-# irrcrops(j)
-irrcrops <- lu_sy %>%
+# ir_crop(j)
+ir_crop <- lu_sy %>%
   filter(system == "I") %>%
   dplyr::select(sy, value)
 
-irrcrops_gdx <- para_gdx(irrcrops, c("sy"), "irrcrops", "Area of irrigrated crops")
+ir_crop_gdx <- para_gdx(ir_crop, c("sy"), "ir_crop", "Total irrigated area per crop")
+
+# det_area(i,j)
+det_area <- lc_det %>%
+  dplyr::select(gridID, sy, value = alloc)
+
+det_area_gdx <- para_gdx(det_area, c("gridID", "sy"), "det_area", "Detailed land use information")
 
 
 ### CREATE GAMS SETS
@@ -143,7 +152,6 @@ n_set_gdx <- set_gdx(n_set, c("s","j"), "n", ts="Main crops with corresponding s
 
 
 # l(k,i)  Pixels in subnat with statistics   
-# NB RENAME adm1 into adm
 l_set <- lc %>%
   dplyr::select(adm, gridID) %>%
   unique() %>%
@@ -163,19 +171,15 @@ m_set_gdx <- set_gdx(m_set, c("k", "s"), "m", ts="Main crop names in Subnat with
 
 # scalelp: number of grid cells to scale optimization so numbers do not get too small
 # Equal to number of i_set
-scalelp <- nrow(i_set)
-scalelp_gdx <- scalar_gdx(scalelp, "scalelp", "Scalar for lp")
+scalef <- nrow(i_set)
+scalef_gdx <- scalar_gdx(scalef, "scalef", "Scaling factor")
 
 # Priors
-priors <- priors_raw %>%
-  mutate(value = priors_norm * scalelp) %>%
-  dplyr::select(gridID, sy, value) %>%
-  mutate(value = ifelse(value == 0, value+0.000001, value))
-priors_gdx <- para_gdx(priors, c("gridID", "sy"), "rev", "Priors for cross-entropy")
+priors_gdx <- para_gdx(priors, c("gridID", "sy"), "priors", "Prior area allocation shares")
 
 
 ### WRITE
 wgdx(file.path(dataPath, paste0("Model/", iso3c_sel, "/Data/input_data_", iso3c_sel, "_2000.gdx")),
-     avail_gdx, deptots_gdx, irrcrops_gdx, irrarea_gdx, produ_gdx, priors_gdx,
+     lc_gdx, adm_area_gdx, ir_crop_gdx, ir_area_gdx, crop_area_gdx, det_area_gdx, priors_gdx,
      i_set_gdx, j_set_gdx, k_set_gdx, n_set_gdx, l_set_gdx, m_set_gdx, s_set_gdx, 
-     scalelp_gdx)
+     scalef_gdx)

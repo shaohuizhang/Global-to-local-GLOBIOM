@@ -130,5 +130,6 @@ Then some general questions about your GAMS code and my results:
 - How to deal with failed harvest (difference planted and harvested area)
 - Suitability really useful?
 - How to deal with fallowing => Zambia case.
+- What is irrigation? AQUASTAT includes controlled and other, other is subsistence so should not be part of SPAM
 
   

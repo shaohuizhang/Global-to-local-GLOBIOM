@@ -48,19 +48,27 @@ gia_raw <- raster(file.path(dataPath, "Data/global/gia/global_irrigated_areas.ti
 crs(gia_raw) <- crs(adm)
 
 
-### SELECT COUNTRY GIA MAP
+### PROCESS
+# Select country map
 gia <- crop(gia_raw, adm)
 gia <- mask(gia, adm)
 names(gia) <- "gia"
-gia[gia == 0] <- NA # set non-irrigated areas to NA
-levelplot(gia) +
-  layer(sp.polygons(adm, col = "black"))
-freq(gia)
 
+# Remove cells with 0 and add area info
+gia[gia == 0] <- NA # set non-irrigated areas to NA
+gia_area <- area(gia)
+gia_area <- gia_area*100 # to ha
+gia_area[is.na(gia)] <- NA
+names(gia_area) <- "value"
+rm(gia)
+
+levelplot(gia_area) +
+  layer(sp.polygons(adm, col = "black"))
+freq(gia_area)
 
 # Save map
 giaPath <- file.path(dataPath, paste0("Data\\", iso3c_sel, "\\Processed\\Maps\\gia"))
 dir.create(giaPath)
-writeRaster(gia, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gia/gia_", iso3c_sel, ".tif")), overwrite = T)
+writeRaster(gia_area, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gia/gia_", iso3c_sel, ".tif")), overwrite = T)
 
 

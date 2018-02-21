@@ -48,37 +48,20 @@ names(grid) <- "gridID"
 gia_raw <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/maps/gia/gia_", iso3c_sel, ".tif"))) 
 names(gia_raw) <- "value"
 
-# land_cover
-lc <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/GAMS/lc_2000_", iso3c_sel, ".rds"))) 
-lc <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/processed/maps/lc/lc_syn_30_sec_2000_", iso3c_sel, ".tif")))
-
+# System
+lu_sy_raw <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/GAMS/lu_sy_2000_", iso3c_sel, ".rds")))
 
 
 ### DETECT IRRIGATION SCHEMES
-# Find irrigation schemes by plotting gia on Google Earth
-# In Google Earth, choose year and draw polygon around area.
+# Find irrigation schemes by plotting gia on Google Earth, OSM, etc and compare with external data on irrigation schemes
+# In Google Earth use history button to select the appropriate year and draw polygon around area.
 # Make sure to select ha and meters for units, make opacity for area 0% 
 # Save polygon
 
+#plotKML::plotKML(gia_raw)
 
-# We use the following procedure to add irrigated area
-#' 1. Irrigation scheme is identified and polygon is created
-#' 2. polygon is transferred to a raster with gridID
-#' 3. We assume the actual area irrigated, taken from other sources, is evenly distributed over all grid cells
-#' 4. Irrigated area is added to grid cells of gia map
-
-
-
-plotKML::plotKML(gia_raw)
-
-mapview(adm, col.regions = NA, alpha.regions = 0, color = "black", lwd = 1) +
-  mapview(sugar1, col.regions = NA, alpha.regions = 0, color = "red", lwd = 2) +
-  mapview(gia_raw)  
-
-sugc1_raw <- readOGR(file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Irrigation/Zambia_sugar_2000.kmz")))
-unzip(file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Irrigation/Zambia_sugc_2000.kmz")), 
-      exdir = file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Irrigation/")))
-
+#mapview(adm, col.regions = NA, alpha.regions = 0, color = "black", lwd = 1) +
+#   mapview(gia_raw)  
 
 
 ### OVERLAY GIA AND IRRIGATION LOCATION
@@ -89,10 +72,20 @@ comb <- stack(grid_area, grid)
 
 
 # Function to prepare input for model
-proc_ir_f <- function(scheme, ir_area){
+# We use the following procedure to add irrigated area
+#' 1. Irrigation scheme is identified and polygon is created
+#' 2. polygon is transferred to a raster with gridID
+#' 3. We assume the actual area irrigated, taken from other sources, is evenly distributed over all grid cells
+#' 4. Irrigated area is added to grid cells of gia map
+
+proc_ir_f <- function(scheme, sys, ir_area){
   
-  # Load spatial data
-  ir_poly <- readOGR(file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Irrigation/", scheme, ".kml")))
+  # Unzip, rename and Load spatial data
+  path <- file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Schemes/"))
+  unzip(file.path(path,  paste0(scheme, ".kmz")),
+        exdir = path)
+  file.rename(file.path(path,  "doc.kml"), file.path(path, paste0(scheme, ".kml")))
+  ir_poly <- readOGR(file.path(dataPath, paste0("Data/", iso3c_sel, "/Raw/Spatial_data/Schemes/", scheme, ".kml")))
   plot(ir_poly)
 
   # Prepare naming
@@ -119,15 +112,33 @@ proc_ir_f <- function(scheme, ir_area){
            scheme = scheme_name,
            year = year,
            short_name = crop,
-           system = "I",
-           sy = paste0(crop, "_I")) %>% # to ha
-    dplyr::select(-x, -y)
+           system = sys,
+           sy = paste(crop, sys, sep = "_")) %>% # to ha
+    dplyr::select(-x, -y, -area)
   return(ir_df)
 }
 
 # Create irrigation df with detailed info
-ir_scheme <- bind_rows(
-  proc_ir_f("Munkumpu_whea_2000", 2000),
-  proc_ir_f("Zambia_sugc_2000", 9000)
+scheme_df <- bind_rows(
+  proc_ir_f("Munkumpu_whea_2000", "I", 2000),
+  proc_ir_f("Zambia_sugc_2000", "I", 9000)
 )
 
+
+### OTHER SPATIAL DATA
+# Add if available
+
+
+### COMBINE ALL 
+lu_detail <- bind_rows(scheme_df)
+
+
+### CALCULATE SHARES THAT WILL BE ALLOCATED TO GRIDCELLS
+lu_sy <- lu_sy_raw %>%
+  rename(lu_sy = value)
+
+lu_detail <- left_join(lu_detail, lu_sy) %>%
+  mutate(alloc = value/lu_sy)
+
+# Save
+saveRDS(lu_detail, file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/GAMS/lu_detail_2000_", iso3c_sel, ".rds"))) 
