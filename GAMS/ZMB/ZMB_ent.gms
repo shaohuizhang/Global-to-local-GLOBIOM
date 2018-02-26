@@ -12,6 +12,7 @@ $set gdxData    H:\MyDocuments\Projects\Global-to-local-GLOBIOM\Model\ZMB\Data\i
 $set gdxOutput  H:\MyDocuments\Projects\Global-to-local-GLOBIOM\Model\ZMB\Data\Results\min_entropy_ZMB_2000.gdx
 
 
+
 *
 * Define model
 *
