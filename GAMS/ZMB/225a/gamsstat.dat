@@ -1,0 +1,352 @@
+=1
+=0IBM ILOG CPLEX   24.9.2 r64480 Released Nov 14, 2017 WEI x86 64bit/MS Windows 
+=1
+
+IBM ILOG CPLEX   24.9.2 r64480 Released Nov 14, 2017 WEI x86 64bit/MS Windows 
+=2
+=1
+--- GAMS/Cplex licensed for continuous and discrete problems.
+=2
+=1
+Cplex 12.7.1.0
+
+=2
+ 
+ 
+--------------------------------------------------------------
+CONTROL FILE STATISTICS
+--------------------------------------------------------------
+Rows : 85182, columns : 1440513, nonzeroes : 3898171
+Free Rows          : 0
+Iteration limit    : 2000000000
+Resource  limit    : 9.000000e+005
+Objective variable : 1355776
+Objective sense    : minimize
+Advanced basis     : no
+ 
+ 
+
+
+Option Values:
+----------------------------------------------------
+usebasis              0
+cutoff                0
+tryint                0
+domlim                0
+advind                0
+aggcutlim             3
+aggfill               10
+aggind                -1
+auxrootthreads        0
+baralg                0
+barcolnz              0
+barcrossalg           0
+bardisplay            1
+barepcomp             1e-008
+bargrowth             1e+012
+baritlim              2100000000
+barmaxcor             -1
+barobjrng             1e+020
+barorder              0
+barqcpepcomp          1e-007
+barstartalg           1
+bbinterval            7
+bendersfeascuttol     1e-006
+bendersoptcuttol      1e-006
+.benderspartition     0
+bendersstrategy       0
+bndstrenind           -1
+bqpcuts               0
+brdir                 0
+bttol                 0.9999
+calcqcpduals          1
+cliques               0
+clocktype             0
+clonelog              0
+coeredind             -1
+computeserver        
+covers                0
+cpumask               auto
+craind                1
+crossoveralg          default
+cutlo                 -1e+075
+cutpass               0
+cuts                  0
+cutsfactor            -1
+cutup                 1e+075
+datacheck             0
+depind                -1
+dettilim              1e+075
+disjcuts              0
+divetype              0
+divfltup              1e+299
+divfltlo              -1e+299
+.divflt               0
+dpriind               0
+dtprefix              bnd
+dtterm                1
+dumpcuts              0
+dumptree              0
+dumplp                0
+eachcutlim            2100000000
+epagap                1e-006
+epgap                 0.0001
+epint                 1e-005
+epmrk                 0.01
+epopt                 1e-006
+epper                 1e-006
+eprelax               1e-006
+eprhs                 1e-006
+feasopt               0
+feasoptmode           0
+.feaspref             1
+fixoptfile            
+flowcovers            0
+flowpaths             0
+flushfiles            0
+fpheur                0
+fraccand              200
+fraccuts              0
+fracpass              0
+freegamsmodel         0
+gubcovers             0
+heurfreq              0
+iafile                
+iatriggerfile         
+iatriggertime         60
+iis                   0
+implbd                0
+interactive           0
+intsollim             2100000000
+itlim                 2000000000
+lbheur                0
+liftprojcuts          0
+lpalg                 default
+lpmethod              0
+ltol                  0
+mcfcuts               0
+memoryemphasis        0
+localimplied          0
+mipdisplay            4
+mipemphasis           0
+mipkappastats         -1
+mipinterval           0
+mipordind             1
+mipordtype            0
+mipsearch             0
+mipstart              0
+miptrace              
+miptracenode          100
+miptracetime          1
+miqcpstrat            0
+mircuts               0
+mpslongnum            1
+mtol                  0
+names                 1
+netdisplay            2
+netepopt              1e-006
+neteprhs              1e-006
+netfind               2
+netitlim              2100000000
+netppriind            0
+nodefileind           1
+nodelim               2100000000
+nodesel               1
+numericalemphasis     0
+objdif                0
+objllim               -1e+075
+objrng               
+objulim               1e+075
+parallelmode          1
+perind                0
+perlim                0
+polishtime            0
+polishafterepagap     0
+polishafterepgap      0
+polishafternode       2100000000
+polishafterintsol     2100000000
+polishaftertime       1e+075
+polishafterdettime    1e+075
+populatelim           20
+ppriind               0
+predual               0
+preind                1
+prelinear             1
+prepass               -1
+preslvnd              0
+pricelim              0
+printoptions          0
+probe                 0
+probetime             1e+075
+probedettime          1e+075
+probread              
+qpmakepsdind          1
+qpmethod              0
+qtolin                -1
+quality               0
+rampupdettimelimit    1e+075
+rampupduration        0
+rampuptimelimit       1e+075
+randomseed            0
+readflt               
+readparams            
+reduce                3
+reinv                 0
+relaxfixedinfeas      0
+relaxpreind           -1
+relobjdif             0
+repairtries           0
+repeatpresolve        -1
+rerun                 yes
+rhsrng               
+rinsheur              0
+rngrestart            
+rtlcuts               0
+scaind                0
+secret               
+siftalg               0
+siftdisplay           1
+siftitlim             2100000000
+simdisplay            1
+singlim               10
+solnpool              
+solnpoolmerge         
+solnpoolnumsym        10
+solnpoolagap          1e+075
+solnpoolcapacity      2100000000
+solnpoolgap           1e+075
+solnpoolintensity     0
+solnpoolpop           1
+solnpoolpopdel        
+solnpoolpoprepeat     
+solnpoolprefix        soln
+solnpoolreplace       0
+solutiontype          0
+optimalitytarget      0
+solvefinal            1
+startalg              0
+strongcandlim         10
+strongitlim           0
+subalg                0
+submipnodelim         500
+symmetry              -1
+threads               1
+tilim                 900000
+trelim                1e+075
+tuning                
+tuningdisplay         1
+tuningmeasure         1
+tuningrepeat          1
+tuningtilim           180000
+tuningdettilim        1e+007
+usercutcall           
+usercutfirst          10
+usercutfreq           10
+usercutinterval       100
+usercutmult           2
+usercutnewint         1
+usergdxin             bchin.gdx
+usergdxsol            bchsol.gdx
+usergdxname           bchout.gdx
+usergdxnameinc        bchout_i.gdx
+usergdxprefix         
+userheurcall          
+userheurfirst         10
+userheurfreq          10
+userheurinterval      100
+userheurmult          2
+userheurnewint        1
+userheurobjfirst      0
+userincbcall          
+userincbicall         
+userjobid             
+userkeep              0
+usercgmaxcols         2147483647
+usercgadvind          1
+usercgsolopt          0
+usercgdumplp          bchcgdump.lp
+userpricingcall       
+usersolvenodelp       
+varsel                0
+waitforenter          0
+workdir               .
+workeralgorithm       0
+workmem               128
+writeannotation       
+writebas              
+writeflt              
+writelp               
+writemps              
+writemst              
+writeord              
+writeparam            
+writepre              
+writesav              
+zerohalfcuts          0
+----------------------------------------------------
+
+=1
+Space for names approximately 42.32 Mb
+Use option 'names no' to turn use of names off
+=2
+CPXPARAM_Advance                                 0
+CPXPARAM_Simplex_Limits_Iterations               2000000000
+CPXPARAM_TimeLimit                               900000
+CPXPARAM_Threads                                 1
+CPXPARAM_Parallel                                1
+CPXPARAM_Tune_TimeLimit                          180000
+Tried aggregator 1 time.
+LP Presolve eliminated 42279 rows and 60920 columns.
+Reduced LP has 42903 rows, 1379593 columns, and 3262040 nonzeros.
+Presolve time = 1.15 sec. (743.52 ticks)
+Initializing dual steep norms . . .
+
+Iteration log . . .
+Iteration:     1   Dual objective     =             0.000000
+Perturbation started.
+Iteration:   202   Dual objective     =          4591.027493
+Iteration:  2149   Dual objective     =          4591.215084
+Iteration:  3840   Dual objective     =          4591.258345
+Iteration:  5456   Dual objective     =          4591.271162
+Iteration:  6973   Dual objective     =          4591.275253
+Iteration:  8374   Dual objective     =          4591.281765
+Iteration:  9773   Dual objective     =          4591.283995
+Iteration: 11194   Dual objective     =          4591.286175
+Iteration: 12527   Dual objective     =          4591.288418
+Iteration: 13847   Dual objective     =          4591.290219
+Iteration: 15258   Dual objective     =          4591.291328
+Iteration: 16611   Dual objective     =          4591.292946
+Iteration: 17850   Dual objective     =          4591.293852
+Iteration: 19152   Dual objective     =          4591.294400
+Iteration: 20480   Dual objective     =          4591.295119
+Iteration: 21680   Dual objective     =          4591.295455
+Iteration: 23016   Dual objective     =          4591.296001
+Iteration: 24211   Dual objective     =          4591.296615
+Iteration: 25613   Dual objective     =          4591.297023
+Iteration: 26665   Dual objective     =          4591.297569
+Iteration: 28031   Dual objective     =          4591.298010
+Iteration: 29353   Dual objective     =          4593.031853
+Iteration: 30626   Dual objective     =          4593.032076
+Iteration: 31705   Dual objective     =          4593.032259
+Iteration: 33164   Dual objective     =          4593.032597
+Iteration: 34473   Dual objective     =          4593.032775
+Iteration: 35839   Dual objective     =          4593.033093
+Iteration: 36961   Dual objective     =          4593.033402
+Iteration: 38086   Dual objective     =          4593.035742
+Iteration: 39362   Dual objective     =          4593.035922
+Iteration: 40578   Dual objective     =          4593.036212
+Iteration: 41801   Dual objective     =          4593.036518
+Elapsed time = 10.39 sec. (10000.42 ticks, 42942 iterations)
+Iteration: 43084   Dual objective     =          4593.036588
+Removing perturbation.
+=1
+LP status(1): optimal
+Cplex Time: 12.45sec (det. 11963.10 ticks)
+=2
+=1
+Optimal solution found.
+=2
+=1
+Objective :        4592.761116
+
+=2
