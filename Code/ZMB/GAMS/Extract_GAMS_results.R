@@ -12,7 +12,7 @@ p_load("tidyverse", "readxl", "stringr", "car", "scales", "RColorBrewer", "rproj
 # Spatial packages
 p_load("rgdal", "ggmap", "raster", "rasterVis", "rgeos", "sp", "mapproj", "maptools", "proj4", "gdalUtils", "sf")
 # Additional packages
-p_load("countrycode", "gdxrrw", "plotKML")
+p_load("countrycode", "gdxrrw", "plotKML", "viridis")
 
 
 ### SET ROOT AND WORKING DIRECTORY
@@ -29,7 +29,6 @@ source(file.path(root, "Code/Support/functions.r"))
 
 
 ### LINK GAMS LIBRARIES
-GAMSPath <- "C:\\GAMS\\win64\\24.4"
 igdx(GAMSPath)
 
 
@@ -40,42 +39,117 @@ options(digits=4)
 options(max.print=1000000) # more is printed on screen
 
 
+### SET COUNTRY
+source("Code/ZMB/Set_country.R")
+
+
 ### LOAD DATA
+# Grid
+grid <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid/grid_30sec_r_", iso3c_sel, ".tif")))
+names(grid) <- "gridID"
+
 # Load results from land use allocation model
-file <- file.path(dataPath, "Model/Results/land_use.gdx")
-land_use_raw <- rgdx.param(file, "Palloc", names = c("gridID", "system", "value"),  compress = T) %>%
-  mutate(system = as.character(system),
+file <- file.path(dataPath, paste0("Model/", iso3c_sel, "/Results/min_entropy_ZMB_2000.gdx"))
+lu_raw <- rgdx.param(file, "Palloc", names = c("gridID", "sy", "value"),  compress = T) %>%
+  mutate(sy = as.character(sy),
          gridID = as.numeric(as.character(gridID)))
 
-# Load country grid
-grid <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/grid_MWI.rds"))
-grid_r <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/grid_r_MWI.rds"))
-
-# Adm map
-adm2 <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm2_2000_adj.rds"))
+# Adm
+adm <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gaul/adm_2000_", iso3c_sel, ".rds")))
 
 # City information
 data(world.cities)
-cities <- filter(world.cities, country.etc == "Malawi", capital == 1)
+cities <- filter(world.cities, country.etc == country_sel, capital == 1)
 
-# Crop cover data
-crop_cover <- readRDS(file.path(dataPath, "Data/MWI/Processed\\Spatial_data/crop_cover_2000_MWI.rds"))
+# Lc  
+lc <- readRDS(file.path(paste0(dataPath, "/Data/", iso3c_sel, "/Processed/GAMS/lc_2000_", iso3c_sel, ".rds"))) 
 
-# Agricultural statistics
-ag_stat_2000 <- read_csv(file.path(dataPath, "Data/MWI/Processed/Agricultural_statistics/ag_stat_2000_MWI.csv"))
+# Sy
+lu_sy <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/GAMS/lu_sy_2000_", iso3c_sel, ".rds")))
 
 # Priors
-priors <- read_csv(file.path(dataPath, "Model/Data/priors.csv"), col_names = c("gridID", "short_name", "prior")) %>%
-  spread(short_name, prior)
-
-### PREPARE MAPs
-# Transform to sf for easy plotting with ggplot
-grid_sf <- st_as_sf(grid)
-
+priors <- readRDS(file.path(paste0(dataPath, "/Data/", iso3c_sel, "/Processed/GAMS/priors_2000_", iso3c_sel, ".rds"))) 
 
 # urban mask
-urban_mask <- readRDS(file.path(dataPath, "Data/MWI/Processed/Spatial_data/urban_mask_MWI.rds"))
-urban_mask_sf <- st_as_sf(urban_mask)
+#urban_mask <- readRDS(file.path(dataPath, "Data/MWI/Processed/Spatial_data/urban_mask_MWI.rds"))
+
+
+### MAPS
+# Add NA to missing values to show where there is no crop cover
+lu <- lu_raw %>%
+  spread(sy, value, fill = NA) 
+
+# Add grid cell coordinates
+grid_df <- as.data.frame(rasterToPoints(grid))
+
+lu <- lu %>%
+  left_join(grid_df,.) %>%
+  gather(sy, value, -gridID, -x, -y)
+
+# Add short_name and system
+lu <- lu %>%
+  mutate(short_name = substr(sy, 0, 4),
+         system = str_sub(sy, start = -1))
+
+# Plot function
+plot_crop_raster_f <- function(crop, sys){
+  df <- filter(lu, short_name %in% crop, system %in% sys)
+  p = ggplot() +
+    geom_raster(data = df, aes(x = x, y = y, fill = value)) +
+    scale_fill_viridis(na.value = "light grey", direction = -1, labels = comma) +
+    geom_path(data = adm, aes (x = long, y = lat, group = group), colour = "black") +
+    facet_wrap(~short_name) +
+    coord_quickmap() +
+    labs(x="", y="", size = "#HH", fill = "Crop area (ha)") +
+    theme_classic() +
+    theme(line = element_blank(),
+          axis.text = element_blank(),
+          strip.background = element_rect(colour = NA, fill = NA)) +
+    geom_point(data = cities, aes(x = long, y = lat), col = "black") +
+    geom_text(data = cities, aes(x = long, y = lat, label = name), size = 4)
+  
+  p
+}
+
+plot_crop_raster_f("maiz", "S")
+plot_crop_raster_f("whea", "I")
+plot_crop_raster_f("cass", "S")
+
+# Plot all
+df <- filter(lu, short_name %in% c("maiz", "whea", "cass"))
+ggplot() +
+  geom_raster(data = lu, aes(x = x, y = y, fill = value)) +
+  scale_fill_viridis(na.value = "light grey", direction = -1, labels = comma) +
+  geom_path(data = adm, aes (x = long, y = lat, group = group), colour = "black") +
+  facet_wrap(~short_name, scales = "free") +
+  #coord_quickmap() +
+  coord_equal() +
+  labs(x="", y="", size = "#HH", fill = "Crop area (ha)") +
+  theme_classic() +
+  theme(line = element_blank(),
+        axis.text = element_blank(),
+        strip.background = element_rect(colour = NA, fill = NA)) +
+  guides(fill = F)
+
+
+
+
+# SF MAP NEED GEOM_SF
+# # Prepare map
+# grid_sf <- grid_sf %>%
+#   left_join(.,land_use)
+# 
+# # Map
+# ggplot(grid_sf) + geom_sf(aes(fill = maiz)) +
+#   scale_fill_gradient(low="grey",high="red", na.value = "blue")
+# 
+# 
+# grid_sf2 <- grid_sf %>%
+#   gather(short_name, value, -geometry, -gridID) %>%
+#   filter(short_name %in% c("maiz", "grou", "cass"))
+# ggplot(grid_sf2) + geom_sf(aes(fill = value)) + 
+#   facet_grid(. ~ short_name) +
+#   scale_fill_gradient(low="grey",high="red", na.value = "blue")
 
 
 ### COMPARE RESULTS WITH INPUT DATA
@@ -140,63 +214,3 @@ check3b <- check3 %>%
   mutate(check = (value-stat),
          share = ((value-stat)/stat)*100) %>% 
   arrange(desc(check))
-
-
-### MAPS
-# Add NA to missing values to show where there is no crop cover
-land_use <- land_use_raw %>%
-  spread(system, value, fill = NA) 
-
-# Add grid cell coordinates
-grid_df <- as.data.frame(rasterToPoints(grid_r))
-
-land_use <- land_use %>%
-  left_join(grid_df,.) %>%
-  gather(system, value, -gridID, -x, -y)
-
-# Add short_name
-land_use <- land_use %>%
-  mutate(short_name = substr(system,0,4),
-         short_name = ifelse(system %in% c("teas_coff_H", "teas_coff_I"), "teas_coff", short_name))
-
-# Plot function
-plot_crop_raster_f <- function(crop){
-  df <- filter(land_use, short_name %in% crop)
-  p = ggplot() +
-    geom_raster(data = df, aes(x = x, y = y, fill = value)) +
-    scale_fill_viridis(na.value = "light grey", direction = -1, labels = comma) +
-    geom_path(data = adm2, aes (x = long, y = lat, group = group), colour = "black") +
-    facet_wrap(~short_name) +
-    coord_quickmap() +
-    labs(x="", y="", size = "#HH", fill = "Crop area (ha)") +
-    theme_classic() +
-    theme(line = element_blank(),
-          axis.text = element_blank(),
-          strip.background = element_rect(colour = NA, fill = NA)) +
-    geom_point(data = cities, aes(x = long, y = lat), col = "black") +
-    geom_text(data = cities, aes(x = long, y = lat, label = name), size = 4)
-  
-  p
-}
-
-
-plot_crop_raster_f(c("cass", "maiz"))
-
-
-
-# SF MAP NEED GEOM_SF
-# # Prepare map
-# grid_sf <- grid_sf %>%
-#   left_join(.,land_use)
-# 
-# # Map
-# ggplot(grid_sf) + geom_sf(aes(fill = maiz)) +
-#   scale_fill_gradient(low="grey",high="red", na.value = "blue")
-# 
-# 
-# grid_sf2 <- grid_sf %>%
-#   gather(short_name, value, -geometry, -gridID) %>%
-#   filter(short_name %in% c("maiz", "grou", "cass"))
-# ggplot(grid_sf2) + geom_sf(aes(fill = value)) + 
-#   facet_grid(. ~ short_name) +
-#   scale_fill_gradient(low="grey",high="red", na.value = "blue")

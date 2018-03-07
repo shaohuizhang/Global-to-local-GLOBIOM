@@ -34,18 +34,11 @@ source("Code/ZMB/Set_country.R")
 
 ### LOAD DATA
 # Adm
-adm1 <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/GAUL_", iso3c_sel, "_adm1_2000.rds")))
-
-# Adm_map
-adm1_map <- read_excel(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Mappings/Mappings_",iso3c_sel, ".xlsx")), sheet = paste0(iso3c_sel, "2adm")) %>%
-  filter(year == 2000) %>%
-  dplyr::select(adm1, adm1_GAUL) %>%
-  na.omit %>%
-  unique()
+adm <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/gaul/adm_2000_", iso3c_sel, ".rds")))
 
 # Grid
-grid_r <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/5min_grid_r_", iso3c_sel, ".rds")))
-
+grid <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid/grid_5min_r_", iso3c_sel, ".tif")))
+names(grid) <- "gridID"
 
 # gaez2lvst_crop_map
 gaez2lvst_crop <- read_excel(file.path(dataPath, "Data/Mappings/Mappings.xlsx"), sheet = "gaez2crop_lvst") %>%
@@ -131,9 +124,12 @@ I_stack
 suit_stack <- stack(S_stack, L_stack, H_stack, I_stack)
 
 # Crop and mask to iso
-gaez2iso_stack <- crop(suit_stack, adm1)
-gaez2iso_stack <- mask(gaez2iso_stack, adm1)
+gaez2iso_stack <- crop(suit_stack, adm)
+gaez2iso_stack <- mask(gaez2iso_stack, adm)
 plot(gaez2iso_stack)
+plot(gaez2iso_stack$maiz_S)
+plot(gaez2iso_stack$cass_S)
+
 
 ### COMBINE WITH AREA AND ADM DATA
 # area size
@@ -141,7 +137,7 @@ area <- area(grid_r)
 names(area) <- "grid_size"
 
 # Rasterize adm
-adm_r <- rasterize(adm1, grid_r)
+adm_r <- rasterize(adm, grid_r)
 names(adm_r) <- "ID"
 
 # Stack 

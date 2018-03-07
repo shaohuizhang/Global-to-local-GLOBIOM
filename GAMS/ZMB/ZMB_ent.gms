@@ -9,7 +9,7 @@ $version 1
 * input and output file
 *
 $set gdxData    H:\MyDocuments\Projects\Global-to-local-GLOBIOM\Model\ZMB\Data\input_data_ZMB_2000.gdx
-$set gdxOutput  H:\MyDocuments\Projects\Global-to-local-GLOBIOM\Model\ZMB\Data\Results\min_entropy_ZMB_2000.gdx
+$set gdxOutput  H:\MyDocuments\Projects\Global-to-local-GLOBIOM\Model\ZMB\Results\min_entropy_ZMB_2000.gdx
 
 
 
@@ -154,18 +154,18 @@ sum_one(j)$crop_area(j)..
 
 * Constraint 3
 * Sum of allocated area over all crops should not exceed actual cropland in a grid cell.
-grid_cover(i)..
-    (1/scalef)*sum(nonzero(i,j), alloc(i,j)*crop_area(j)) =l= lc(i)+lc_slack(i);
 *grid_cover(i)..
-*    (1/scalef)*sum(nonzero(i,j), alloc(i,j)*crop_area(j)) =l= lc(i);
+*    (1/scalef)*sum(nonzero(i,j), alloc(i,j)*crop_area(j)) =l= lc(i)+lc_slack(i);
+grid_cover(i)..
+    (1/scalef)*sum(nonzero(i,j), alloc(i,j)*crop_area(j)) =l= lc(i);
 
 * Contstraint 4
 * Irrigated grid cells are allocated
 *
-*ir_cover(i)..
-*    (1/scalef)*sum(j$ir_crop(j), alloc(i,j)*ir_crop(j)) =l= ir_area(i) + ir_slack(i);
 ir_cover(i)..
-    (1/scalef)*sum(j$ir_crop(j), alloc(i,j)*ir_crop(j)) =l= ir_area(i);
+    (1/scalef)*sum(j$ir_crop(j), alloc(i,j)*ir_crop(j)) =l= ir_area(i) + ir_slack(i);
+*ir_cover(i)..
+*    (1/scalef)*sum(j$ir_crop(j), alloc(i,j)*ir_crop(j)) =l= ir_area(i);
 
 * Constraint 5
 * Total allocation per crop should be equal to land use in adm
@@ -263,7 +263,6 @@ control_alloc(k,s) =
 
 
 * Compare ir_slack with availability
-$ontext
 parameter sum_ir_slack;
 sum_ir_slack = sum(i, ir_slack.l(i));
 
@@ -275,14 +274,13 @@ comp_ir_slack(i,'availability')$ir_slack.l(i) = lc(i);
 comp_ir_slack(i,'irslack')$ir_slack.l(i) = ir_slack.l(i);
 comp_ir_slack(i,'irarea')$ir_slack.l(i) = ir_area(i);
 comp_ir_slack(i,'allocated')$ir_slack.l(i) = sum(j,palloc(i,j));
-$offtext
+
 
 *
 * save solution
 *
 execute_unload "%gdxOutput%" , i, j, scalef, labels, alloc, palloc, report, result_crop, result_pixel,
-                   k, s, sign, control_alloc, adm_area, lc, crop_area, priors, ir_area, ir_crop, lc_slack;
-*, ir_slack, comp_ir_slack;
+                   k, s, sign, control_alloc, adm_area, lc, crop_area, priors, ir_area, ir_crop, lc_slack, ir_slack, comp_ir_slack;
 
 $ontext
 $offtext

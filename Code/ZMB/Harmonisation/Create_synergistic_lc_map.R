@@ -91,12 +91,15 @@ roads <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps
 esa <- esa_raw %>%
   group_by(gridID, source) %>%
   summarize(value = sum(value, na.rm = T))
+sum(esa$value)
 
 rcmrd <- rcmrd_raw %>%
   dplyr::select(gridID, value, source)
+sum(rcmrd$value)
 
 glc <- glc_raw %>%
   dplyr::select(gridID, value, source)
+sum(glc$value)
 
 lc_comb <- bind_rows(esa, rcmrd, glc)
 
@@ -155,10 +158,10 @@ rank_f <- function(df){
 }
 
 # Rank
-ranking <- lc_comb %>%
-  group_by(gridID) %>%
-  do(rank_f(.))
-saveRDS(ranking, "Cache/ranking.rds")
+# ranking <- lc_comb %>%
+#   group_by(gridID) %>%
+#   do(rank_f(.))
+#saveRDS(ranking, "Cache/ranking.rds")
 ranking <- readRDS("Cache/ranking.rds")
 
 
@@ -178,8 +181,16 @@ left_join(lc_rank, grid_df) %>%
     geom_raster(aes(x = x, y = y, fill = factor(rank))) +
     geom_path(data = adm, aes(x = long, y = lat, group = group), colour = "black") +
     #geom_path(data = roads, aes(x = long, y = lat, group = group), colour = "grey50") +
+    scale_fill_brewer(palette="Set1",
+                      name = "Source",
+                      breaks=c("1", "2", "3", "4", "5", "6", "7"),
+                      labels=c("Detail", "gmia, rcmrd", "rcmrd, esa, glc2000",
+                               "rcmrd, esa", "rcmrd, glc2000", "rcmrd", "rest")) +
     coord_equal() +
-    theme_bw()
+    labs(x = "", y = "") +
+    theme_classic() +
+    theme(line = element_blank(),
+        axis.text = element_blank())
 
 # Area by rank and source
 lc_comb %>%
@@ -352,11 +363,16 @@ lc <- dplyr::select(lc_raw, value, adm, gridID, x, y)
 
 # Plot synergistic lc map
 ggplot() +
-  geom_raster(data = lc, aes(x = x, y = y, fill = value)) +
+  #geom_raster(data = lc, aes(x = x, y = y, fill = value)) +
+  geom_raster(data = lc, aes(x = x, y = y), fill = "dark green") +
   geom_path(data = adm, aes(x = long, y = lat, group = group), colour = "black") +
-  geom_path(data = roads, aes(x = long, y = lat, group = group), colour = "grey50") +
+  #geom_path(data = roads, aes(x = long, y = lat, group = group), colour = "grey50") +
   coord_equal() +
-  theme_bw()
+  coord_equal() +
+  labs(x = "", y = "") +
+  theme_classic() +
+  theme(line = element_blank(),
+        axis.text = element_blank())
 
 ### SAVE
 # lc_ir

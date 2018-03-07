@@ -1,6 +1,6 @@
 #'========================================================================================================================================
 #' Project:  Global-to-local GLOBIOM
-#' Subject:  Prepare validation for country SPAM
+#' Subject:  Validate crop distribution maps
 #' Author:   Michiel van Dijk
 #' Contact:  michiel.vandijk@wur.nl
 #'========================================================================================================================================
@@ -29,14 +29,6 @@ options(digits=4)
 options(max.print=1000000) # more is printed on screen
 
 
-### SET COUNTRY
-source("Code/MWI/Set_country.R")
-
-### LINK GAMS LIBRARIES
-GAMSPath <- "C:\\GAMS\\win64\\24.9"
-igdx(GAMSPath)
-
-
 ### LOAD DATA
 # Household survey data
 suppressMessages(source("Code/MWI/Household_surveys/combine_data_MWI_2010.R"))
@@ -46,20 +38,18 @@ hs2crop_lvst <- read_excel(file.path(dataPath, "Data/MWI/Processed/Mappings/Mapp
   dplyr::select(crop_code, short_name)
 
 # Adm map
-adm2 <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/gaul/GAUL_MWI_adm2_2000_adj.rds"))
+adm2 <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/GAUL_MWI_adm2_2000_adj.rds"))
 
 # Load country grid
-grid_p <- readRDS(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid/grid_30sec_p_", iso3c_sel, ".rds")))
-grid <- raster(file.path(dataPath, paste0("Data/", iso3c_sel, "/Processed/Maps/grid/grid_30sec_r_", iso3c_sel, ".tif")))
-names(grid) <- "gridID"
-
+grid <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/grid_MWI.rds"))
+grid_r <- readRDS(file.path(dataPath, "Data/MWI/Processed/Maps/grid_r_MWI.rds"))
 
 # urban mask
 urban_mask <- readRDS(file.path(dataPath, "Data/MWI/Processed/Spatial_data/urban_mask_MWI.rds"))
 
 # Model results
-file <- file.path(dataPath, paste0("Model/", iso3c_sel, "/Results/MWI_ent_approx_no_slack.gdx"))
-lu_raw <- rgdx.param(file, "Palloc", names = c("gridID", "system", "value"),  compress = T) %>%
+file <- file.path(dataPath, "Model/Results/land_use.gdx")
+land_use_raw <- rgdx.param(file, "Palloc", names = c("gridID", "system", "value"),  compress = T) %>%
   mutate(system = as.character(system),
          gridID = as.numeric(as.character(gridID)))
 
@@ -80,18 +70,18 @@ val_df <- MWI2010 %>%
 
 ### SPAM RESULTS
 # Add NA to missing values to show where there is no crop cover
-lu <- lu_raw %>%
+land_use <- land_use_raw %>%
   spread(system, value, fill = NA) 
 
 # Add grid cell coordinates
-grid_df <- as.data.frame(rasterToPoints(grid))
+grid_df <- as.data.frame(rasterToPoints(grid_r))
 
-lu <- lu %>%
+land_use <- land_use %>%
   left_join(grid_df,.) %>%
   gather(system, value, -gridID, -x, -y)
 
 # Add short_name
-lu <- lu %>%
+land_use <- land_use %>%
   mutate(short_name = str_sub(system,1,-3), # cut of last two characters
          short_name = ifelse(system %in% c("teas_coff_H", "teas_coff_I"), "teas_coff", short_name))
 
@@ -101,7 +91,7 @@ lu <- lu %>%
 # Plot function
 plot_crop_val_f <- function(crop){
   df_val <- filter(val_df, short_name %in% crop)
-  df_lu <-  filter(lu, short_name %in% crop)
+  df_lu <-  filter(land_use, short_name %in% crop)
   p = ggplot() +
     geom_raster(data = df_lu, aes(x = x, y = y, fill = value)) +
     scale_fill_viridis(na.value = "light grey", direction = -1, labels = comma) +
@@ -109,7 +99,7 @@ plot_crop_val_f <- function(crop){
     geom_point(data = df_val, aes(x = lon, y = lat, size = hh), colour = "red", alpha = 0.3) +
     facet_wrap(~short_name) +
     coord_quickmap() +
-    labs(x="", y="", fill = "area (ha)", colour = "# hh") +
+    labs(x="", y="") +
     theme_classic() +
     theme(line = element_blank(),
           axis.text = element_blank(),
@@ -120,8 +110,11 @@ plot_crop_val_f <- function(crop){
   p
 }
 
-plot_crop_val_f(c("trof", "rice", "maiz"))
-plot_crop_val_f(c("rice"))
+plot_crop_val_f(c("trof", "rice"))
+
+
+
+
 
 
 ### SHARE OF CORRECT CLASSIFICATION
@@ -131,7 +124,7 @@ coordinates(val_geo) <- c("lon", "lat")
 crs(val_geo) <- crs(adm2)
 
 # Map validation data to gridID and link to land use data
-val2gridID <- extract(grid, val_geo, df = T) %>%
+val2gridID <- extract(grid_r, val_geo, df = T) %>%
   bind_cols(val_df) %>%
   dplyr::select(gridID, short_name) %>%
   na.omit %>%
@@ -139,7 +132,7 @@ val2gridID <- extract(grid, val_geo, df = T) %>%
   mutate(validation = 1)
 
 # Link to land
-lu2gridID <- lu %>%
+lu2gridID <- land_use %>%
   na.omit() %>%
   dplyr::select(gridID, short_name) %>%
   unique() %>%
